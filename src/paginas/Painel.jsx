@@ -4,6 +4,8 @@ import PainelDetalhe from './painel/PainelDetalhe.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
+import BuscaLocal from './painel/BuscaLocal.jsx'
+import { useAlfineteBusca } from '../mapa/useAlfineteBusca.js'
 import ModaisDoPainel from './painel/ModaisDoPainel.jsx'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { glebasDoTalhao } from '../hooks/useHierarquia.js'
@@ -35,6 +37,7 @@ export default function Painel() {
   const [confirmandoFazenda, setConfirmandoFazenda] = useState(null)
   const [carregandoExclusaoFazenda, setCarregandoExclusaoFazenda] = useState(false)
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
+  const [buscaAberta, setBuscaAberta] = useState(false)
 
   const { aviso, mostrar: mostrarAviso } = useAviso()
 
@@ -73,6 +76,7 @@ export default function Painel() {
   })
 
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
+  const alfinete = useAlfineteBusca(mapa)
 
   /**
    * A barra lateral pede o desenho pelo contexto; aqui o pedido é consumido e
@@ -142,14 +146,36 @@ export default function Painel() {
         )}
         {fazendaSelecionada && (
           <button
-            onClick={() => setFiltrosAbertos((a) => !a)}
+            // Um de cada vez: os dois abrem no mesmo canto.
+            onClick={() => {
+              setFiltrosAbertos((a) => !a)
+              setBuscaAberta(false)
+            }}
             aria-expanded={filtrosAbertos}
             className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
           >
             Colorir o mapa
           </button>
         )}
+        {/* Buscar não depende de fazenda selecionada: é justamente o que se usa
+            para achar a propriedade antes de existir qualquer cadastro. */}
+        <button
+          onClick={() => {
+            setBuscaAberta((a) => !a)
+            setFiltrosAbertos(false)
+          }}
+          aria-expanded={buscaAberta}
+          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
+        >
+          🔍 Buscar
+        </button>
       </div>
+
+      {buscaAberta && (
+        <div className="absolute left-3 top-14 z-[1100]">
+          <BuscaLocal aoIrPara={alfinete.irPara} />
+        </div>
+      )}
 
       {filtrosAbertos && fazendaSelecionada && (
         <div className="absolute left-3 top-14 z-[1100] w-64 rounded-lg border border-slate-200 bg-white shadow-lg">
