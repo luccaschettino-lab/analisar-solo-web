@@ -246,6 +246,31 @@ tem rótulo repetido nos 24 parâmetros. **Rode depois de mexer em
 A RLS tem seu próprio teste, em `supabase/testes/teste_rls.sql`, para colar no
 SQL Editor.
 
+## Publicação
+
+Automática pelo GitHub Actions (`.github/workflows/deploy.yml`) a cada push em
+`main`. O workflow confere os segredos, roda `npm run testar`, constrói e
+publica.
+
+Endereço: **https://luccaschettino-lab.github.io/analisar-solo-web/**
+
+**O Vite embute as variáveis no bundle em tempo de build**, então elas precisam
+existir como *repository secrets* no GitHub — `.env` local não chega lá:
+
+| Segredo | Onde cadastrar |
+|---|---|
+| `VITE_SUPABASE_URL` | Settings → Secrets and variables → Actions |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | idem |
+
+E em Settings → Pages, a origem tem que ser **GitHub Actions**, não "Deploy from
+a branch".
+
+> **O repositório é público.** A publishable key vai no bundle e é visível —
+> isso é esperado, a segurança está na RLS. Mas **nunca** commitar laudos,
+> planilhas ou dados de propriedades: o `.gitignore` bloqueia `*.xlsx`, `*.xls`,
+> `*.csv` e `laudos/` por isso. Arquivo commitado fica no histórico para sempre;
+> apagar depois não remove de clones já feitos.
+
 ## Estado das fases
 
 ### Fase 1 — concluída

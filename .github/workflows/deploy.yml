@@ -1,0 +1,75 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite republicar sem precisar de um commit novo.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez. `cancel-in-progress: false` deixa a que já começou
+# terminar — cancelar no meio pode deixar o Pages num estado inconsistente.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # Falha cedo e com mensagem clara. Sem isso o build passa, o site publica,
+      # e o usuário vê a tela de "Configuração incompleta" sem saber por quê —
+      # o Vite embute essas variáveis no bundle em tempo de build.
+      - name: Conferir os segredos de configuração
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          CHAVE: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          faltando=""
+          [ -z "$URL" ] && faltando="$faltando VITE_SUPABASE_URL"
+          [ -z "$CHAVE" ] && faltando="$faltando VITE_SUPABASE_PUBLISHABLE_KEY"
+          if [ -n "$faltando" ]; then
+            echo "::error::Segredos ausentes:$faltando"
+            echo "Cadastre em Settings > Secrets and variables > Actions > New repository secret."
+            exit 1
+          fi
+
+      # Portão de qualidade: as regras de coloração não podem quebrar em silêncio.
+      - name: Rodar os testes
+        run: npm run testar
+
+      - name: Construir
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - id: publicacao
+        uses: actions/deploy-pages@v4

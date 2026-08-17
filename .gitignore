@@ -8,6 +8,14 @@ dist-ssr
 .env.*
 !.env.example
 
+# Planilhas e laudos de laboratório: dados reais de propriedades.
+# Este repositório é PÚBLICO, e arquivo commitado fica no histórico do git
+# para sempre — apagar depois não remove de clones já feitos.
+*.xlsx
+*.xls
+*.csv
+laudos/
+
 # logs
 npm-debug.log*
 yarn-debug.log*
