@@ -77,6 +77,19 @@ Levantadas na auditoria de 2026-08-14 e **aceitas explicitamente**.
 | **Todas as análises da fazenda carregam de uma vez.** | Trocar de parâmetro, safra ou profundidade é recorte do que já está em memória. Numa conexão de campo, é a diferença entre o filtro responder na hora e travar a cada clique. |
 | **Talhão mantém a cor do cadastro; só a gleba recebe cor de valor.** | O talhão é a moldura, a gleba é o dado. Colorir os dois competiria pela mesma leitura. |
 
+### Navegação em cascata
+
+Feita depois da Fase 4, a pedido do responsável, que não gostava das abas.
+
+| Decisão | Motivo |
+|---|---|
+| **Uma barra lateral única em todas as telas**, com Fazenda › Talhão › Gleba › seção. Substituiu o menu do topo, as abas das telas e o painel do mapa. | Havia três lugares de navegação — menu, abas e painel — e nenhum mostrava onde se estava dentro da hierarquia. A cascata responde "onde estou" e "para onde dá para ir" no mesmo lugar. |
+| **Clicar num talhão ou gleba seleciona no mapa; as sub-entradas navegam.** | As duas ações são legítimas, e a mais frequente — olhar no mapa — tem que ser a mais barata. Selecionar estando em outra tela leva de volta ao mapa. |
+| **`FazendaContext` levanta o estado da fazenda para o layout.** | A barra vive acima das rotas e precisa da mesma árvore que o mapa desenha. Dois estados divergiriam: criar um talhão no mapa não apareceria na barra. |
+| **O pedido de desenho ("+ Talhão", "+ Gleba") viaja por estado no contexto.** | A barra não tem acesso à instância do Leaflet, e dar acesso a ela seria pior. A página do mapa consome o pedido e limpa. É evento carregado por estado — feio, mas explícito. |
+| **Ações da fazenda viraram botões sobre o mapa**, no canto oposto aos controles do Leaflet. | Moravam no painel que deixou de existir. O zoom foi para a direita justamente para liberar esse canto. |
+| **`PainelLateral.jsx` e `ArvoreHierarquia.jsx` removidos.** | Ficaram órfãos. Componente que ninguém importa é pior que componente ruim: alguém tenta mantê-lo. |
+
 ---
 
 ## Limitações conhecidas, não corrigidas

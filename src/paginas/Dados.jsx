@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
+import { PainelDeAba } from '../componentes/Abas.jsx'
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx'
 import ImportarPdf from '../features/importacao/pdf/ImportarPdf.jsx'
 import FormAnalise from './dados/FormAnalise.jsx'
@@ -55,14 +55,10 @@ export default function Dados() {
         <p className="mt-0.5 text-sm text-slate-500">
           Lance os laudos do laboratório para acompanhar a evolução de cada gleba.
         </p>
-        <div className="mt-3">
-          <Abas
-            abas={ABAS}
-            ativa={abaAtiva}
-            aoTrocar={trocarAba}
-            rotulo="Formas de entrada de dados"
-          />
-        </div>
+        {/* Sem abas: a barra lateral já leva às duas formas de entrada. */}
+        <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+          {abaAtiva === 'pdf' ? 'Importar laudo PDF' : 'Entrada manual'}
+        </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">

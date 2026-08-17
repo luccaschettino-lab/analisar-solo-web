@@ -209,8 +209,9 @@ src/
   dados/       uma ida ao servidor por função, erro do Postgres traduzido
   hooks/       estado compartilhado: fazendas, hierarquia, análises, seleção, aviso
   mapa/        Leaflet e Geoman, imperativos, isolados do React
-  componentes/ genéricos: Modal, Abas, formulário, guards, ErrorBoundary
-  layouts/     casca pública (login) e autenticada (cabeçalho + Outlet)
+  componentes/ genéricos: Modal, formulário, guards, ErrorBoundary
+  context/     AuthContext (sessão) e FazendaContext (fazenda aberta)
+  layouts/     casca pública (login), casca autenticada e a BarraLateral
   paginas/     Painel (mapa), Dados, GlebaDetalhe, Login, Cadastro
     painel/    peças da tela do mapa, incluindo seus hooks
     gleba/     trilha, tabela e gráficos de /#/glebas/:id
