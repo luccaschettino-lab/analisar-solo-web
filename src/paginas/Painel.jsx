@@ -104,6 +104,19 @@ export default function Painel() {
 
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
 
+  /**
+   * No celular o painel cobre o mapa, então escolher um item e continuar com a
+   * gaveta aberta esconde justamente o que se quer ver. Recolhe ao selecionar.
+   *
+   * O corte usa a mesma largura do `md:` do Tailwind (768px), para o
+   * comportamento bater com o layout. Acima disso o painel é coluna fixa e
+   * fechar seria perda de contexto.
+   */
+  function selecionarEFecharNoCelular(alvo) {
+    item.selecionarEFocar(alvo)
+    if (window.matchMedia('(max-width: 767px)').matches) setRecolhido(true)
+  }
+
   async function abrirExclusaoFazenda() {
     if (!fazendaSelecionada || carregandoExclusaoFazenda) return
     setCarregandoExclusaoFazenda(true)
@@ -123,9 +136,50 @@ export default function Painel() {
     setConfirmandoFazenda(null)
   }
 
+  /**
+   * O detalhe do item selecionado aparece em dois lugares, um por vez.
+   *
+   * Em telas largas, no rodapé do painel. No celular, como barra sobre o mapa —
+   * porque lá a gaveta fecha ao selecionar, e o detalhe iria junto, levando os
+   * botões de editar, excluir e ver análises.
+   *
+   * `PainelDetalhe` não tem estado, então renderizar nos dois lugares é seguro:
+   * o CSS mostra só um.
+   */
+  const detalhe = item.itemSelecionado ? (
+    <PainelDetalhe
+      item={item.itemSelecionado}
+      tipo={item.selecionado.tipo}
+      talhaoPai={item.talhaoPai}
+      quantidadeGlebas={
+        item.selecionado.tipo === 'talhao'
+          ? glebasDoTalhao(glebas, item.selecionado.id).length
+          : 0
+      }
+      editor={editor}
+      editandoGeometria={item.editandoGeometria}
+      gravandoGeometria={item.gravandoGeometria}
+      carregandoExclusao={item.carregandoExclusao}
+      aoEditarDados={item.abrirEdicaoDados}
+      aoEditarGeometria={item.iniciarEdicaoGeometria}
+      aoSalvarGeometria={item.salvarGeometria}
+      aoCancelarGeometria={item.cancelarGeometria}
+      aoExcluir={item.abrirExclusao}
+      aoFechar={item.limparSelecao}
+    />
+  ) : null
+
   return (
     <div className="relative h-full">
       <Mapa aoCriarMapa={aoCriarMapa} />
+
+      {/* Só no celular, e só com a gaveta fechada — senão apareceria duplicado
+          por cima dela. */}
+      {detalhe && recolhido && (
+        <div className="absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 bg-white shadow-lg md:hidden">
+          {detalhe}
+        </div>
+      )}
 
       <PainelLateral
         fazendas={fazendas}
@@ -151,37 +205,14 @@ export default function Painel() {
             />
           )
         }
-        detalhe={
-          item.itemSelecionado && (
-            <PainelDetalhe
-              item={item.itemSelecionado}
-              tipo={item.selecionado.tipo}
-              talhaoPai={item.talhaoPai}
-              quantidadeGlebas={
-                item.selecionado.tipo === 'talhao'
-                  ? glebasDoTalhao(glebas, item.selecionado.id).length
-                  : 0
-              }
-              editor={editor}
-              editandoGeometria={item.editandoGeometria}
-              gravandoGeometria={item.gravandoGeometria}
-              carregandoExclusao={item.carregandoExclusao}
-              aoEditarDados={item.abrirEdicaoDados}
-              aoEditarGeometria={item.iniciarEdicaoGeometria}
-              aoSalvarGeometria={item.salvarGeometria}
-              aoCancelarGeometria={item.cancelarGeometria}
-              aoExcluir={item.abrirExclusao}
-              aoFechar={item.limparSelecao}
-            />
-          )
-        }
+        detalhe={detalhe}
       >
         {fazendaSelecionada && (
           <ArvoreHierarquia
             talhoes={talhoes}
             glebas={glebas}
             selecionado={item.selecionado}
-            aoSelecionar={item.selecionarEFocar}
+            aoSelecionar={selecionarEFecharNoCelular}
             aoNovoTalhao={criacao.iniciarTalhao}
             aoNovaGleba={criacao.iniciarGleba}
             editor={editor}
@@ -198,6 +229,7 @@ export default function Painel() {
           chaveParametro={filtro.chaveParametro}
           anoSafra={filtro.anoSafra}
           profundidade={filtro.profundidade}
+          elevada={Boolean(detalhe && recolhido)}
         />
       )}
 

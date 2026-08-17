@@ -39,9 +39,13 @@ export default function LayoutApp() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
-        <div className="flex items-center gap-6">
-          <span className="text-sm font-semibold text-solo-700">Analisar Solo</span>
+      <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-6 sm:py-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-6">
+          {/* O nome do produto some no celular: os dois links de navegação
+              valem mais que a marca numa tela de 360 px. */}
+          <span className="hidden text-sm font-semibold text-solo-700 sm:inline">
+            Analisar Solo
+          </span>
           <nav className="flex items-center gap-1">
             {LINKS.map((l) => (
               // `end` só na raiz: sem isso "/" ficaria ativo em toda rota,
@@ -53,17 +57,22 @@ export default function LayoutApp() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           {erro && (
             <span role="alert" className="text-sm text-red-700">
               {erro}
             </span>
           )}
-          <span className="text-sm text-slate-500">{identificacao}</span>
+          {/* Quem está logado importa pouco quando só há uma conta no aparelho,
+              e ocupa metade da largura de um celular. */}
+          <span className="hidden max-w-[16ch] truncate text-sm text-slate-500 sm:inline">
+            {identificacao}
+          </span>
           <button
             onClick={() => aoSair()}
             disabled={saindo}
-            className="text-sm font-medium text-slate-600 transition hover:text-solo-700 disabled:cursor-not-allowed disabled:text-slate-300"
+            // min-h-11 ≈ 44 px: alvo de toque mínimo confortável.
+            className="min-h-11 px-2 text-sm font-medium text-slate-600 transition hover:text-solo-700 disabled:cursor-not-allowed disabled:text-slate-300 sm:min-h-0 sm:px-0"
           >
             {saindo ? 'Saindo…' : 'Sair'}
           </button>

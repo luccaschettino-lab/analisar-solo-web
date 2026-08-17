@@ -107,7 +107,9 @@ export default function ArvoreHierarquia({
                   onClick={() => alternar(talhao.id)}
                   aria-expanded={aberto}
                   aria-label={aberto ? `Recolher talhão ${talhao.codigo}` : `Expandir talhão ${talhao.codigo}`}
-                  className={`w-6 shrink-0 text-xs text-slate-400 hover:text-slate-700 ${FOCO}`}
+                  // 44 px de alvo no celular: o glifo tem 12 px, mas o dedo
+                  // precisa de área. Em tela larga volta ao compacto.
+                  className={`w-11 shrink-0 text-sm text-slate-400 hover:text-slate-700 md:w-6 md:text-xs ${FOCO}`}
                 >
                   {aberto ? '▾' : '▸'}
                 </button>
@@ -137,7 +139,7 @@ export default function ArvoreHierarquia({
                       <li key={gleba.id}>
                         <button
                           onClick={() => aoSelecionar({ tipo: 'gleba', id: gleba.id })}
-                          className={`w-full py-1.5 pl-12 pr-3 text-left ${FOCO} ${
+                          className={`w-full py-2.5 pl-12 pr-3 text-left md:py-1.5 ${FOCO} ${
                             glebaAtiva ? 'bg-amber-100' : 'hover:bg-slate-100'
                           }`}
                         >

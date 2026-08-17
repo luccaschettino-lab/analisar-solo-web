@@ -25,7 +25,10 @@ export function useMapa(containerRef) {
     const m = L.map(containerRef.current, {
       center: CENTRO_PADRAO,
       zoom: ZOOM_PADRAO,
-      zoomControl: true,
+      // Desligado aqui para ser recriado à direita. O padrão do Leaflet é o
+      // canto superior esquerdo, que é justamente onde o painel lateral fica —
+      // os botões + e − nasciam embaixo dele.
+      zoomControl: false,
       // Sem isso o Leaflet escreve "Leaflet" no canto; a atribuicao das duas
       // fontes de tile vem das opcoes de cada camada e e obrigatoria.
       attributionControl: true,
@@ -38,7 +41,18 @@ export function useMapa(containerRef) {
       if (chave === CAMADA_PADRAO) camada.addTo(m)
     }
 
-    L.control.layers(camadas, {}, { position: 'topright', collapsed: false }).addTo(m)
+    // Zoom à direita, longe do painel. Adicionado antes do seletor de camadas
+    // para ficar acima dele na pilha.
+    L.control.zoom({ position: 'topright' }).addTo(m)
+
+    // Expandido em tela larga, onde não atrapalha; recolhido no celular, onde
+    // as duas opções abertas comem o canto do mapa. O Leaflet já recolhe ao
+    // detectar toque, mas o corte por largura também pega notebook em janela
+    // estreita.
+    const telaEstreita = window.matchMedia('(max-width: 767px)').matches
+    L.control
+      .layers(camadas, {}, { position: 'topright', collapsed: telaEstreita })
+      .addTo(m)
     // Escala metrica: referencia rapida para conferir se o poligono desenhado
     // tem o tamanho que o produtor espera. Sem imperial, que aqui so atrapalha.
     L.control.scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(m)

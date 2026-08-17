@@ -25,9 +25,10 @@ export default function SobreposicoesDoMapa({
   return (
     <>
       {semReferencia && !marcandoCentro && !gravandoCentro && (
-        // pl-80 abre espaço para o painel lateral: sem isso o cartão nasce
-        // metade escondido atrás dele.
-        <div className="pointer-events-none absolute inset-0 z-[1050] flex items-center justify-center pl-80">
+        // O padding compensa o painel lateral, que só existe a partir de md.
+        // No celular o painel é gaveta sobreposta, e um pl-80 empurraria o
+        // cartão para fora da tela.
+        <div className="pointer-events-none absolute inset-0 z-[1050] flex items-center justify-center p-4 md:pl-80">
           <div className="pointer-events-auto max-w-sm rounded-xl border border-slate-200 bg-white/95 p-5 text-center shadow-lg backdrop-blur">
             <h3 className="text-sm font-semibold text-slate-900">Onde fica a propriedade?</h3>
             <p className="mt-1 text-sm text-slate-600">

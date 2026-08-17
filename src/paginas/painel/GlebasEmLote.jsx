@@ -58,7 +58,9 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
   }
 
   return (
-    <aside className="absolute left-0 top-0 z-[2000] flex h-full w-[26rem] flex-col border-r border-slate-200 bg-white shadow-xl">
+    // No celular ocupa a tela toda: 26rem é mais largo que um aparelho comum,
+    // e a prévia dos pontos não caberia ao lado de qualquer jeito.
+    <aside className="absolute inset-0 z-[2000] flex flex-col border-slate-200 bg-white shadow-xl sm:inset-y-0 sm:left-0 sm:right-auto sm:w-[26rem] sm:border-r">
       <div className="flex items-start justify-between border-b border-slate-200 px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">
