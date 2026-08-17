@@ -5,6 +5,7 @@ import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
 import BuscaLocal from './painel/BuscaLocal.jsx'
+import InfoImagem from './painel/InfoImagem.jsx'
 import { useAlfineteBusca } from '../mapa/useAlfineteBusca.js'
 import ModaisDoPainel from './painel/ModaisDoPainel.jsx'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
@@ -38,6 +39,10 @@ export default function Painel() {
   const [carregandoExclusaoFazenda, setCarregandoExclusaoFazenda] = useState(false)
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const [buscaAberta, setBuscaAberta] = useState(false)
+  const [camadaAtiva, setCamadaAtiva] = useState(null)
+  // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
+  // de se mover — consultar a cada pixel de arrasto seria abuso do serviço.
+  const [centroEstavel, setCentroEstavel] = useState(null)
 
   const { aviso, mostrar: mostrarAviso } = useAviso()
 
@@ -76,7 +81,32 @@ export default function Painel() {
   })
 
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
+  const aoTrocarCamada = useCallback((chave) => setCamadaAtiva(chave), [])
   const alfinete = useAlfineteBusca(mapa)
+
+  /**
+   * O centro do mapa só é atualizado quando o movimento termina, e só se
+   * andou o bastante para mudar a resposta. A data da imagem varia por
+   * região, não por pixel — consultar a cada arrasto castigaria o serviço do
+   * Esri sem informar nada de novo.
+   */
+  useEffect(() => {
+    if (!mapa) return
+
+    function registrar() {
+      const c = mapa.getCenter()
+      setCentroEstavel((anterior) => {
+        if (anterior && Math.abs(anterior.lat - c.lat) < 0.02 && Math.abs(anterior.lng - c.lng) < 0.02) {
+          return anterior
+        }
+        return { lat: c.lat, lng: c.lng }
+      })
+    }
+
+    registrar()
+    mapa.on('moveend', registrar)
+    return () => mapa.off('moveend', registrar)
+  }, [mapa])
 
   /**
    * A barra lateral pede o desenho pelo contexto; aqui o pedido é consumido e
@@ -118,7 +148,9 @@ export default function Painel() {
 
   return (
     <div className="relative h-full">
-      <Mapa aoCriarMapa={aoCriarMapa} />
+      <Mapa aoCriarMapa={aoCriarMapa} aoTrocarCamada={aoTrocarCamada} />
+
+      <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
 
       {/* Ações da fazenda, no canto oposto ao dos controles do mapa. */}
       <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">

@@ -2,15 +2,15 @@ import { useEffect, useRef } from 'react'
 import { useMapa } from './useMapa.js'
 
 /**
- * Container do mapa. Reporta a instancia Leaflet para quem o usa, e a partir
- * dai todo desenho e feito de forma imperativa sobre ela.
+ * Container do mapa. Reporta a instância Leaflet e a camada base ativa para
+ * quem o usa, e a partir daí todo desenho é feito de forma imperativa.
  *
- * `aoCriarMapa` precisa ser estavel (useCallback no pai), senao o efeito
+ * `aoCriarMapa` precisa ser estável (useCallback no pai), senão o efeito
  * dispara a cada render.
  */
-export default function Mapa({ aoCriarMapa, className = '' }) {
+export default function Mapa({ aoCriarMapa, aoTrocarCamada, className = '' }) {
   const containerRef = useRef(null)
-  const mapa = useMapa(containerRef)
+  const { mapa, camadaAtiva } = useMapa(containerRef)
 
   // Reporta também o null da desmontagem: sem isso o pai guardaria uma
   // instância já removida e tentaria desenhar sobre um mapa morto.
@@ -18,7 +18,11 @@ export default function Mapa({ aoCriarMapa, className = '' }) {
     aoCriarMapa?.(mapa)
   }, [mapa, aoCriarMapa])
 
-  // h-full obrigatorio: o Leaflet mede o container na criacao, e um div sem
+  useEffect(() => {
+    aoTrocarCamada?.(camadaAtiva)
+  }, [camadaAtiva, aoTrocarCamada])
+
+  // h-full obrigatório: o Leaflet mede o container na criação, e um div sem
   // altura vira um mapa de 0px que nunca renderiza tile nenhum.
   return <div ref={containerRef} className={`h-full w-full ${className}`} />
 }

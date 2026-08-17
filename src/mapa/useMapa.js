@@ -17,6 +17,9 @@ import {
  */
 export function useMapa(containerRef) {
   const [mapa, setMapa] = useState(null)
+  // Chave da camada base ativa. Quem mostra a data da imagem precisa saber
+  // qual fonte está na tela — a data do Esri não vale para o Sentinel.
+  const [camadaAtiva, setCamadaAtiva] = useState(CAMADA_PADRAO)
   const instancia = useRef(null)
 
   useEffect(() => {
@@ -35,11 +38,17 @@ export function useMapa(containerRef) {
     })
 
     const camadas = {}
+    // Rótulo → chave, para traduzir de volta o evento do Leaflet, que só
+    // informa o nome exibido.
+    const chavePorRotulo = {}
     for (const [chave, cfg] of Object.entries(CAMADAS_BASE)) {
       const camada = L.tileLayer(cfg.url, cfg.opcoes)
       camadas[cfg.rotulo] = camada
+      chavePorRotulo[cfg.rotulo] = chave
       if (chave === CAMADA_PADRAO) camada.addTo(m)
     }
+
+    m.on('baselayerchange', (e) => setCamadaAtiva(chavePorRotulo[e.name] ?? null))
 
     // Zoom à direita, longe do painel. Adicionado antes do seletor de camadas
     // para ficar acima dele na pilha.
@@ -69,5 +78,5 @@ export function useMapa(containerRef) {
     }
   }, [containerRef])
 
-  return mapa
+  return { mapa, camadaAtiva }
 }

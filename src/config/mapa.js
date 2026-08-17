@@ -2,29 +2,63 @@
 // Fica separado do componente para que URLs e atribuicoes tenham um lugar
 // unico — atribuicao de tile e obrigacao legal das duas fontes, nao enfeite.
 
+const ATRIB_ESRI =
+  'Imagens &copy; <a href="https://www.esri.com/">Esri</a> — Esri, Maxar, Earthstar Geographics e a comunidade GIS'
+const ATRIB_EOX =
+  'Sentinel-2 cloudless por <a href="https://eox.at/">EOX</a> — contém dados Copernicus Sentinel modificados'
+const ATRIB_OSM =
+  '&copy; contribuidores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+
+// maxNativeZoom evita pedir tile que a fonte não tem: o Leaflet estica o
+// último nível disponível em vez de receber 404 e mostrar buraco cinza. Sem
+// isso, aproximar para posicionar um ponto de coleta quebraria a tela.
+const ZOOM_ALTA = { maxNativeZoom: 19, maxZoom: 22 }
+const ZOOM_SENTINEL = { maxNativeZoom: 15, maxZoom: 22 }
+
+/** Mosaico anual do Sentinel-2, um por ano. Serve para comparar uso da terra. */
+function sentinel(ano) {
+  return {
+    rotulo: `Sentinel-2 · ${ano}`,
+    url: `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-${ano}_3857/default/g/{z}/{y}/{x}.jpg`,
+    opcoes: { attribution: ATRIB_EOX, ...ZOOM_SENTINEL },
+    // A data não precisa ser consultada: é o próprio mosaico.
+    info: { tipo: 'fixo', texto: `Mosaico anual ${ano} · 10 m/pixel` },
+  }
+}
+
+/**
+ * `info` diz como descobrir a data da imagem:
+ *   { tipo: 'esri' }   consulta o serviço de metadados, por coordenada
+ *   { tipo: 'fixo' }   a data é conhecida e constante
+ *   ausente            camada sem data (mapa de ruas, relevo)
+ */
 export const CAMADAS_BASE = {
   satelite: {
-    rotulo: 'Satélite',
+    rotulo: 'Satélite (Esri)',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    opcoes: {
-      attribution:
-        'Imagens &copy; <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-      // O World Imagery cobre ate z19 na maior parte do Brasil. maxNativeZoom
-      // deixa o Leaflet esticar o tile de 19 em vez de pedir um 404 ao Esri,
-      // entao o usuario continua conseguindo aproximar para posicionar o ponto.
-      maxNativeZoom: 19,
-      maxZoom: 22,
-    },
+    opcoes: { attribution: ATRIB_ESRI, ...ZOOM_ALTA },
+    info: { tipo: 'esri' },
+  },
+  clarity: {
+    rotulo: 'Satélite (Esri Clarity)',
+    url: 'https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    opcoes: { attribution: ATRIB_ESRI, ...ZOOM_ALTA },
+    // O Clarity não publica serviço de metadados — verificado, devolve 404.
+    // Melhor não mostrar data nenhuma que mostrar a data da outra camada.
+    info: { tipo: 'fixo', texto: 'Mosaico alternativo, data não publicada' },
+  },
+  s2_2024: sentinel(2024),
+  s2_2021: sentinel(2021),
+  s2_2018: sentinel(2018),
+  relevo: {
+    rotulo: 'Relevo',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    opcoes: { attribution: ATRIB_ESRI, ...ZOOM_ALTA },
   },
   ruas: {
     rotulo: 'Ruas',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    opcoes: {
-      attribution:
-        '&copy; contribuidores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxNativeZoom: 19,
-      maxZoom: 22,
-    },
+    opcoes: { attribution: ATRIB_OSM, ...ZOOM_ALTA },
   },
 }
 
