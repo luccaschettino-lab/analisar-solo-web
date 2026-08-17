@@ -19,8 +19,22 @@ function traduzirErro(erro) {
   if (/password should be at least/i.test(msg)) return 'A senha precisa ter no mínimo 6 caracteres.'
   if (/unable to validate email/i.test(msg)) return 'E-mail inválido.'
   if (/rate limit|too many requests/i.test(msg)) return 'Muitas tentativas. Aguarde um minuto.'
-  if (/failed to fetch|networkerror/i.test(msg)) return 'Sem conexão com o servidor.'
+  // Falha de rede mostra o endereço tentado. Sem isso, um erro de digitação na
+  // URL do Supabase vira "sem conexão" genérico, e a causa só aparece no
+  // console do navegador — foi exatamente o que aconteceu com um `.supabase.com`
+  // no lugar de `.supabase.co` na primeira publicação.
+  if (/failed to fetch|networkerror/i.test(msg)) {
+    return `Sem conexão com o servidor (${servidorConfigurado()}).`
+  }
   return msg || 'Não foi possível concluir a operação.'
+}
+
+function servidorConfigurado() {
+  try {
+    return new URL(import.meta.env.VITE_SUPABASE_URL).host
+  } catch {
+    return 'endereço inválido'
+  }
 }
 
 export function AuthProvider({ children }) {
