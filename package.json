@@ -1,0 +1,42 @@
+{
+  "name": "analisar-solo-web",
+  "version": "0.1.0",
+  "description": "Visualizacao de analises de solo",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "testar": "node testes/coloracao.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luccaschettino-lab/analisar-solo-web.git"
+  },
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/luccaschettino-lab/analisar-solo-web/issues"
+  },
+  "homepage": "https://github.com/luccaschettino-lab/analisar-solo-web#readme",
+  "private": true,
+  "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "^2.20.0",
+    "@supabase/supabase-js": "^2.112.3",
+    "@turf/area": "^7.4.0",
+    "@turf/boolean-point-in-polygon": "^7.4.0",
+    "@turf/boolean-within": "^7.4.0",
+    "@turf/helpers": "^7.4.0",
+    "chart.js": "^4.5.1",
+    "leaflet": "^1.9.4",
+    "react": "^19.2.8",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.5",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.2.1"
+  }
+}
