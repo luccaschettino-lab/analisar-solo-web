@@ -1,26 +1,16 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-
-const LINKS = [
-  { para: '/', rotulo: 'Mapa' },
-  { para: '/dados', rotulo: 'Dados' },
-]
-
-function classeDoLink({ isActive }) {
-  const base =
-    'rounded-md px-3 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600'
-  return isActive
-    ? `${base} bg-solo-50 text-solo-800`
-    : `${base} text-slate-600 hover:bg-slate-100 hover:text-slate-900`
-}
+import { FazendaProvider } from '../context/FazendaContext.jsx'
+import BarraLateral from './BarraLateral.jsx'
 
 export default function LayoutApp() {
   const { usuario, sair } = useAuth()
   const [saindo, setSaindo] = useState(false)
   const [erro, setErro] = useState('')
+  // Só no celular: em tela larga a barra é fixa e não recolhe.
+  const [gavetaAberta, setGavetaAberta] = useState(false)
 
-  // Nome vem do metadado gravado no cadastro; e-mail e o fallback.
   const identificacao = usuario?.user_metadata?.nome || usuario?.email
 
   async function aoSair() {
@@ -28,9 +18,8 @@ export default function LayoutApp() {
     setSaindo(true)
     try {
       await sair()
-      // Em caso de sucesso nao devolvemos "saindo" para false: o
-      // onAuthStateChange derruba a sessao e o guard troca de tela.
-      // Reabilitar o botao aqui so criaria um piscar antes do redirect.
+      // Em caso de sucesso o botão não volta a ficar habilitado: o
+      // onAuthStateChange derruba a sessão e o guard troca de tela.
     } catch (e) {
       setErro(e.message)
       setSaindo(false)
@@ -38,53 +27,66 @@ export default function LayoutApp() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-6 sm:py-3">
-        <div className="flex min-w-0 items-center gap-3 sm:gap-6">
-          {/* O nome do produto some no celular: os dois links de navegação
-              valem mais que a marca numa tela de 360 px. */}
-          <span className="hidden text-sm font-semibold text-solo-700 sm:inline">
-            Analisar Solo
-          </span>
-          <nav className="flex items-center gap-1">
-            {LINKS.map((l) => (
-              // `end` só na raiz: sem isso "/" ficaria ativo em toda rota,
-              // porque toda rota começa com barra.
-              <NavLink key={l.para} to={l.para} end={l.para === '/'} className={classeDoLink}>
-                {l.rotulo}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+    <FazendaProvider>
+      <div className="flex h-full flex-col">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              onClick={() => setGavetaAberta(true)}
+              aria-label="Abrir navegação"
+              className="min-h-11 min-w-11 rounded text-slate-600 hover:bg-slate-100 md:hidden"
+            >
+              ☰
+            </button>
+            <span className="truncate text-sm font-semibold text-solo-700">Analisar Solo</span>
+          </div>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-          {erro && (
-            <span role="alert" className="text-sm text-red-700">
-              {erro}
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            {erro && (
+              <span role="alert" className="text-sm text-red-700">
+                {erro}
+              </span>
+            )}
+            <span className="hidden max-w-[16ch] truncate text-sm text-slate-500 sm:inline">
+              {identificacao}
             </span>
-          )}
-          {/* Quem está logado importa pouco quando só há uma conta no aparelho,
-              e ocupa metade da largura de um celular. */}
-          <span className="hidden max-w-[16ch] truncate text-sm text-slate-500 sm:inline">
-            {identificacao}
-          </span>
-          <button
-            onClick={() => aoSair()}
-            disabled={saindo}
-            // min-h-11 ≈ 44 px: alvo de toque mínimo confortável.
-            className="min-h-11 px-2 text-sm font-medium text-slate-600 transition hover:text-solo-700 disabled:cursor-not-allowed disabled:text-slate-300 sm:min-h-0 sm:px-0"
-          >
-            {saindo ? 'Saindo…' : 'Sair'}
-          </button>
-        </div>
-      </header>
+            <button
+              onClick={() => aoSair()}
+              disabled={saindo}
+              className="min-h-11 px-2 text-sm font-medium text-slate-600 transition hover:text-solo-700 disabled:cursor-not-allowed disabled:text-slate-300 sm:min-h-0 sm:px-0"
+            >
+              {saindo ? 'Saindo…' : 'Sair'}
+            </button>
+          </div>
+        </header>
 
-      {/* min-h-0 deixa o filho encolher dentro do flex; sem isso o mapa
-          estoura a altura da janela. A rolagem passa a ser de cada página —
-          o mapa não rola, ele redimensiona. */}
-      <main className="min-h-0 flex-1">
-        <Outlet />
-      </main>
-    </div>
+        <div className="flex min-h-0 flex-1">
+          {/* Coluna fixa a partir de md. */}
+          <aside className="hidden w-64 shrink-0 border-r border-slate-200 md:block">
+            <BarraLateral />
+          </aside>
+
+          {/* Gaveta no celular. */}
+          {gavetaAberta && (
+            <>
+              <div
+                onClick={() => setGavetaAberta(false)}
+                aria-hidden="true"
+                className="fixed inset-0 z-[1900] bg-slate-900/30 md:hidden"
+              />
+              <aside className="fixed inset-y-0 left-0 z-[1950] w-[85%] max-w-xs border-r border-slate-200 bg-white shadow-xl md:hidden">
+                <BarraLateral aoNavegar={() => setGavetaAberta(false)} />
+              </aside>
+            </>
+          )}
+
+          {/* min-h-0 e min-w-0 deixam o filho encolher dentro do flex; sem
+              isso o mapa e as tabelas largas estouram o container. */}
+          <main className="min-h-0 min-w-0 flex-1">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </FazendaProvider>
   )
 }

@@ -1,5 +1,5 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
+import { PainelDeAba } from '../componentes/Abas.jsx'
 import TrilhaNavegacao from './gleba/TrilhaNavegacao.jsx'
 import TabelaAnalises from './gleba/TabelaAnalises.jsx'
 import HistoricoGraficos from './gleba/HistoricoGraficos.jsx'
@@ -64,18 +64,13 @@ export default function GlebaDetalhe() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b border-slate-200 bg-white px-6 pt-4">
+      {/* Sem abas: a barra lateral já leva a Análises e Histórico. Aqui fica
+          só a trilha, que diz onde se está. */}
+      <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <TrilhaNavegacao fazenda={fazenda} talhao={talhao} gleba={gleba} />
-        <div className="mt-3">
-          <Abas
-            abas={ABAS.map((a) =>
-              a.chave === 'analises' ? { ...a, contador: analises.length } : a,
-            )}
-            ativa={abaAtiva}
-            aoTrocar={trocarAba}
-            rotulo="Seções da gleba"
-          />
-        </div>
+        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+          {abaAtiva === 'historico' ? 'Histórico' : `Análises · ${analises.length}`}
+        </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">

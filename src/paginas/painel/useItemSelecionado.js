@@ -26,8 +26,11 @@ export function useItemSelecionado({
   mostrarAviso,
   coloracao = null,
   filtro = null,
+  // Vêm do FazendaContext: a barra lateral também seleciona, e dois estados
+  // separados fariam clicar na árvore não destacar a geometria.
+  selecionado,
+  setSelecionado,
 }) {
-  const [selecionado, setSelecionado] = useState(null)
   // Chave "tipo:id" da geometria em edição. Guardar a chave, e não um booleano,
   // deixa detectar sozinho quando a seleção muda no meio da edição.
   const [editandoChave, setEditandoChave] = useState(null)
@@ -38,7 +41,7 @@ export function useItemSelecionado({
   // Incrementado para redesenhar as camadas a partir dos dados salvos.
   const [revisao, setRevisao] = useState(0)
 
-  const aoSelecionar = useCallback((alvo) => setSelecionado(alvo), [])
+  const aoSelecionar = useCallback((alvo) => setSelecionado(alvo), [setSelecionado])
   const { obterCamada } = useGeometrias(mapa, {
     talhoes,
     glebas,
@@ -61,12 +64,12 @@ export function useItemSelecionado({
       : null
   const editandoGeometria = Boolean(editandoChave) && editandoChave === chaveSelecionada
 
-  const limparSelecao = useCallback(() => setSelecionado(null), [])
+  const limparSelecao = useCallback(() => setSelecionado(null), [setSelecionado])
 
   // Trocar de fazenda zera a seleção: o item de antes não existe mais na tela.
   useEffect(() => {
     setSelecionado(null)
-  }, [idFazenda])
+  }, [idFazenda, setSelecionado])
 
   const desligarEdicao = useCallback(
     (chave) => {
@@ -85,6 +88,17 @@ export function useItemSelecionado({
     setEditandoChave(null)
     setRevisao((r) => r + 1)
   }, [editandoChave, chaveSelecionada, desligarEdicao])
+
+  /**
+   * Leva o mapa até o item já selecionado.
+   *
+   * Existe porque a seleção agora pode vir de fora — da barra lateral — e nesse
+   * caso o mapa precisa reagir a um estado que ele não mudou.
+   */
+  const focarSelecionado = useCallback(() => {
+    if (!mapa || !itemSelecionado?.geometria) return
+    focarGeometria(mapa, itemSelecionado.geometria)
+  }, [mapa, itemSelecionado])
 
   // Clique na árvore leva o mapa até a geometria.
   const selecionarEFocar = useCallback(
@@ -199,6 +213,7 @@ export function useItemSelecionado({
     itemSelecionado,
     talhaoPai,
     selecionarEFocar,
+    focarSelecionado,
     // Seleciona sem mover o mapa. Usado logo após criar uma geometria: nesse
     // instante ela ainda não está na lista, então não haveria o que focar.
     selecionar: aoSelecionar,
