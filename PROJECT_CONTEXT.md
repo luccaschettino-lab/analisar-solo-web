@@ -265,6 +265,13 @@ existir como *repository secrets* no GitHub — `.env` local não chega lá:
 E em Settings → Pages, a origem tem que ser **GitHub Actions**, não "Deploy from
 a branch".
 
+**Publicado e funcionando desde 2026-08-17**, com login validado no ar.
+
+> Cuidado ao editar `VITE_SUPABASE_URL`: o domínio é **`.supabase.co`**, não
+> `.supabase.com`. Um M a mais faz o navegador não resolver o nome, e o
+> sintoma é um genérico "sem conexão com o servidor" — aconteceu na primeira
+> publicação. Por isso a mensagem de erro passou a incluir o host tentado.
+
 > **O repositório é público.** A publishable key vai no bundle e é visível —
 > isso é esperado, a segurança está na RLS. Mas **nunca** commitar laudos,
 > planilhas ou dados de propriedades: o `.gitignore` bloqueia `*.xlsx`, `*.xls`,
@@ -292,8 +299,6 @@ error boundary. Ver as seções acima.
 
 **Pendências conhecidas:**
 
-- Nenhum commit feito ainda.
-- Deploy no GitHub Pages via Actions ainda não configurado.
 - **Redirect URLs** não confirmadas no dashboard. Só importam quando a
   confirmação de e-mail for religada ou for usada recuperação de senha —
   adicionar `https://luccaschettino-lab.github.io/analisar-solo-web/` e
