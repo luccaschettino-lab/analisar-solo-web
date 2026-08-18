@@ -172,9 +172,20 @@ export default function Painel() {
               onClick={mapaDaFazenda.iniciarMarcacao}
               className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
             >
-              Marcar centro
+              Marcar sede
             </button>
           </>
+        )}
+        {/* Fora do bloco de editor: ir ate a sede e leitura, nao edicao.
+            Um consultor com papel de leitor tambem precisa se localizar. */}
+        {fazendaSelecionada && mapaDaFazenda.temSede && (
+          <button
+            onClick={mapaDaFazenda.irParaSede}
+            title="Centralizar o mapa na sede da fazenda"
+            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
+          >
+            <span aria-hidden="true">⌂</span> Ir para a sede
+          </button>
         )}
         {fazendaSelecionada && (
           <button
@@ -256,11 +267,11 @@ export default function Painel() {
       <SobreposicoesDoMapa
         semReferencia={mapaDaFazenda.semReferencia}
         editor={editor}
-        marcandoCentro={mapaDaFazenda.marcandoCentro}
-        gravandoCentro={mapaDaFazenda.gravandoCentro}
+        marcandoSede={mapaDaFazenda.marcandoSede}
+        gravandoSede={mapaDaFazenda.gravandoSede}
         desenhando={criacao.desenhando}
         aviso={aviso}
-        aoMarcarCentro={mapaDaFazenda.iniciarMarcacao}
+        aoMarcarSede={mapaDaFazenda.iniciarMarcacao}
         aoCancelarMarcacao={mapaDaFazenda.cancelarMarcacao}
         aoAbortarDesenho={criacao.abortar}
       />

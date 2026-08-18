@@ -73,6 +73,15 @@ export const ZOOM_PADRAO = 13
 // para o fitBounds trabalhar.
 export const ZOOM_PONTO = 17
 
+// Zoom aplicado ao ir para a sede da fazenda. Menor que ZOOM_PONTO porque a
+// sede e ponto de referencia, nao alvo de precisao: quem clica quer ver a
+// sede E o que esta em volta dela.
+export const ZOOM_SEDE = 15
+
+// Abaixo deste zoom os rotulos fixos dos talhoes somem. Com a fazenda inteira
+// na tela quatro rotulos cabem; trinta viram mancha sobre o mapa.
+export const ZOOM_MINIMO_ROTULO = 13
+
 // Folga ao redor da geometria no fitBounds, para o desenho nao encostar
 // nas bordas nem ficar sob o painel lateral.
 export const PADDING_FIT = [40, 40]

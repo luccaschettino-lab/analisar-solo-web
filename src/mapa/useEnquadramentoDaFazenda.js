@@ -8,7 +8,7 @@ import { ZOOM_PADRAO } from '../config/mapa.js'
  * Saiu de `useMapaDaFazenda` quando a tela de comparação precisou do
  * enquadramento sem o resto: lá o mapa é só leitura, e reusar o hook inteiro
  * levava junto o modo de marcar centro — estado, listener de clique e a
- * escrita em `definirCentro` — numa tela que não escreve nada.
+ * escrita em `definirSede` — numa tela que não escreve nada.
  *
  * Extrair foi melhor que criar um segundo hook parecido: a regra de para onde
  * o mapa vai ao abrir uma fazenda é uma só, e duas cópias divergiriam na
@@ -29,7 +29,7 @@ export function useEnquadramentoDaFazenda({
   /**
    * Enquadramento de abertura, uma vez por fazenda:
    *   1. limites de todos os talhões desenhados;
-   *   2. centro gravado;
+   *   2. sede marcada;
    *   3. nada — quem mostra o convite é `semReferencia`, em `useMapaDaFazenda`.
    *
    * O ref impede reenquadrar a cada render: quem deu zoom para conferir um
@@ -43,7 +43,7 @@ export function useEnquadramentoDaFazenda({
 
     if (enquadrarGeometrias(mapa, geometriasDosTalhoes)) return
 
-    const { centro_lat: lat, centro_lng: lng } = fazendaSelecionada
+    const { sede_lat: lat, sede_lng: lng } = fazendaSelecionada
     if (lat != null && lng != null) mapa.setView([lat, lng], ZOOM_PADRAO)
   }, [mapa, fazendaSelecionada, carregandoHierarquia, geometriasDosTalhoes])
 

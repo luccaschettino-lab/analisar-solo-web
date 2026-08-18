@@ -281,7 +281,9 @@ a branch".
 
 **No ar e em uso**: cadastro de propriedade com desenho no mapa, lançamento de
 laudos, tabela comparativa entre safras, gráficos de evolução, coloração do
-mapa por parâmetro e busca por lugar ou coordenada.
+mapa por parâmetro e busca por lugar ou coordenada. Os talhões aparecem com
+rótulo fixo — código, descrição e área —, e a fazenda tem uma **sede** marcável,
+que vira um pin com o nome dela e tem botão próprio para o mapa ir até lá.
 
 **Fase 5 concluída** — `/#/comparar`: mapa divergente entre dois anos-safra,
 com escala simétrica centrada em zero, e tabela de variação ordenável ao lado.

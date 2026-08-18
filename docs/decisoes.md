@@ -101,7 +101,7 @@ Levantadas na auditoria de 2026-08-14 e **aceitas explicitamente**.
 |---|---|
 | **`variacao.js` dividido em cinco arquivos**: `estadosVariacao` (folha), `variacao` (cálculo), `escalaDivergente` (cor), `textosVariacao` (apresentação), `ordenarVariacao` (tabela). | O arquivo chegou a 460 linhas misturando quatro responsabilidades. O quinto arquivo — as constantes de estado — não estava na proposta: apareceu porque o cálculo precisa da cor e a cor precisa dos estados, o que fechava um ciclo de imports. Ciclo em módulo ES funciona por acidente da ordem de avaliação e quebra no dia em que alguém ler a constante no topo do arquivo em vez de dentro de uma função. `variacao.js` reexporta `LADO` e `VARIACAO`, então a superfície pública não mudou. |
 | **Erro de carga vem antes de qualquer mensagem de "não tem".** Os três erros — fazendas, hierarquia, análises — saem juntos na faixa de alerta dos filtros; o mapa e a tabela apontam para lá. | A tela dizia "Esta fazenda ainda não tem glebas cadastradas" quando as glebas tinham **falhado** ao carregar, e a mesma frase enquanto ainda carregavam. Não saber distinguir "falhou" de "está vazio" é o pior que esta tela pode fazer: as duas leem igual e só uma é problema de quem está olhando. |
-| **`useEnquadramentoDaFazenda` extraído de `useMapaDaFazenda`.** | A tela de comparação reusava o hook inteiro e levava junto o modo de marcar centro — estado, listener de clique e a escrita em `definirCentro` — numa tela que não escreve nada. Criar um hook novo e parecido duplicaria a regra de para onde o mapa vai ao abrir uma fazenda; extrair mantém uma cópia só. A API de `useMapaDaFazenda` não mudou, então o Painel não sentiu. |
+| **`useEnquadramentoDaFazenda` extraído de `useMapaDaFazenda`.** | A tela de comparação reusava o hook inteiro e levava junto o modo de marcar a sede — estado, listener de clique e a escrita em `definirSede` — numa tela que não escreve nada. Criar um hook novo e parecido duplicaria a regra de para onde o mapa vai ao abrir uma fazenda; extrair mantém uma cópia só. A API de `useMapaDaFazenda` não mudou, então o Painel não sentiu. |
 | **`ROTULO_VARIACAO` removido.** | Definido, exportado e usado em lugar nenhum — nem no código, nem no teste. Constante exportada que ninguém consome é pior que código feio: alguém a mantém. |
 
 ### Navegação em cascata
@@ -350,7 +350,7 @@ error boundary. Ver as seções acima.
 
 - [x] Mapa em tela cheia, satélite Esri por padrão, OSM alternável, escala
 - [x] Painel lateral recolhível com seletor de fazenda
-- [x] CRUD de fazenda e marcação do centro pelo mapa
+- [x] CRUD de fazenda e marcação da sede pelo mapa (era "centro"; renomeado depois da Fase 5)
 - [x] Árvore Talhão › Gleba com contadores; clique centraliza e destaca
 - [x] Desenho de talhão e de gleba (ponto ou sub-área) com Geoman
 - [x] `area_ha` calculada com turf e gravada junto da geometria
@@ -392,6 +392,23 @@ isso é aplicado e como foi verificado estão em
 pinta com os três filtros escolhidos, parâmetro sem faixa validada fica cinza
 com o valor no tooltip, e a legenda carrega o aviso de que a classificação é
 preliminar. Nenhuma dessas três coisas é detalhe visual.
+
+### Rótulos fixos e sede da fazenda
+
+Feito depois da Fase 5, a pedido do responsável, a partir de um aplicativo de
+campo que ele usa como referência.
+
+| Decisão | Motivo |
+|---|---|
+| **O rótulo do talhão passou de balão no hover para texto fixo sobre a geometria**, com `Talhão CÓDIGO (descrição)` e a área embaixo. | O produtor reconhece a propriedade dele pela disposição dos talhões. Ter que caçar cada nome com o cursor desfaz esse reconhecimento — e no celular, onde não há cursor, o rótulo só aparecia depois de um toque que também selecionava. |
+| **A caixa do tooltip é removida por CSS; o texto é branco com contorno escuro.** | Fixo e repetido em todo talhão, o balão padrão do Leaflet vira uma parede de caixinhas cobrindo o que se quer ver. Sobre satélite não há como garantir contraste — o mesmo mapa tem solo exposto claro e mata escura —, então o contorno resolve os dois casos sem tapar a imagem. |
+| **Os rótulos somem abaixo do zoom 13**, por uma classe no container do mapa. | Quatro talhões cabem na tela; trinta viram mancha. A classe evita abrir e fechar dezenas de tooltips a cada zoom, o que faria o Leaflet recriar os elementos e piscar. |
+| **As glebas continuam com rótulo só no hover.** | Uma fazenda tem poucas dezenas de talhões e pode ter centenas de glebas. Tudo fixo ao mesmo tempo seria ilegível. |
+| **Dizemos "Talhão", não "Lote"**, mesmo o aplicativo de referência dizendo Lote. | `Lote` é a coluna da planilha do laboratório. Talhão é a entidade do cadastro, com código próprio e permanente. Misturar os dois nomes na tela reintroduz a tradução mental que o modelo de dados existe para eliminar. |
+| **"Marcar centro" virou "Marcar sede", e o ponto passou a aparecer** como pin com o nome da fazenda. | O ponto era um detalhe de interface — "onde o mapa abre" — e não tinha representação na tela. Vira um lugar real, que o produtor reconhece. O enquadramento de abertura continua caindo nele quando não há talhão desenhado, mas isso virou consequência, não a definição. |
+| **As colunas foram renomeadas de `centro_lat`/`centro_lng` para `sede_lat`/`sede_lng`.** | Manter o nome antigo faria a coluna mentir sobre o que guarda. A migração foi aplicada **imediatamente antes do deploy**, porque renomear derruba o bundle que está no ar até o novo subir — a janela ficou em cerca de um minuto, em vez de meia hora. |
+| **O pin é SVG inline num `divIcon`, e o nome vem como tooltip do marcador.** | Arquivo de ícone quebra com o bundler e com o prefixo `/analisar-solo-web/` do Pages — mesma razão de as glebas-ponto usarem `circleMarker`. O nome ficou fora do `divIcon` porque tem largura variável: dimensionar o ícone à mão para caber "Fazenda Chapada" e "Sítio São João" daria um retângulo errado nos dois casos. |
+| **O botão "Ir para a sede" fica fora do bloco de editor.** | Localizar-se é leitura, não edição. Um consultor com papel de leitor precisa disso tanto quanto o dono. |
 
 ### Fase 5 — concluída
 

@@ -3,7 +3,9 @@ import L from 'leaflet'
 import { paraFeature, ehPonto } from '../lib/geo.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipGleba } from './tooltipGleba.js'
+import { conteudoRotuloTalhao } from './rotuloTalhao.js'
 import {
+  ZOOM_MINIMO_ROTULO,
   ESTILO_TALHAO,
   ESTILO_TALHAO_DESTACADO,
   ESTILO_GLEBA,
@@ -71,6 +73,29 @@ export function useGeometrias(
     }
   }, [mapa])
 
+  /**
+   * Os rótulos fixos somem quando o mapa se afasta.
+   *
+   * Uma classe no container e o CSS faz o resto. A alternativa — abrir e
+   * fechar dezenas de tooltips a cada zoom — faria o Leaflet destruir e
+   * recriar os elementos, com a piscada correspondente.
+   */
+  useEffect(() => {
+    if (!mapa) return
+    const container = mapa.getContainer()
+
+    function ajustar() {
+      container.classList.toggle('mapa-sem-rotulos', mapa.getZoom() < ZOOM_MINIMO_ROTULO)
+    }
+
+    ajustar()
+    mapa.on('zoomend', ajustar)
+    return () => {
+      mapa.off('zoomend', ajustar)
+      container.classList.remove('mapa-sem-rotulos')
+    }
+  }, [mapa])
+
   // Talhões
   useEffect(() => {
     const grupo = grupoTalhoes.current
@@ -88,7 +113,17 @@ export function useGeometrias(
       const camada = L.geoJSON(f, {
         style: { ...ESTILO_TALHAO, color: talhao.cor, fillColor: talhao.cor },
       })
-      camada.bindTooltip(rotulo(talhao), { sticky: true })
+      // Rótulo fixo, centrado na geometria — não balão de hover. O produtor
+      // reconhece a fazenda dele pela disposição dos talhões, e ter que
+      // procurar cada nome com o cursor desfaz esse reconhecimento.
+      camada.bindTooltip(conteudoRotuloTalhao(talhao), {
+        permanent: true,
+        direction: 'center',
+        className: 'rotulo-talhao',
+        // O Leaflet aplica 0.9 por padrão, e isso lava o branco do texto. A
+        // legibilidade aqui vem do contorno no CSS, não da opacidade.
+        opacity: 1,
+      })
       camada.on('click', (e) => {
         // Sem isto o clique atravessa para o mapa e o modo de marcar centro
         // ou de desenho receberia um clique que era para a geometria.

@@ -11,3 +11,106 @@ body,
 body {
   @apply bg-slate-50 text-slate-800 antialiased;
 }
+
+/*
+ * Rótulo fixo do talhão, escrito sobre a imagem de satélite.
+ *
+ * O tooltip do Leaflet nasce como um balão: fundo branco, borda, sombra e uma
+ * seta apontando para a geometria. Isso serve para um rótulo que aparece no
+ * hover, um de cada vez. Fixo e repetido em todo talhão, viraria uma parede de
+ * caixinhas cobrindo justamente o que o produtor quer ver.
+ *
+ * Por isso a caixa some e sobra o texto. Sobre satélite não há como garantir
+ * contraste — o mesmo mapa tem solo exposto claro e mata escura —, então o
+ * branco vem com contorno escuro em vez de fundo sólido: lê nos dois casos sem
+ * tapar a imagem.
+ */
+.leaflet-tooltip.rotulo-talhao {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  /* Contorno em quatro direções: mais barato que text-stroke e com suporte
+     universal. */
+  text-shadow:
+    0 0 3px rgba(0, 0, 0, 0.9),
+    1px 1px 0 rgba(0, 0, 0, 0.7),
+    -1px 1px 0 rgba(0, 0, 0, 0.7),
+    1px -1px 0 rgba(0, 0, 0, 0.7),
+    -1px -1px 0 rgba(0, 0, 0, 0.7);
+  /* O rótulo é legenda, não alvo: clicar nele tem que atingir o talhão. */
+  pointer-events: none;
+}
+
+/* A seta do balão, que o Leaflet desenha como um ::before separado. */
+.leaflet-tooltip.rotulo-talhao::before {
+  display: none;
+}
+
+/*
+ * Afastado o bastante, os rótulos somem.
+ *
+ * Quatro talhões cabem na tela com folga; trinta viram uma mancha de texto
+ * sobreposto que esconde o mapa em vez de explicá-lo. A classe é posta no
+ * container pelo mapa, conforme o zoom.
+ */
+.mapa-sem-rotulos .leaflet-tooltip.rotulo-talhao {
+  display: none;
+}
+
+.rotulo-talhao .rotulo-area {
+  font-weight: 400;
+  font-size: 0.9em;
+  opacity: 0.95;
+}
+
+/*
+ * Pin da sede: SVG inline dentro de um divIcon.
+ *
+ * Sem arquivo de ícone pelo mesmo motivo das glebas-ponto, registrado em
+ * useGeometrias — imagem de marcador quebra com o bundler e o caminho base do
+ * GitHub Pages.
+ */
+.pin-sede {
+  background: none;
+  border: none;
+}
+
+/*
+ * Nome da fazenda sob o pin. É um tooltip permanente do próprio marcador, e
+ * não parte do divIcon: o nome tem largura variável, e dimensionar o ícone à
+ * mão para caber "Fazenda Chapada" e "Sítio São João" daria um retângulo
+ * errado nos dois casos. O tooltip se mede sozinho.
+ */
+.leaflet-tooltip.rotulo-sede {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 3px rgba(0, 0, 0, 0.9),
+    1px 1px 0 rgba(0, 0, 0, 0.7),
+    -1px 1px 0 rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.leaflet-tooltip.rotulo-sede::before {
+  display: none;
+}
+
+/* O nome da sede segue a mesma regra de zoom dos rótulos de talhão. */
+.mapa-sem-rotulos .leaflet-tooltip.rotulo-sede {
+  display: none;
+}

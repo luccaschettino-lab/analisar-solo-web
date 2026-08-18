@@ -13,7 +13,7 @@ export async function listarFazendasDoUsuario(usuarioId) {
   const linhas = checar(
     await supabase
       .from('fazenda_membros')
-      .select('papel, fazendas(id, nome, municipio, uf, centro_lat, centro_lng, criado_em)')
+      .select('papel, fazendas(id, nome, municipio, uf, sede_lat, sede_lng, criado_em)')
       .eq('usuario_id', usuarioId),
     'Falha ao carregar fazendas',
   )
@@ -50,17 +50,18 @@ export async function atualizarFazenda(id, { nome, municipio, uf }) {
   )
 }
 
-// Centro do mapa na abertura. Gravado quando o usuario marca o ponto na
-// fazenda ainda sem talhoes.
-export async function definirCentro(id, lat, lng) {
+// Sede da fazenda: o ponto que o usuario marca no mapa. Aparece como pin com
+// o nome da fazenda, e serve de enquadramento de abertura quando ainda nao ha
+// talhao desenhado.
+export async function definirSede(id, lat, lng) {
   return checar(
     await supabase
       .from('fazendas')
-      .update({ centro_lat: lat, centro_lng: lng })
+      .update({ sede_lat: lat, sede_lng: lng })
       .eq('id', id)
       .select()
       .single(),
-    'Falha ao gravar o centro da fazenda',
+    'Falha ao gravar a sede da fazenda',
   )
 }
 

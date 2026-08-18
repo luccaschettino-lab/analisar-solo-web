@@ -57,21 +57,33 @@ export function rotuloComUnidade(chave) {
  *
  * Devolve a faixa inteira, não só o nível, porque quem exibe precisa do rótulo
  * próprio quando ele existe — ver o pH em `config/parametros.js`.
+ *
+ * O terceiro argumento existe desde que as faixas deixaram de morar só no
+ * config. Três estados, iguais aos de `lib/criterios.js`:
+ *
+ *   - omitido   → usa as faixas do config (todo o código anterior à Fase 7);
+ *   - array     → usa essas, vindas do conjunto de critérios da fazenda;
+ *   - `null`    → não há classificação, mesmo que o config tenha uma.
+ *
+ * Recebe as faixas já resolvidas, e não o conjunto de critérios, de propósito:
+ * este arquivo é folha e `lib/criterios.js` depende dele. Passar o conjunto
+ * fecharia um ciclo de imports entre os dois — e, de todo modo, quem
+ * classifica um número não precisa saber que existem consultores.
  */
-export function faixaDe(chave, valor) {
-  const p = parametro(chave)
-  if (!p?.faixas || !temMedicao(valor)) return null
+export function faixaDe(chave, valor, faixas) {
+  const efetivas = faixas === undefined ? parametro(chave)?.faixas : faixas
+  if (!efetivas || !temMedicao(valor)) return null
   const numero = Number(valor)
   if (!Number.isFinite(numero)) return null
-  for (const faixa of p.faixas) {
+  for (const faixa of efetivas) {
     if (faixa.ate === null || numero <= faixa.ate) return faixa
   }
   return null
 }
 
 /** Nível de interpretação, ou null se o parâmetro não tem faixas aplicáveis. */
-export function nivelDe(chave, valor) {
-  return faixaDe(chave, valor)?.nivel ?? null
+export function nivelDe(chave, valor, faixas) {
+  return faixaDe(chave, valor, faixas)?.nivel ?? null
 }
 
 /**

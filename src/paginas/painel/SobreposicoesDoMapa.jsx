@@ -14,17 +14,17 @@ function Banner({ children }) {
 export default function SobreposicoesDoMapa({
   semReferencia,
   editor,
-  marcandoCentro,
-  gravandoCentro,
+  marcandoSede,
+  gravandoSede,
   desenhando,
   aviso,
-  aoMarcarCentro,
+  aoMarcarSede,
   aoCancelarMarcacao,
   aoAbortarDesenho,
 }) {
   return (
     <>
-      {semReferencia && !marcandoCentro && !gravandoCentro && (
+      {semReferencia && !marcandoSede && !gravandoSede && (
         // O padding compensa o painel lateral, que só existe a partir de md.
         // No celular o painel é gaveta sobreposta, e um pl-80 empurraria o
         // cartão para fora da tela.
@@ -32,31 +32,32 @@ export default function SobreposicoesDoMapa({
           <div className="pointer-events-auto max-w-sm rounded-xl border border-slate-200 bg-white/95 p-5 text-center shadow-lg backdrop-blur">
             <h3 className="text-sm font-semibold text-slate-900">Onde fica a propriedade?</h3>
             <p className="mt-1 text-sm text-slate-600">
-              Navegue até a fazenda no mapa e marque o centro. É por ele que o mapa vai
-              abrir enquanto não houver talhões desenhados.
+              Navegue até a fazenda no mapa e marque a sede. Ela aparece no mapa
+              com o nome da fazenda, e é por ela que o mapa abre enquanto não houver
+              talhões desenhados.
             </p>
             {editor && (
               <button
-                onClick={aoMarcarCentro}
+                onClick={aoMarcarSede}
                 className="mt-4 rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800"
               >
-                Marcar centro
+                Marcar sede
               </button>
             )}
           </div>
         </div>
       )}
 
-      {marcandoCentro && (
+      {marcandoSede && (
         <Banner>
-          Clique no mapa para marcar o centro da fazenda.{' '}
+          Clique no mapa para marcar a sede da fazenda.{' '}
           <button onClick={aoCancelarMarcacao} className="ml-2 underline">
             cancelar
           </button>
         </Banner>
       )}
 
-      {gravandoCentro && <Banner>Gravando o centro da fazenda…</Banner>}
+      {gravandoSede && <Banner>Gravando a sede da fazenda…</Banner>}
 
       {desenhando && (
         <Banner>
