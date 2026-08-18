@@ -1,12 +1,11 @@
+import { HACHURA_FUNDO, HACHURA_TRACO } from '../config/mapa.js'
+
 const NS = 'http://www.w3.org/2000/svg'
 
 export const ID_HACHURA = 'hachura-sem-dado'
 
 /** Valor de `fillColor` que faz o Leaflet pintar a geometria com a hachura. */
 export const PREENCHIMENTO_HACHURA = `url(#${ID_HACHURA})`
-
-const COR_FUNDO = '#f1f5f9'
-const COR_TRACO = '#94a3b8'
 
 /**
  * Injeta o `<pattern>` da hachura no SVG do mapa, uma vez.
@@ -55,14 +54,14 @@ export function garantirHachura(mapa) {
   const fundo = document.createElementNS(NS, 'rect')
   fundo.setAttribute('width', '8')
   fundo.setAttribute('height', '8')
-  fundo.setAttribute('fill', COR_FUNDO)
+  fundo.setAttribute('fill', HACHURA_FUNDO)
 
   const traco = document.createElementNS(NS, 'line')
   traco.setAttribute('x1', '0')
   traco.setAttribute('y1', '0')
   traco.setAttribute('x2', '0')
   traco.setAttribute('y2', '8')
-  traco.setAttribute('stroke', COR_TRACO)
+  traco.setAttribute('stroke', HACHURA_TRACO)
   traco.setAttribute('stroke-width', '2')
 
   pattern.appendChild(fundo)

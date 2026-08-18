@@ -99,6 +99,27 @@ export const COR_GLEBA = '#ffb300'
 export const RAIO_PONTO_GLEBA = 7
 
 /**
+ * Tons neutros das geometrias sem classificação.
+ *
+ * Ficam aqui, e só aqui, porque aparecem em três lugares que precisam
+ * combinar: o preenchimento da gleba no mapa, o traço do padrão de hachura e
+ * a amostra da hachura na legenda. Se a legenda deixar de bater com o mapa,
+ * ela para de servir como chave de leitura — e foi o que quase aconteceu com
+ * o fundo repetido à mão em dois arquivos.
+ */
+const ARDOSIA_400 = '#94a3b8'
+const ARDOSIA_300 = '#cbd5e1'
+const ARDOSIA_100 = '#f1f5f9'
+
+/** Gleba com valor medido, mas parâmetro sem faixa no config. */
+export const CINZA_NEUTRO = ARDOSIA_400
+/** Cor lógica do estado "sem dado" — o desenho real é a hachura. */
+export const CINZA_HACHURA = ARDOSIA_300
+/** Fundo e traço do padrão de hachura, no SVG do mapa e no CSS da legenda. */
+export const HACHURA_FUNDO = ARDOSIA_100
+export const HACHURA_TRACO = ARDOSIA_400
+
+/**
  * Gleba-ponto sem dado: círculo vazado, com traço tracejado.
  *
  * A hachura usada nos polígonos não serve aqui. O ladrilho tem 8 px e o

@@ -1,4 +1,5 @@
 import { NIVEIS, SEM_MEDICAO } from '../config/parametros.js'
+import { CINZA_NEUTRO, CINZA_HACHURA } from '../config/mapa.js'
 import { parametro, faixaDe, rotuloDaFaixa, formatarValor, temMedicao } from './parametros.js'
 
 /**
@@ -20,8 +21,10 @@ export const ESTADO = {
   SEM_ANALISE: 'sem_analise', // nenhuma análise no filtro → hachura
 }
 
-export const CINZA_NEUTRO = '#94a3b8'
-export const CINZA_HACHURA = '#cbd5e1'
+// Reexportadas de config/mapa.js, onde as cores das geometrias vivem.
+// Quem consome o estado de uma gleba pega a cor daqui sem precisar saber
+// de onde ela vem.
+export { CINZA_NEUTRO, CINZA_HACHURA }
 
 /** O filtro está completo o bastante para colorir? */
 export function filtroCompleto({ anoSafra, profundidade, chaveParametro }) {

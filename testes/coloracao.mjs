@@ -1,9 +1,10 @@
 import {
-  ESTADO, CINZA_NEUTRO, CINZA_HACHURA,
+  ESTADO,
   filtroCompleto, indexarAnalises, resolverGleba, criarColoracao,
   faixasParaLegenda, temFaixas, anosDisponiveis, profundidadesDisponiveis,
 } from '../src/lib/coloracao.js'
 import { NIVEIS, CHAVES_PARAMETROS } from '../src/config/parametros.js'
+import { CINZA_NEUTRO, CINZA_HACHURA } from '../src/config/mapa.js'
 
 const A = (gleba, ano, prof, campos) => ({ gleba_id: gleba, ano_safra: ano, profundidade: prof, ...campos })
 

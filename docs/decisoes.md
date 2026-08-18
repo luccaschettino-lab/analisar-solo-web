@@ -244,3 +244,118 @@ A regra que atravessa o produto, aplicada em três camadas:
 
 Verificado contra o PostgREST real: um `p = 0` e um `k = null` no mesmo insert
 sobreviveram à ida e volta com os tipos certos.
+
+---
+
+## Desenho da RLS
+
+**Por que `security definer`:** a policy de `fazenda_membros` precisa consultar
+`fazenda_membros`. Como subconsulta direta, o Postgres reaplica a policy sobre
+a própria consulta e estoura com *infinite recursion detected in policy*.
+Dentro da função, a consulta roda como dona da tabela, que não passa por RLS.
+
+**Por que `search_path = ''`:** sem isso, um schema no `search_path` do
+chamador poderia sequestrar nomes de tabela dentro de uma função que roda com
+privilégio elevado. Por isso todo nome nas funções está qualificado.
+
+**Detalhe não óbvio na policy de `select` de `fazendas`:**
+
+```sql
+using (criado_por = auth.uid() or public.tem_acesso_fazenda(id))
+```
+
+A primeira metade não é redundância. O `supabase-js` emite `INSERT ... RETURNING`
+no `.insert().select()`, e o Postgres aplica a policy de `SELECT` à linha
+devolvida. Nesse instante o trigger que registra o criador como proprietário
+ainda não rodou — ele é `AFTER INSERT`, e não pode ser `BEFORE` porque a FK de
+`fazenda_membros` exige a fazenda já existindo. Sem essa cláusula, **toda
+criação de fazenda falharia na volta**.
+
+---
+
+## Histórico das fases
+
+Registro do caminho: o que cada fase entregou e o que a auditoria dela apontou.
+
+### Fase 1 — concluída
+
+- [x] Scaffold Vite + React + Tailwind
+- [x] Roteamento em modo hash
+- [x] Cliente Supabase lendo do `.env`, com `.env.example` e `.gitignore`
+- [x] Migrações SQL com todas as tabelas, constraints e policies
+- [x] Telas de login e cadastro
+- [x] Este documento
+
+Banco aplicado e testado. Cadastro exercitado de ponta a ponta pela interface
+em 2026-08-14: usuário criado, `perfis` preenchido pelo trigger, sessão emitida
+na hora (confirmação de e-mail desligada no projeto).
+
+Auditoria em 2026-08-14 apontou três itens parciais, **todos corrigidos**:
+`perfis` sem policy de insert, logout sem tratamento de erro, e ausência de
+error boundary. Ver as seções acima.
+
+**Pendências conhecidas:**
+
+- **Redirect URLs** não confirmadas no dashboard. Só importam quando a
+  confirmação de e-mail for religada ou for usada recuperação de senha —
+  adicionar `https://luccaschettino-lab.github.io/analisar-solo-web/` e
+  `http://localhost:5173` em *Authentication → URL Configuration*.
+- **Confirmação de e-mail está desligada** no projeto, para acelerar os testes.
+  Religar antes de publicar. O cadastro já trata os dois casos
+  (`precisaConfirmarEmail`).
+
+### Fase 2 — concluída
+
+- [x] Mapa em tela cheia, satélite Esri por padrão, OSM alternável, escala
+- [x] Painel lateral recolhível com seletor de fazenda
+- [x] CRUD de fazenda e marcação do centro pelo mapa
+- [x] Árvore Talhão › Gleba com contadores; clique centraliza e destaca
+- [x] Desenho de talhão e de gleba (ponto ou sub-área) com Geoman
+- [x] `area_ha` calculada com turf e gravada junto da geometria
+- [x] Validação de contenção da gleba: avisa, pede confirmação, não bloqueia
+- [x] Edição de vértices e de dados; exclusão com cascata contada
+- [x] Glebas em lote com prévia no mapa e erro por linha
+
+Arquitetura da tela do mapa, o contador `revisao` e a regra de escrita nunca
+otimista: [`docs/decisoes.md`](docs/decisoes.md#arquitetura-da-tela-do-mapa).
+
+### Fase 3 — concluída
+
+- [x] `src/config/parametros.js` como fonte única dos 24 parâmetros
+- [x] Tela da gleba em `/#/glebas/:id` com trilha Fazenda › Talhão › Gleba
+- [x] Aba Análises: tabela rolável, uma safra por vez, comparação opcional
+- [x] Aba Histórico: um gráfico por parâmetro, série por profundidade
+- [x] Tela `/#/dados` com entrada manual e placeholder de importação por PDF
+- [x] Formulário com os 24 campos agrupados, todos opcionais
+- [x] Faixa plausível avisa sem bloquear; conflito de chave pergunta
+- [x] Edição carrega no formulário; exclusão confirma
+- [x] `src/features/importacao/pdf/README.md` com o contrato para o outro time
+
+**A regra que atravessa tudo: ausência nunca é zero.** `null` no banco, "sem
+medição" na tabela, buraco não conectado no gráfico. As três camadas em que
+isso é aplicado e como foi verificado estão em
+[`docs/decisoes.md`](docs/decisoes.md), seção *Ausência nunca é zero*.
+
+### Fase 4 — concluída
+
+- [x] Três filtros no painel: ano-safra, profundidade e parâmetro
+- [x] Coloração das glebas pelas faixas de `config/parametros.js`
+- [x] Quatro estados: com cor, sem faixa, sem medição, sem análise
+- [x] Gleba sem dado continua visível — hachurada (área) ou vazada (ponto)
+- [x] Legenda no canto do mapa, com o aviso de classificação preliminar
+- [x] Tooltip com valor, unidade e classificação
+- [x] `testes/coloracao.mjs` cobrindo as regras críticas
+
+**A coloração é uma afirmação sobre a terra de alguém.** Por isso o mapa só
+pinta com os três filtros escolhidos, parâmetro sem faixa validada fica cinza
+com o valor no tooltip, e a legenda carrega o aviso de que a classificação é
+preliminar. Nenhuma dessas três coisas é detalhe visual.
+
+### Fase 5 — não iniciada
+
+Comparação entre anos no mapa, mapa divergente e tabela de variação. Ainda não
+especificada.
+
+**Continua pendente:** as faixas de `config/parametros.js` não passaram por
+validação agronômica, e o fósforo segue sem classificação por depender do
+P-Rem. Ver as limitações em [`docs/decisoes.md`](docs/decisoes.md).

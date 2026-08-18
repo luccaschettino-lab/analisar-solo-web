@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { faixasParaLegenda, CINZA_HACHURA } from '../../lib/coloracao.js'
+import { faixasParaLegenda } from '../../lib/coloracao.js'
+import { HACHURA_FUNDO, HACHURA_TRACO } from '../../config/mapa.js'
 import { rotuloComUnidade } from '../../lib/parametros.js'
 
 // Mesma hachura do mapa, em CSS: a legenda tem que mostrar exatamente o que
 // aparece na gleba, senão não serve de chave de leitura.
 const HACHURA_CSS = {
-  backgroundColor: '#f1f5f9',
-  backgroundImage: `repeating-linear-gradient(45deg, ${CINZA_HACHURA} 0 2px, transparent 2px 8px)`,
+  backgroundColor: HACHURA_FUNDO,
+  backgroundImage: `repeating-linear-gradient(45deg, ${HACHURA_TRACO} 0 2px, transparent 2px 8px)`,
 }
 
 function Amostra({ cor, estilo }) {
