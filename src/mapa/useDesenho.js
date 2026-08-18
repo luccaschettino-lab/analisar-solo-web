@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
-import { COR_GLEBA } from '../config/mapa.js'
+import { COR_GLEBA, SNAP_DISTANCIA } from '../config/mapa.js'
 
 /**
  * O Geoman desenha marcador com o L.Icon.Default, cuja imagem não resolve sob
@@ -65,7 +65,7 @@ export function useDesenho(mapa, aoConcluir) {
     mapa.doubleClickZoom.disable()
     mapa.pm.enableDraw('Polygon', {
       snappable: true,
-      snapDistance: 20,
+      snapDistance: SNAP_DISTANCIA,
       // Sem isto o Geoman só fecha o polígono ao clicar de volta no primeiro
       // vértice, que num talhão grande já está fora da tela.
       finishOn: 'dblclick',

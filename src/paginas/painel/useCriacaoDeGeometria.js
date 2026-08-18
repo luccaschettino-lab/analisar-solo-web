@@ -8,7 +8,7 @@ import { useDesenho } from '../../mapa/useDesenho.js'
  * Nada é gravado aqui — o hook entrega a geometria pendente e quem salva é o
  * formulário. Assim um desenho abandonado no meio não deixa lixo no banco.
  */
-export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao }) {
+export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, aoAvisar }) {
   // null | { tipo:'talhao' } | { tipo:'gleba', talhaoId, forma }
   const [desenhando, setDesenhando] = useState(null)
   // Geometria desenhada esperando o formulário: { tipo, talhaoId?, geometria }
@@ -46,9 +46,20 @@ export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao }
   const iniciarGleba = useCallback(
     (talhaoId) => {
       if (!editor) return
+
+      // Sem esta guarda o fluxo morria em silêncio: o estado era marcado, o
+      // diálogo não aparecia (ele só renderiza com o talhão resolvido) e
+      // clicar "+ Gleba" de novo no mesmo talhão nem re-renderizava, porque o
+      // valor do estado não mudava. Para quem clicava, o botão simplesmente
+      // parava de funcionar.
+      if (!talhoes.some((t) => t.id === talhaoId)) {
+        aoAvisar?.('Este talhão não está mais disponível. Recarregue a página e tente de novo.')
+        return
+      }
+
       setEscolhendoGleba(talhaoId)
     },
-    [editor],
+    [editor, talhoes, aoAvisar],
   )
 
   // A forma escolhida decide a ferramenta: ponto usa marcador, sub-área usa

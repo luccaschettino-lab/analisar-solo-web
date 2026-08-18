@@ -54,14 +54,14 @@ Modelar isso errado faz o produto inteiro perder a razão de existir.
 | Backend | Supabase (Postgres + Auth + RLS + Storage) |
 | Hospedagem | GitHub Pages |
 | Mapa | Leaflet 1.9.4 + `@geoman-io/leaflet-geoman-free` 2.20 |
-| Geometria | turf granular: `@turf/area`, `@turf/boolean-within`, `@turf/boolean-point-in-polygon`, `@turf/helpers` |
+| Geometria | turf granular: `@turf/area`, `@turf/boolean-within`, `@turf/boolean-point-in-polygon`, `@turf/difference`, `@turf/helpers` |
 
 | Gráficos | Chart.js 4.5 + `react-chartjs-2` 5.3 |
 
 **Turf granular, não `@turf/turf`.** O pacote completo arrasta dezenas de
 módulos para usarmos três funções. Os pacotes avulsos entregam o mesmo.
 
-**Bundle em 1,26 MB / 369 KB gzip.** Leaflet, Geoman, turf, Supabase e Chart.js
+**Bundle em 1,34 MB / 393 KB gzip.** Leaflet, Geoman, turf, Supabase e Chart.js
 somados. Pesado para o 3G do campo. A saída registrada é carregar mapa e
 gráficos por rota com `lazy` — não feito ainda, e a tela de comparação da Fase 5
 somou mais 16 KB gzip por entrar no mesmo pedaço.

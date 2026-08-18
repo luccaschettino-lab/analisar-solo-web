@@ -354,7 +354,8 @@ error boundary. Ver as seções acima.
 - [x] Árvore Talhão › Gleba com contadores; clique centraliza e destaca
 - [x] Desenho de talhão e de gleba (ponto ou sub-área) com Geoman
 - [x] `area_ha` calculada com turf e gravada junto da geometria
-- [x] Validação de contenção da gleba: avisa, pede confirmação, não bloqueia
+- [x] Validação de contenção da gleba — *avisava e deixava confirmar; passou a
+      bloquear depois, ver "Contenção da gleba: de aviso para bloqueio"*
 - [x] Edição de vértices e de dados; exclusão com cascata contada
 - [x] Glebas em lote com prévia no mapa e erro por linha
 
@@ -456,6 +457,26 @@ confiar nela.
 validação agronômica, o fósforo segue sem classificação por depender do P-Rem,
 e agora o limiar de estabilidade herda essa mesma fragilidade. Ver as
 limitações acima.
+
+### Contenção da gleba: de aviso para bloqueio
+
+Pedido do responsável, junto do relato de que a criação de glebas "travava às
+vezes". As duas coisas eram a mesma história.
+
+**Isto reverte a decisão da Fase 2**, que está registrada acima: *"avisa, pede
+confirmação, não bloqueia — o GPS de campo erra, e o produtor conhece a terra
+dele melhor que o desenho"*. A reversão é deliberada e do dono do produto.
+
+| Decisão | Motivo |
+|---|---|
+| **O que parecia trava era o aviso de contenção.** O primeiro clique em Salvar não salvava: acendia um aviso âmbar e trocava o texto do botão para "Salvar mesmo assim". | Com o aviso fora do campo de visão no modal, o efeito era o botão não fazer nada. Um fluxo em que o mesmo clique ora salva, ora não, é indistinguível de um defeito. |
+| **O snap de 20 px era o que empurrava a gleba para fora.** | Vértice dentro de 20 px da borda grudava nela; borda compartilhada mais arredondamento de ponto flutuante fazia `booleanWithin` reprovar. A queixa de "atração forte demais" e a de "não vai" tinham a mesma causa. Reduzido para 8 px, em `SNAP_DISTANCIA`. |
+| **Bloqueio com tolerância, não bloqueio estrito.** Sub-área passa se o que escapa for até 1% da área dela; ponto tem que estar dentro. | Bloquear pela regra estrita tornaria impossível cadastrar a gleba desenhada rente à divisa — caso legítimo e comum, e agravado pelo próprio snap. O remédio pioraria o sintoma. Ponto não tem área para tolerar: fora é sempre engano. |
+| **`avaliarContencao` devolve três situações, não duas**, e `nao_verificavel` nunca bloqueia. | Não saber conferir — talhão sem geometria, desenho degenerado — é diferente de saber que está errado. Impedir o cadastro pela própria incapacidade de medir trocaria um problema do sistema por um problema do usuário. |
+| **`@turf/difference` como dependência nova.** | Medir *quanto* escapou exige recortar a gleba pelo talhão. Sem isso só dá para responder "dentro ou fora", e a tolerância na divisa seria impossível. Pacote granular, como os outros do turf; somou ~15 KB gzip ao bundle. |
+| **O botão fica desabilitado, em vez de dizer "salvar mesmo assim".** | O botão passa a dizer a verdade sobre o que acontece se for clicado. E a mensagem diz o quanto está fora, em porcentagem e hectares — sem isso, "está fora" não ajuda a corrigir. |
+| **O cadastro em lote bloqueia junto.** | O insert do lote é uma transação só; deixar gravar com pontos fora criaria glebas que o cadastro individual recusaria. Duas regras diferentes para a mesma coisa é pior que uma regra rígida. |
+| **Um terceiro defeito, esse real e silencioso:** desenho concluído com o talhão ausente da lista não renderizava formulário nenhum — a geometria era engolida sem mensagem. E clicar "+ Gleba" de novo no mesmo talhão não re-renderizava, porque o valor do estado não mudava. | Para quem clicava, o botão simplesmente parava de funcionar. Agora `iniciarGleba` avisa quando o talhão não existe mais, e o desenho órfão abre um diálogo explicando que a gleba **não** foi criada. |
 
 ### Foto do solo
 

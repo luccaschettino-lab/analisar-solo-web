@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Modal from '../../componentes/Modal.jsx'
 import { Campo, BotaoPrincipal, Aviso } from '../../componentes/formulario.jsx'
 import { criarGleba, atualizarGleba } from '../../dados/glebas.js'
-import { areaEmHectares, glebaDentroDoTalhao, ehPonto } from '../../lib/geo.js'
+import { areaEmHectares, avaliarContencao, CONTENCAO, ehPonto } from '../../lib/geo.js'
 
 export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar }) {
   const edicao = Boolean(gleba)
@@ -12,16 +12,23 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
   const [nome, setNome] = useState(gleba?.nome ?? '')
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
-  // Só vira true depois que o usuário viu o aviso de contenção uma vez.
-  const [cienteDoFora, setCienteDoFora] = useState(false)
 
   const areaHa = areaEmHectares(geo)
   const ponto = ehPonto(geo)
 
-  // true dentro, false fora, null quando não dá para verificar — talhão sem
-  // geometria ou desenho degenerado. null nunca vira aviso: seria alarme falso.
-  const contido = glebaDentroDoTalhao(geo, talhao?.geometria)
-  const foraDoTalhao = contido === false
+  /**
+   * Contenção da gleba no talhão. Passou a **bloquear** o salvamento, a pedido
+   * do responsável — antes só avisava e deixava confirmar.
+   *
+   * A tolerância na divisa é o que torna o bloqueio viável: sem ela, uma
+   * sub-área desenhada rente à cerca ficaria impossível de cadastrar, porque
+   * o snap gruda o vértice na borda e o arredondamento o joga para fora.
+   *
+   * `nao_verificavel` não bloqueia: não saber conferir é diferente de saber
+   * que está errado.
+   */
+  const contencao = avaliarContencao(geo, talhao?.geometria)
+  const foraDoTalhao = contencao.situacao === CONTENCAO.FORA
 
   async function enviar(evento) {
     evento.preventDefault()
@@ -30,12 +37,15 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
       return
     }
 
-    // Avisa uma vez e deixa salvar na segunda tentativa. O GPS de campo erra,
-    // e o produtor conhece a terra dele melhor que o desenho — o aviso serve
-    // para ele reparar, não para impedir.
-    if (foraDoTalhao && !cienteDoFora) {
-      setCienteDoFora(true)
-      setErro('')
+    // Bloqueio, não confirmação. Antes o primeiro clique só acendia um aviso e
+    // o segundo salvava — o que fazia o botão parecer quebrado para quem não
+    // via o aviso.
+    if (foraDoTalhao) {
+      setErro(
+        ponto
+          ? `Este ponto está fora do talhão ${talhao.codigo}. Reposicione-o dentro do talhão para salvar.`
+          : `Esta sub-área está fora do talhão ${talhao.codigo}. Redesenhe-a dentro do talhão para salvar.`,
+      )
       return
     }
 
@@ -63,14 +73,15 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
         {foraDoTalhao && (
           <div
             role="alert"
-            className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
           >
             <p className="font-medium">
               {ponto ? 'Este ponto está' : 'Esta sub-área está'} fora do talhão {talhao.codigo}.
             </p>
             <p className="mt-1">
-              Confira se é isso mesmo. Se estiver certo, clique em salvar de novo para
-              confirmar.
+              {ponto
+                ? 'Feche esta janela e marque o ponto dentro do talhão.'
+                : `Fora do talhão: ${(contencao.fracaoFora * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% da sub-área${contencao.areaForaHa ? ` (${contencao.areaForaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha)` : ''}. Feche esta janela e redesenhe dentro do talhão.`}
             </p>
           </div>
         )}
@@ -129,12 +140,10 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
             Cancelar
           </button>
           <div className="w-40">
-            <BotaoPrincipal type="submit" disabled={salvando}>
-              {salvando
-                ? 'Salvando…'
-                : foraDoTalhao && cienteDoFora
-                  ? 'Salvar mesmo assim'
-                  : 'Salvar'}
+            {/* Desabilitado, e não "salvar mesmo assim": o botão diz a verdade
+                sobre o que vai acontecer se for clicado. */}
+            <BotaoPrincipal type="submit" disabled={salvando || foraDoTalhao}>
+              {salvando ? 'Salvando…' : 'Salvar'}
             </BotaoPrincipal>
           </div>
         </div>

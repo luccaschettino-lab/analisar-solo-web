@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs"
+    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs && node testes/geo.mjs"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "@turf/area": "^7.4.0",
     "@turf/boolean-point-in-polygon": "^7.4.0",
     "@turf/boolean-within": "^7.4.0",
+    "@turf/difference": "^7.4.0",
     "@turf/helpers": "^7.4.0",
     "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",

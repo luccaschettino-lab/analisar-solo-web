@@ -4,6 +4,7 @@ import FormGleba from './FormGleba.jsx'
 import EscolherTipoGleba from './EscolherTipoGleba.jsx'
 import GlebasEmLote from './GlebasEmLote.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
+import Modal from '../../componentes/Modal.jsx'
 import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
 
 /**
@@ -93,6 +94,31 @@ export default function ModaisDoPainel({
             mostrarAviso(`Gleba ${gleba.codigo} criada.`)
           }}
         />
+      )}
+
+      {/* A geometria foi desenhada mas o talhao sumiu — apagado em outra aba,
+          ou fazenda trocada no meio do fluxo. Antes esta combinacao nao
+          renderizava nada: o desenho era engolido em silencio e a pessoa
+          ficava olhando o mapa sem entender. */}
+      {criacao.pendente?.tipo === 'gleba' && !criacao.talhaoPendente && (
+        <Modal titulo="Talhão não encontrado" aoFechar={criacao.fecharPendente}>
+          <p className="text-sm text-slate-600">
+            O desenho foi concluído, mas o talhão a que ele pertenceria não está mais na lista —
+            ele pode ter sido apagado em outra aba, ou a fazenda foi trocada no meio do caminho.
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            A gleba <strong>não foi criada</strong>. Recarregue a página e desenhe de novo.
+          </p>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={criacao.fecharPendente}
+              className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800"
+            >
+              Entendi
+            </button>
+          </div>
+        </Modal>
       )}
 
       {item.editandoDados === 'talhao' && item.itemSelecionado && fazendaSelecionada && (

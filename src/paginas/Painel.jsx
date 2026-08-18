@@ -68,6 +68,7 @@ export default function Painel() {
     editor,
     talhoes,
     aoLimparSelecao: item.limparSelecao,
+    aoAvisar: mostrarAviso,
   })
 
   const mapaDaFazenda = useMapaDaFazenda({

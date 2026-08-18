@@ -78,6 +78,16 @@ export const ZOOM_PONTO = 17
 // sede E o que esta em volta dela.
 export const ZOOM_SEDE = 15
 
+// Distancia, em pixels, dentro da qual o vertice desenhado gruda numa
+// geometria existente.
+//
+// Era 20 — a que o Geoman sugere — e reclamada como "atracao forte demais":
+// mirando dentro do talhao, o vertice pulava para a borda. Pior que o
+// incomodo, isso empurrava a gleba para fora e a validacao de contencao a
+// reprovava. 8 px ainda ajuda a fechar talhoes vizinhos sem fresta, mas so
+// quando se mira de fato na borda.
+export const SNAP_DISTANCIA = 8
+
 // Abaixo deste zoom os rotulos fixos dos talhoes somem. Com a fazenda inteira
 // na tela quatro rotulos cabem; trinta viram mancha sobre o mapa.
 export const ZOOM_MINIMO_ROTULO = 13

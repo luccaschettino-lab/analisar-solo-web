@@ -30,7 +30,9 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
     [texto, codigosExistentes],
   )
 
-  // Contenção é aviso, nunca bloqueio — mesma regra do cadastro individual.
+  // Contenção **bloqueia**, como no cadastro individual. Era aviso; mudou a
+  // pedido do responsável. Aqui são todos pontos, e ponto não tem divisa para
+  // tolerar: ou caiu dentro do talhão, ou a coordenada está errada.
   const foraDoTalhao = useMemo(
     () =>
       itens.filter(
@@ -42,7 +44,7 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
   usePreviaLote(mapa, itens)
 
   async function gravar() {
-    if (itens.length === 0) return
+    if (itens.length === 0 || foraDoTalhao.length > 0) return
     setErro('')
     setSalvando(true)
     try {
@@ -112,7 +114,7 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
         {foraDoTalhao.length > 0 && (
           <div
             role="alert"
-            className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+            className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900"
           >
             <p className="font-medium">
               {foraDoTalhao.length}{' '}
@@ -120,8 +122,8 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
               {talhao.codigo}
             </p>
             <p className="mt-1">
-              {foraDoTalhao.map((i) => i.codigo).join(', ')} — confira se é isso mesmo. Dá para
-              gravar assim.
+              {foraDoTalhao.map((i) => i.codigo).join(', ')} — corrija as coordenadas para gravar.
+              O lote inteiro é gravado de uma vez, então nada entra enquanto houver ponto fora.
             </p>
           </div>
         )}
@@ -158,7 +160,7 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
         </button>
         <button
           onClick={gravar}
-          disabled={salvando || itens.length === 0}
+          disabled={salvando || itens.length === 0 || foraDoTalhao.length > 0}
           className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {salvando
