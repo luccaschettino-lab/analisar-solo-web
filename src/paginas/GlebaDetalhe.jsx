@@ -3,12 +3,16 @@ import { PainelDeAba } from '../componentes/Abas.jsx'
 import TrilhaNavegacao from './gleba/TrilhaNavegacao.jsx'
 import TabelaAnalises from './gleba/TabelaAnalises.jsx'
 import HistoricoGraficos from './gleba/HistoricoGraficos.jsx'
+import FotoGleba from './gleba/FotoGleba.jsx'
 import { useGlebaContexto } from '../hooks/useGlebaContexto.js'
 import { useAnalises } from '../hooks/useAnalises.js'
+import { useFazendaAtual } from '../context/FazendaContext.jsx'
+import { podeEditar } from '../lib/permissoes.js'
 
 const ABAS = [
   { chave: 'analises', rotulo: 'Análises' },
   { chave: 'historico', rotulo: 'Histórico' },
+  { chave: 'foto', rotulo: 'Foto' },
 ]
 
 function Centralizado({ children }) {
@@ -20,7 +24,10 @@ export default function GlebaDetalhe() {
   const [params, setParams] = useSearchParams()
   const abaAtiva = ABAS.some((a) => a.chave === params.get('aba')) ? params.get('aba') : 'analises'
 
-  const { contexto, carregando, naoEncontrada, erro } = useGlebaContexto(id)
+  const { contexto, carregando, naoEncontrada, erro, aplicarGleba } = useGlebaContexto(id)
+  // O papel sai da lista de fazendas que o contexto ja carregou — evita uma
+  // ida ao servidor so para descobrir se esta pessoa pode trocar a foto.
+  const { fazendas } = useFazendaAtual()
   const {
     analises,
     carregando: carregandoAnalises,
@@ -56,6 +63,8 @@ export default function GlebaDetalhe() {
   }
 
   const { fazenda, talhao, gleba } = contexto
+  const papel = fazendas.find((f) => f.id === fazenda.id)?.papel
+  const editor = podeEditar(papel)
 
   function trocarAba(chave) {
     // `replace` para não empilhar uma entrada de histórico por clique de aba.
@@ -69,12 +78,28 @@ export default function GlebaDetalhe() {
       <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <TrilhaNavegacao fazenda={fazenda} talhao={talhao} gleba={gleba} />
         <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-          {abaAtiva === 'historico' ? 'Histórico' : `Análises · ${analises.length}`}
+          {abaAtiva === 'historico' && 'Histórico'}
+          {abaAtiva === 'foto' && 'Foto do solo'}
+          {abaAtiva === 'analises' && `Análises · ${analises.length}`}
         </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        {carregandoAnalises ? (
+        {/* A foto fica fora do bloco que depende das análises: gleba recém
+            cadastrada não tem laudo nenhum, e é justamente onde a foto do
+            solo mais serve. Antes, a mensagem de "nenhuma análise" trocava o
+            conteúdo inteiro e engolia esta aba. */}
+        <PainelDeAba chave="foto" ativa={abaAtiva}>
+          <FotoGleba
+            fazendaId={fazenda.id}
+            gleba={gleba}
+            editor={editor}
+            aoAtualizar={aplicarGleba}
+          />
+        </PainelDeAba>
+
+        {abaAtiva !== 'foto' &&
+          (carregandoAnalises ? (
           <p className="p-6 text-sm text-slate-400">Carregando análises…</p>
         ) : erroAnalises ? (
           <p role="alert" className="m-6 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -103,7 +128,7 @@ export default function GlebaDetalhe() {
               <HistoricoGraficos analises={analises} />
             </PainelDeAba>
           </>
-        )}
+          ))}
       </div>
     </div>
   )

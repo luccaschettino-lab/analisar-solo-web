@@ -189,6 +189,11 @@ export default function BarraLateral({ aoNavegar }) {
                                         Histórico
                                       </button>
                                     </li>
+                                    <li>
+                                      <button onClick={() => irPara(`/glebas/${gleba.id}?aba=foto`)} className={`${ITEM} text-slate-600 hover:bg-slate-100`}>
+                                        Foto{gleba.foto_path && <span aria-label="tem foto" title="tem foto"> 📷</span>}
+                                      </button>
+                                    </li>
                                   </ul>
                                 )}
                               </li>

@@ -51,7 +51,7 @@ Modelar isso errado faz o produto inteiro perder a razão de existir.
 | UI | React 19, **JavaScript sem TypeScript** |
 | Estilo | Tailwind CSS 3 (via PostCSS) |
 | Rotas | React Router 7, **modo hash** (`createHashRouter`) |
-| Backend | Supabase (Postgres + Auth + RLS) |
+| Backend | Supabase (Postgres + Auth + RLS + Storage) |
 | Hospedagem | GitHub Pages |
 | Mapa | Leaflet 1.9.4 + `@geoman-io/leaflet-geoman-free` 2.20 |
 | Geometria | turf granular: `@turf/area`, `@turf/boolean-within`, `@turf/boolean-point-in-polygon`, `@turf/helpers` |
@@ -138,6 +138,13 @@ Migrações em `supabase/migrations/`, aplicadas em ordem de timestamp.
 
 Tabelas: `perfis`, `fazendas`, `fazenda_membros`, `talhoes`, `glebas`,
 `analises`, `criterios`.
+
+**Storage:** um bucket, `fotos`, **privado**, com a foto do solo de cada gleba
+(uma por gleba, em `glebas.foto_path`). O caminho é
+`fazenda_id/gleba_id/uuid.jpg`, e a primeira pasta não é organização: é o que
+as policies do bucket leem para chamar `tem_acesso_fazenda` e
+`pode_editar_fazenda` — a autorização das fotos cai na mesma hierarquia do
+resto, sem regra nova. O acesso sai por URL assinada de validade curta.
 
 **Unidades não ficam no banco.** Rótulo, unidade, casas decimais, grupo e
 faixa plausível de cada parâmetro vivem em **`src/config/parametros.js`**,
@@ -298,6 +305,10 @@ Gleba medida em apenas um dos anos nunca é tratada como zero: fica hachurada no
 mapa e nomeia, na tabela, qual ano falta e por quê. **Ainda não exercitada no
 navegador** — o build passa e as regras puras têm teste, mas a tela só foi
 verificada por leitura.
+
+**Foto do solo** — cada gleba aceita uma foto, na aba Foto de `/#/glebas/:id`.
+Reduzida no navegador para ~300 KB antes de subir, porque quem fotografa o solo
+está no campo, no 3G.
 
 **Fase 7 concluída** — `/#/criterios`: o consultor cria conjuntos nomeados de
 faixas de interpretação e aplica um em cada fazenda. A cor do mapa deixou de

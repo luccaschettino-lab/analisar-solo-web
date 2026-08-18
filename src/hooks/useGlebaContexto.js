@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { buscarGlebaComContexto } from '../dados/glebas.js'
 
 /**
@@ -39,5 +39,15 @@ export function useGlebaContexto(glebaId) {
       })
   }, [glebaId])
 
-  return { contexto, carregando, naoEncontrada, erro }
+  /**
+   * Aplica localmente campos que voltaram do servidor — hoje, a foto.
+   *
+   * Escrita nunca e otimista: so entra aqui o que o banco ja devolveu. O que
+   * se evita e uma segunda ida ao servidor so para reler a mesma gleba.
+   */
+  const aplicarGleba = useCallback((campos) => {
+    setContexto((atual) => (atual ? { ...atual, gleba: { ...atual.gleba, ...campos } } : atual))
+  }, [])
+
+  return { contexto, carregando, naoEncontrada, erro, aplicarGleba }
 }

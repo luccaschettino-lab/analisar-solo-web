@@ -1,7 +1,7 @@
 import { supabase, checar, checarContagem } from './cliente.js'
 import { compararCodigo } from './talhoes.js'
 
-const CAMPOS = 'id, talhao_id, codigo, nome, geometria, area_ha, criado_em'
+const CAMPOS = 'id, talhao_id, codigo, nome, geometria, area_ha, foto_path, foto_em, criado_em'
 
 /**
  * Todas as glebas da fazenda, de uma vez.

@@ -457,6 +457,24 @@ validação agronômica, o fósforo segue sem classificação por depender do P-
 e agora o limiar de estabilidade herda essa mesma fragilidade. Ver as
 limitações acima.
 
+### Foto do solo
+
+Pedido depois da Fase 7. Primeiro uso de Storage no projeto.
+
+| Decisão | Motivo |
+|---|---|
+| **O caminho começa pelo `fazenda_id`.** | Não é organização de pastas: é o que as policies do bucket leem com `storage.foldername(name)` para chamar `tem_acesso_fazenda` e `pode_editar_fazenda`. A autorização das fotos passa a ser a mesma do resto do banco, sem inventar regra nova. |
+| **`uuid_ou_nulo(text)` em vez de `::uuid` direto na policy.** | Um arquivo gravado num caminho que não começa por uuid faria o cast estourar com `22P02`. Numa policy, erro é pior que negação: derruba a consulta inteira em vez de esconder a linha. A função devolve `null`, e `null` reprova em `tem_acesso_fazenda` como deve. |
+| **Bucket privado, com URL assinada de validade curta.** | Foto do solo é dado da propriedade. O `.gitignore` já bloqueia planilhas e laudos pelo mesmo motivo; bucket público seria a mesma exposição por outra porta. O custo é que a URL expira, e o hook precisa reassiná-la — o que ele faz cinco minutos antes do vencimento. |
+| **Redução no navegador antes de subir**, 1600 px e JPEG 0,8. | Foto de celular tem 4-12 MB; reduzida fica em 200-400 KB. No 3G do campo é a diferença entre o envio terminar e a pessoa desistir. Sem dependência nova — `canvas` faz. O limite de 5 MB no bucket é rede de segurança, não o mecanismo: o servidor não deve confiar no cliente. |
+| **`createImageBitmap(..., { imageOrientation: 'from-image' })`.** | O `<img>` da tela respeita a rotação gravada no EXIF, mas o canvas desenha os pixels crus. Sem isso, metade das fotos de celular subiria deitada. |
+| **Nunca ampliar.** | Uma foto de 800 px virando 1600 px ocuparia quatro vezes mais bytes sem um pixel a mais de informação. Testado em `testes/imagem.mjs`. |
+| **Uma foto por gleba, em coluna, não em tabela.** | Escolha do responsável. Uma galeria com data seria a versão visual da comparação entre anos, mas a segunda foto tomar o lugar da primeira resolve o pedido com muito menos superfície. Virar galeria depois é acrescentar tabela, não desfazer o que existe. |
+| **Ordem do envio: sobe o arquivo → grava o caminho → apaga o antigo.** | Invertida, uma falha no meio deixaria a gleba apontando para um arquivo que não existe e a foto sumiria da tela. Nesta ordem, a falha no último passo deixa um arquivo órfão ocupando espaço — o problema menor, porque ninguém perde imagem. Se o passo do meio falhar, o arquivo recém-enviado é apagado na hora. |
+| **Apagar a gleba não apaga o arquivo do Storage.** | Limitação aceita: a cascata do Postgres não alcança o bucket. Ficam órfãos. Resolver exigiria um trigger com chamada externa ou uma rotina de limpeza, e nenhum dos dois se justifica no volume atual. |
+| **A aba Foto fica fora do bloco que depende das análises.** | A tela trocava todo o conteúdo pela mensagem "nenhuma análise nesta gleba", o que engoliria a aba justamente na gleba recém-cadastrada — que é onde a foto do solo mais serve. |
+| **`capture="environment"` no seletor de arquivo.** | No celular abre a câmera traseira direto, em vez do seletor de arquivos. É o gesto certo para quem está em pé na gleba. No computador o atributo é ignorado e o seletor normal aparece. |
+
 ### Fase 7 — concluída
 
 - [x] Tabela `criterios` com `parametros jsonb`, `fazendas.criterio_id` e RLS
