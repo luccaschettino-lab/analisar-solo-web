@@ -101,7 +101,7 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
           <div className="flex-1">
             <Campo
               id="gleba-nome"
-              rotulo="Nome (opcional)"
+              rotulo="Descrição (opcional)"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Perto do córrego"
