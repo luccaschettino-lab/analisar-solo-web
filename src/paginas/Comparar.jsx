@@ -27,6 +27,7 @@ export default function Comparar() {
     fazendas, carregandoFazendas, erroFazendas, idSelecionada, fazendaSelecionada, selecionarFazenda,
     talhoes, glebas, carregando: carregandoHierarquia, erro: erroHierarquia,
     analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
+    parametrosDoCriterio, criterio,
     selecionado, setSelecionado,
   } = useFazendaAtual()
 
@@ -34,8 +35,8 @@ export default function Comparar() {
   const { filtro, mudar, inverter, erro: erroAnos, completo } = useFiltroComparacao(anos)
 
   const comparacao = useMemo(
-    () => compararAnos(analisesDaFazenda, glebas, filtro),
-    [analisesDaFazenda, glebas, filtro],
+    () => compararAnos(analisesDaFazenda, glebas, filtro, parametrosDoCriterio),
+    [analisesDaFazenda, glebas, filtro, parametrosDoCriterio],
   )
   const coloracao = useMemo(() => criarColoracaoVariacao(comparacao), [comparacao])
   const conteudoTooltip = useMemo(() => criarTooltipVariacao(comparacao), [comparacao])
@@ -108,7 +109,7 @@ export default function Comparar() {
         <div className="relative min-h-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
           <Mapa aoCriarMapa={aoCriarMapa} />
 
-          {comparacao && <LegendaDivergente comparacao={comparacao} />}
+          {comparacao && <LegendaDivergente comparacao={comparacao} criterio={criterio} />}
 
           {!prontoParaComparar && (
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1100] flex justify-center px-3">

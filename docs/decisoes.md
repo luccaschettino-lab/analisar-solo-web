@@ -410,6 +410,23 @@ campo que ele usa como referência.
 | **O pin é SVG inline num `divIcon`, e o nome vem como tooltip do marcador.** | Arquivo de ícone quebra com o bundler e com o prefixo `/analisar-solo-web/` do Pages — mesma razão de as glebas-ponto usarem `circleMarker`. O nome ficou fora do `divIcon` porque tem largura variável: dimensionar o ícone à mão para caber "Fazenda Chapada" e "Sítio São João" daria um retângulo errado nos dois casos. |
 | **O botão "Ir para a sede" fica fora do bloco de editor.** | Localizar-se é leitura, não edição. Um consultor com papel de leitor precisa disso tanto quanto o dono. |
 
+### Fase 7
+
+| Decisão | Motivo |
+|---|---|
+| **`parametros` como `jsonb` num registro só**, não uma tabela de faixas. | As faixas nunca são consultadas isoladamente — carrega-se o conjunto inteiro ao abrir a fazenda. Em linhas seriam ~100 registros por conjunto com coluna de ordem para manter na mão; em jsonb o formato fica idêntico ao do config e o fallback vira uma linha. Precedente: `analises.extras`. |
+| **Três estados por parâmetro:** chave ausente (usa o config), `faixas` preenchidas (substitui), `faixas: null` (declara que não há classificação). | O terceiro existe porque um consultor pode discordar da faixa genérica sem ter outra pronta. Sem ele, a única saída seria deixar de pé uma faixa que ele considera errada. |
+| **Só o autor aplica o próprio conjunto numa fazenda**, garantido por trigger. | Sem isso bastaria adivinhar um UUID e apontá-lo na própria fazenda para passar a enxergar o conjunto de outra pessoa — a função de visibilidade o tornaria legível no instante seguinte. Não dá para resolver no `WITH CHECK`: ele roda depois da linha atualizada, quando o vínculo já existe. |
+| **A restrição de autoria ficou em trigger, não no `WITH CHECK` da policy de update de `fazendas`.** | O `WITH CHECK` roda em *todo* update. Com ele, o dono de uma fazenda que usa o critério do consultor não conseguiria nem renomear a própria fazenda. O trigger enxerga a linha antiga e só se mete quando `criterio_id` de fato muda. |
+| **`autor_nome` denormalizado em `criterios`**, preenchido por trigger. | A legenda precisa assinar, mas a policy de `perfis` é "ler o próprio" — de propósito. Afrouxá-la para exibir um nome abriria a leitura de todos os perfis. É um retrato do momento da criação: quem assinou, assinou com o nome daquele dia. |
+| **A assinatura na legenda é por parâmetro, não por fazenda.** | Um conjunto pode sobrescrever o pH e não falar do zinco. Creditar o consultor pela cor do zinco seria mentira — ele não escreveu aquilo. Nesse caso a legenda volta a mostrar o aviso de classificação preliminar, dizendo que o conjunto está aplicado mas não define aquele parâmetro. |
+| **`faixaDe` recebe as faixas já resolvidas, não o conjunto de critérios.** | `lib/parametros.js` é folha e `lib/criterios.js` depende dele; passar o conjunto fecharia um ciclo. E quem classifica um número não precisa saber que existem consultores. O argumento é opcional, então nada do que existia antes mudou de comportamento. |
+| **`origemDoLimiar` deixou de devolver `'config'`.** | Com o `delta_minimo` podendo vir do conjunto, aquele valor fazia a legenda creditar ao arquivo um número que o consultor tinha escrito. Agora diz **como** o limiar foi obtido — declarado ou derivado das faixas —, e quem assina é assunto da assinatura. |
+| **Personalizar um parâmetro começa com uma cópia das faixas do config**, não com lista vazia. | Digitar cinco faixas do zero para mudar um limite seria o caminho mais curto para ninguém usar a tela. |
+| **A última faixa ser aberta é erro, não aviso.** | `faixaDe` devolve a primeira faixa em que o valor cabe. Se a última tiver teto, um valor acima dele não casa com nada e a gleba sai sem classificação — sem erro, sem aviso, e só aparecendo no laudo que passar do teto. É a falha mais perigosa desta tela. |
+| **Rótulo repetido e limite fora do plausível são avisos, não erros.** | São escolhas legítimas de quem entende de solo. O sistema barra o que produziria classificação silenciosamente errada, e apenas avisa sobre o resto — mesma divisão do formulário de análises da Fase 3. |
+| **Definir faixa para um parâmetro que o config deixou sem uma dispara o aviso com a `nota` registrada.** | É o caso do fósforo, que depende do P-Rem. O consultor pode decidir assim mesmo, mas a razão escrita tem que aparecer — e o aviso sai do próprio `nota`, sem lista de exceções à mão. |
+
 ### Fase 5 — concluída
 
 - [x] Tela `/#/comparar`, no menu para qualquer usuário com acesso à fazenda
@@ -439,6 +456,32 @@ confiar nela.
 validação agronômica, o fósforo segue sem classificação por depender do P-Rem,
 e agora o limiar de estabilidade herda essa mesma fragilidade. Ver as
 limitações acima.
+
+### Fase 7 — concluída
+
+- [x] Tabela `criterios` com `parametros jsonb`, `fazendas.criterio_id` e RLS
+- [x] `lib/criterios.js`: mescla conjunto × config e validação das faixas
+- [x] `faixaDe`, `coloracao` e `variacao` passam a aceitar critérios
+- [x] Tela `/#/criterios`, com editor por parâmetro agrupado
+- [x] Aplicar e remover o conjunto na fazenda aberta
+- [x] Legendas assinando o critério, parâmetro a parâmetro
+- [x] `testes/criterios.mjs`, incluindo a integração com mapa e comparação
+
+**Isto destrava o bloqueio registrado desde a Fase 3.** As faixas de
+`config/parametros.js` nunca passaram por validação agronômica, e o mapa
+pintava com uma tabela genérica que ninguém assinava. Agora quem responde pela
+interpretação escreve as faixas e assina; o config virou **semente**, não
+verdade.
+
+**O que continua no config, e por quê:** rótulo, unidade, casas decimais,
+grupo e faixa plausível. Isso é fato, não juízo — "cálcio se mede em
+cmolc/dm³" não é opinião de consultor. A regra da fonte única continua valendo
+para os fatos; só a interpretação saiu.
+
+**Não exercitada no navegador.** Build e testes passam, e a integração está
+coberta — o mesmo pH 6,2 muda de "Pouco ácido" para "Ideal" e de amarelo para
+verde quando o conjunto entra —, mas a tela em si só foi verificada por leitura
+de código.
 
 ### Fase 6 — não iniciada
 

@@ -3,6 +3,7 @@ import { useFazendas } from '../hooks/useFazendas.js'
 import { useSelecaoFazenda } from '../hooks/useSelecaoFazenda.js'
 import { useHierarquia } from '../hooks/useHierarquia.js'
 import { useAnalisesDaFazenda } from '../hooks/useAnalisesDaFazenda.js'
+import { useCriterioDaFazenda } from '../hooks/useCriterioDaFazenda.js'
 import { useFiltroMapa } from '../paginas/painel/useFiltroMapa.js'
 import { anosDisponiveis, criarColoracao } from '../lib/coloracao.js'
 import { podeEditar } from '../lib/permissoes.js'
@@ -39,12 +40,29 @@ export function FazendaProvider({ children }) {
     erro: erroAnalises,
   } = useAnalisesDaFazenda(fazendaSelecionada?.id ?? null)
 
+  /**
+   * Conjunto de critérios em vigor. `null` = padrão do sistema.
+   *
+   * Mora aqui, e não em cada tela, porque o mapa, a comparação e a tela da
+   * gleba precisam do mesmo — duas leituras separadas poderiam pintar o mapa
+   * por um critério e a tabela por outro.
+   */
+  const {
+    criterio,
+    carregando: carregandoCriterio,
+    erro: erroCriterio,
+    recarregar: recarregarCriterio,
+  } = useCriterioDaFazenda(fazendaSelecionada?.criterio_id ?? null)
+
+  // O que a classificação consome é o mapa de parâmetros, não o registro.
+  const parametrosDoCriterio = criterio?.parametros ?? null
+
   const anos = useMemo(() => anosDisponiveis(analisesDaFazenda), [analisesDaFazenda])
   const { filtro, definirFiltro } = useFiltroMapa(anos)
 
   const coloracao = useMemo(
-    () => criarColoracao(analisesDaFazenda, filtro),
-    [analisesDaFazenda, filtro],
+    () => criarColoracao(analisesDaFazenda, filtro, parametrosDoCriterio),
+    [analisesDaFazenda, filtro, parametrosDoCriterio],
   )
 
   /**
@@ -83,6 +101,12 @@ export function FazendaProvider({ children }) {
       erroAnalises,
       anos,
 
+      criterio,
+      parametrosDoCriterio,
+      carregandoCriterio,
+      erroCriterio,
+      recarregarCriterio,
+
       filtro,
       definirFiltro,
       coloracao,
@@ -96,6 +120,7 @@ export function FazendaProvider({ children }) {
       fazendas, carregandoFazendas, erroFazendas, aplicarFazenda, removerFazenda,
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
+      criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
       filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho,
     ],
   )

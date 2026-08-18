@@ -1,6 +1,7 @@
 import { NIVEIS, SEM_MEDICAO } from '../config/parametros.js'
 import { CINZA_NEUTRO, CINZA_HACHURA } from '../config/mapa.js'
 import { parametro, faixaDe, rotuloDaFaixa, formatarValor, temMedicao } from './parametros.js'
+import { faixasEfetivas } from './criterios.js'
 
 /**
  * Coloração das glebas no mapa a partir de um filtro
@@ -52,8 +53,11 @@ export function indexarAnalises(analises, { anoSafra, profundidade }) {
  *
  * Nunca devolve zero no lugar de ausência, e nunca aproxima para a faixa mais
  * próxima — ausência sai como ausência.
+ *
+ * `faixas` omitido usa as do config. Quem passa vem de `criarColoracao`, que
+ * já resolveu o conjunto de critérios da fazenda uma vez só.
  */
-export function resolverGleba(analise, chaveParametro) {
+export function resolverGleba(analise, chaveParametro, faixas) {
   const p = parametro(chaveParametro)
 
   if (!analise) {
@@ -83,11 +87,12 @@ export function resolverGleba(analise, chaveParametro) {
   }
 
   const valorFormatado = `${formatarValor(chaveParametro, bruto)}${p?.unidade ? ` ${p.unidade}` : ''}`
-  const faixa = faixaDe(chaveParametro, bruto)
+  const faixa = faixaDe(chaveParametro, bruto, faixas)
 
-  // Parâmetro sem faixa no config não recebe cor. É deliberado: pintar sem
+  // Parâmetro sem faixa aplicável não recebe cor. É deliberado: pintar sem
   // classificação válida afirmaria "bom" ou "ruim" sem base — ver a limitação
-  // do fósforo em docs/decisoes.md.
+  // do fósforo em docs/decisoes.md. Vale tanto para o config quanto para um
+  // conjunto de critérios que declare `faixas: null` neste parâmetro.
   if (!faixa) {
     return {
       estado: ESTADO.SEM_FAIXA,
@@ -116,16 +121,20 @@ export function resolverGleba(analise, chaveParametro) {
  * Devolve uma função `(glebaId) => estado` ou `null` quando o filtro está
  * incompleto. `null` é o sinal para o mapa manter tudo em cinza neutro.
  */
-export function criarColoracao(analises, filtro) {
+export function criarColoracao(analises, filtro, criterio = null) {
   if (!filtroCompleto(filtro)) return null
 
+  // As faixas sao resolvidas UMA vez, e nao a cada gleba: numa fazenda com
+  // centenas de glebas, repetir a mescla por linha seria trabalho igual para
+  // resposta identica.
+  const faixas = faixasEfetivas(filtro.chaveParametro, criterio)
   const porGleba = indexarAnalises(analises, filtro)
-  return (glebaId) => resolverGleba(porGleba.get(glebaId) ?? null, filtro.chaveParametro)
+  return (glebaId) => resolverGleba(porGleba.get(glebaId) ?? null, filtro.chaveParametro, faixas)
 }
 
-/** O parâmetro tem faixas? Decide se a legenda aparece. */
-export function temFaixas(chaveParametro) {
-  return Boolean(parametro(chaveParametro)?.faixas)
+/** O parâmetro tem faixas em vigor? Decide se a legenda aparece. */
+export function temFaixas(chaveParametro, criterio = null) {
+  return Boolean(faixasEfetivas(chaveParametro, criterio))
 }
 
 /**
@@ -137,12 +146,12 @@ export function temFaixas(chaveParametro) {
  *
  * Devolve `[]` para parâmetro sem faixas — a legenda some nesse caso.
  */
-export function faixasParaLegenda(chaveParametro) {
-  const p = parametro(chaveParametro)
-  if (!p?.faixas) return []
+export function faixasParaLegenda(chaveParametro, criterio = null) {
+  const faixas = faixasEfetivas(chaveParametro, criterio)
+  if (!faixas) return []
 
   let anterior = null
-  return p.faixas.map((faixa) => {
+  return faixas.map((faixa) => {
     const de = anterior
     anterior = faixa.ate
 

@@ -137,13 +137,19 @@ Migrações em `supabase/migrations/`, aplicadas em ordem de timestamp.
 > arquivo local com ele.
 
 Tabelas: `perfis`, `fazendas`, `fazenda_membros`, `talhoes`, `glebas`,
-`analises`.
+`analises`, `criterios`.
 
-**Unidades não ficam no banco.** Rótulo, unidade, casas decimais e faixas de
-cor de cada parâmetro vivem em **`src/config/parametros.js`**, criado na Fase 3.
+**Unidades não ficam no banco.** Rótulo, unidade, casas decimais, grupo e
+faixa plausível de cada parâmetro vivem em **`src/config/parametros.js`**,
+criado na Fase 3.
 
-**Essa é a fonte única.** Nenhum componente pode repetir rótulo, unidade,
-casas decimais ou faixa — se aparecer hardcoded numa tela, é bug. As funções
+**Essa é a fonte única dos fatos.** Nenhum componente pode repetir rótulo,
+unidade ou casas decimais — se aparecer hardcoded numa tela, é bug.
+
+**As faixas de interpretação saíram de lá na Fase 7.** Elas viraram juízo
+editável: a tabela `criterios` guarda conjuntos nomeados, a fazenda aponta para
+um em `fazendas.criterio_id`, e o config passou a ser **semente** — vale para
+todo parâmetro que o conjunto não tocar. A mescla está em `src/lib/criterios.js`. As funções
 que leem a tabela ficam em `src/lib/parametros.js`, separadas só por tamanho.
 A coluna `analises.extras jsonb` guarda parâmetros de laboratórios que fujam da
 lista fixa.
@@ -204,6 +210,7 @@ src/
     gleba/     trilha, tabela e gráficos de /#/glebas/:id
     dados/     seletor em cascata, formulário e listagem de /#/dados
     comparacao/ filtros, legenda divergente e tabela de /#/comparar
+    criterios/  editor de faixas por parâmetro de /#/criterios
   features/importacao/pdf/   placeholder + README do contrato
 supabase/
   migrations/  aplicadas em ordem de timestamp
@@ -292,7 +299,12 @@ mapa e nomeia, na tabela, qual ano falta e por quê. **Ainda não exercitada no
 navegador** — o build passa e as regras puras têm teste, mas a tela só foi
 verificada por leitura.
 
-**Fase 6 não iniciada** — importação de GeoJSON do QGIS.
+**Fase 7 concluída** — `/#/criterios`: o consultor cria conjuntos nomeados de
+faixas de interpretação e aplica um em cada fazenda. A cor do mapa deixou de
+ser anônima; a legenda assina, parâmetro a parâmetro. **Ainda não exercitada no
+navegador.**
+
+**Fase 6 não iniciada** — importação de KML/GeoJSON do QGIS, em stand by.
 
 **O que trava a próxima etapa:** as faixas de interpretação de
 `config/parametros.js` **não passaram por validação agronômica**, e o fósforo

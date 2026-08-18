@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ESCALA_DIVERGENTE, CINZA_NEUTRO, HACHURA_FUNDO, HACHURA_TRACO } from '../../config/mapa.js'
 import { formatarValor, rotuloComUnidade, parametro } from '../../lib/parametros.js'
 import { FRACAO_PADRAO, origemDoLimiar } from '../../lib/variacao.js'
+import AssinaturaCriterio from '../../componentes/AssinaturaCriterio.jsx'
 
 // Mesma hachura do mapa, em CSS — copiada da legenda da Fase 4 pelo mesmo
 // motivo: a amostra tem que ser exatamente o que aparece na gleba.
@@ -46,7 +47,7 @@ function Barra({ max, limiar }) {
  * escala, o que conta como estável e de onde esse limiar veio, e o que
  * significam os dois cinzas — que não são valores, são ausências.
  */
-export default function LegendaDivergente({ comparacao, elevada = false }) {
+export default function LegendaDivergente({ comparacao, criterio = null, elevada = false }) {
   // No celular começa recolhida, como a legenda do mapa da Fase 4: aberta, ela
   // tapa justamente o mapa que explica.
   const [aberta, setAberta] = useState(false)
@@ -55,7 +56,7 @@ export default function LegendaDivergente({ comparacao, elevada = false }) {
 
   const { chaveParametro, anoA, anoB, profundidade, max, limiar } = comparacao
   const unidade = parametro(chaveParametro)?.unidade ?? ''
-  const origem = origemDoLimiar(chaveParametro)
+  const origem = origemDoLimiar(chaveParametro, criterio?.parametros ?? null)
   const semVariacao = max === 0
 
   const extremo = (sinal) =>
@@ -101,7 +102,7 @@ export default function LegendaDivergente({ comparacao, elevada = false }) {
             {unidade ? ` ${unidade}` : ''}
           </span>
           <span className="mt-0.5 block">
-            {origem === 'config' && 'Limiar definido no config para este parâmetro.'}
+            {origem === 'declarado' && 'Limiar definido explicitamente para este parâmetro.'}
             {origem === 'faixas' &&
               `Padrão: ${Math.round(FRACAO_PADRAO * 100)}% da amplitude das faixas de classificação.`}
             {origem === 'sem_faixas' &&
@@ -140,12 +141,15 @@ export default function LegendaDivergente({ comparacao, elevada = false }) {
           </li>
         </ul>
 
-        {/* Vermelho e azul dizem direção. Quem transforma direção em juízo é a
-            coluna de classificação — e ela vem das faixas não validadas. */}
-        <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-tight text-amber-900">
+        {/* Vermelho e azul dizem direção; quem transforma direção em juízo é a
+            coluna de classificação. Por isso o aviso do sentido fica sempre, e
+            a assinatura abaixo responde só pela classificação. */}
+        <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600">
           As cores indicam o sentido da mudança, não se ela é boa: alumínio que sobe é ruim, cálcio
-          que sobe é bom. A classificação na tabela é preliminar, não validada por agrônomo.
+          que sobe é bom.
         </p>
+
+        <AssinaturaCriterio criterio={criterio} chaveParametro={chaveParametro} />
       </div>
     </aside>
   )

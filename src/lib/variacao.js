@@ -2,6 +2,7 @@ import { CINZA_NEUTRO } from '../config/mapa.js'
 import { parametro, faixaDe, rotuloDaFaixa, formatarValor, temMedicao } from './parametros.js'
 import { calcularDiferenca } from './comparacao.js'
 import { indexarAnalises } from './coloracao.js'
+import { faixasEfetivas, deltaMinimoEfetivo } from './criterios.js'
 import { LADO, VARIACAO } from './estadosVariacao.js'
 import { escalaDivergente, corDaVariacao } from './escalaDivergente.js'
 
@@ -45,10 +46,10 @@ export const FRACAO_PADRAO = 0.05
  * `null` quando o parâmetro não tem faixas, ou tem menos de dois limites
  * finitos, que é o mesmo que não ter régua.
  */
-export function amplitudeDasFaixas(chave) {
-  const p = parametro(chave)
-  if (!p?.faixas) return null
-  const limites = p.faixas.map((f) => f.ate).filter((v) => Number.isFinite(v))
+export function amplitudeDasFaixas(chave, criterio = null) {
+  const faixas = faixasEfetivas(chave, criterio)
+  if (!faixas) return null
+  const limites = faixas.map((f) => f.ate).filter((v) => Number.isFinite(v))
   if (limites.length < 2) return null
   return Math.max(...limites) - Math.min(...limites)
 }
@@ -56,8 +57,9 @@ export function amplitudeDasFaixas(chave) {
 /**
  * O quanto o valor precisa mudar para a variação contar como significativa.
  *
- * Ordem: `delta_minimo` do config, se declarado; senão 5% da amplitude das
- * faixas; senão **zero**.
+ * Ordem: `delta_minimo` declarado — no conjunto de critérios da fazenda ou,
+ * na falta dele, no config; senão 5% da amplitude das faixas em vigor; senão
+ * **zero**.
  *
  * Zero para parâmetro sem faixas é escolha, não descuido. Sem escala de
  * interpretação validada não há como afirmar o que é ruído de laboratório —
@@ -67,25 +69,30 @@ export function amplitudeDasFaixas(chave) {
  * `delta_minimo` negativo ou não numérico é ignorado: aceitar produziria uma
  * faixa de estabilidade impossível de ler.
  */
-export function limiarDe(chave) {
-  const declarado = parametro(chave)?.delta_minimo
+export function limiarDe(chave, criterio = null) {
+  const declarado = deltaMinimoEfetivo(chave, criterio)
   if (Number.isFinite(declarado) && declarado >= 0) return declarado
-  const amplitude = amplitudeDasFaixas(chave)
+  const amplitude = amplitudeDasFaixas(chave, criterio)
   return amplitude === null ? 0 : amplitude * FRACAO_PADRAO
 }
 
 /**
- * De onde saiu o limiar deste parâmetro.
+ * Como o limiar foi obtido: declarado, derivado das faixas, ou inexistente.
  *
  * A legenda mostra isso porque o número sozinho não se explica: "estável até
  * 0,18" é uma afirmação forte sobre o solo de alguém, e quem lê tem direito de
- * saber se ela veio de um valor validado no config ou de uma regra genérica
- * que ninguém conferiu.
+ * saber se ela foi escrita por alguém ou se saiu de uma regra genérica.
+ *
+ * Diz **como**, não **de quem**. O `delta_minimo` declarado pode vir do
+ * conjunto de critérios da fazenda ou do config, e antes esta função devolvia
+ * `'config'` nos dois casos — o que fazia a legenda creditar ao arquivo um
+ * número que o consultor tinha escrito. Quem assina é assunto da legenda, que
+ * o pega do próprio conjunto.
  */
-export function origemDoLimiar(chave) {
-  const declarado = parametro(chave)?.delta_minimo
-  if (Number.isFinite(declarado) && declarado >= 0) return 'config'
-  return amplitudeDasFaixas(chave) === null ? 'sem_faixas' : 'faixas'
+export function origemDoLimiar(chave, criterio = null) {
+  const declarado = deltaMinimoEfetivo(chave, criterio)
+  if (Number.isFinite(declarado) && declarado >= 0) return 'declarado'
+  return amplitudeDasFaixas(chave, criterio) === null ? 'sem_faixas' : 'faixas'
 }
 
 // ---- leitura de um lado ---------------------------------------------------
@@ -111,14 +118,15 @@ function lerLado(analise, chave) {
  * `null` quando A é zero — dividir por zero daria infinito, e "subiu ∞%" não
  * informa nada. `tipoDiferenca` diz qual dos dois casos ocorreu.
  */
-export function compararGleba(gleba, analiseA, analiseB, chave) {
+export function compararGleba(gleba, analiseA, analiseB, chave, criterio = null) {
   const a = lerLado(analiseA, chave)
   const b = lerLado(analiseB, chave)
-  const limiar = limiarDe(chave)
+  const limiar = limiarDe(chave, criterio)
+  const faixas = faixasEfetivas(chave, criterio)
 
   // A classificação exibida é a do Ano B: é o estado atual do solo. A do Ano A
   // já foi mostrada no mapa da Fase 4, quando aquele ano era o atual.
-  const faixaB = b.estado === LADO.MEDIDO ? faixaDe(chave, b.valor) : null
+  const faixaB = b.estado === LADO.MEDIDO ? faixaDe(chave, b.valor, faixas) : null
 
   const base = {
     glebaId: gleba.id,
@@ -177,7 +185,7 @@ export function filtroComparacaoCompleto({ anoA, anoB, profundidade, chaveParame
  *
  * Devolve `null` com filtro incompleto — o sinal para a tela não afirmar nada.
  */
-export function compararAnos(analises, glebas, filtro) {
+export function compararAnos(analises, glebas, filtro, criterio = null) {
   if (!filtroComparacaoCompleto(filtro)) return null
 
   const indiceA = indexarAnalises(analises, {
@@ -195,6 +203,7 @@ export function compararAnos(analises, glebas, filtro) {
       indiceA.get(gleba.id) ?? null,
       indiceB.get(gleba.id) ?? null,
       filtro.chaveParametro,
+      criterio,
     ),
   )
 
@@ -205,7 +214,7 @@ export function compararAnos(analises, glebas, filtro) {
     anoB: filtro.anoB,
     profundidade: filtro.profundidade,
     chaveParametro: filtro.chaveParametro,
-    limiar: limiarDe(filtro.chaveParametro),
+    limiar: limiarDe(filtro.chaveParametro, criterio),
     max,
     linhas: cruas.map((linha) => ({ ...linha, cor: corDaVariacao(linha, max) })),
   }

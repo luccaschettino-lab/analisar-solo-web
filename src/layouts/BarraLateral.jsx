@@ -234,6 +234,13 @@ export default function BarraLateral({ aoNavegar }) {
           <NavLink to="/dados" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? 'bg-solo-50 text-solo-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={aoNavegar}>
             <span aria-hidden="true">📋</span> Dados
           </NavLink>
+
+          {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
+              e autor entra em leitura, e precisa — a cor do mapa dele sai
+              daqui. */}
+          <NavLink to="/criterios" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? 'bg-solo-50 text-solo-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={aoNavegar}>
+            <span aria-hidden="true">🎚</span> Critérios
+          </NavLink>
           <ul className="ml-4 border-l border-slate-200 pl-1">
             <li>
               <button onClick={() => irPara('/dados')} className={`${ITEM} text-slate-600 hover:bg-slate-100`}>

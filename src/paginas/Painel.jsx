@@ -29,7 +29,7 @@ export default function Painel() {
     talhoes, glebas, aplicarTalhao, aplicarGleba, aplicarGlebas,
     removerTalhao, removerGleba, carregando: carregandoHierarquia,
     aplicarFazenda, removerFazenda,
-    anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises,
+    anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises, criterio,
     selecionado, setSelecionado, pedidoDeDesenho, setPedidoDeDesenho,
   } = ctx
 
@@ -261,6 +261,7 @@ export default function Painel() {
           anoSafra={filtro.anoSafra}
           profundidade={filtro.profundidade}
           elevada={Boolean(item.itemSelecionado)}
+          criterio={criterio}
         />
       )}
 

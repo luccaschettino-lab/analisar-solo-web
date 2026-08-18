@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { faixasParaLegenda } from '../../lib/coloracao.js'
 import { HACHURA_FUNDO, HACHURA_TRACO } from '../../config/mapa.js'
 import { rotuloComUnidade } from '../../lib/parametros.js'
+import AssinaturaCriterio from '../../componentes/AssinaturaCriterio.jsx'
 
 // Mesma hachura do mapa, em CSS: a legenda tem que mostrar exatamente o que
 // aparece na gleba, senão não serve de chave de leitura.
@@ -27,12 +28,12 @@ function Amostra({ cor, estilo }) {
  * um dos dez sem faixas, não há escala a explicar e a legenda some — mostrar
  * uma legenda vazia sugeriria que o mapa está colorido quando não está.
  */
-export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, elevada }) {
+export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, elevada, criterio }) {
   // No celular começa recolhida: 224 px de legenda sobre uma tela de 360 tapam
   // justamente o mapa que ela explica. Em tela larga fica sempre aberta.
   const [aberta, setAberta] = useState(false)
 
-  const faixas = faixasParaLegenda(chaveParametro)
+  const faixas = faixasParaLegenda(chaveParametro, criterio?.parametros ?? null)
   if (faixas.length === 0) return null
 
   return (
@@ -92,11 +93,10 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
         </li>
       </ul>
 
-      {/* Exigido enquanto as faixas não passarem por validação agronômica.
-          Ver a limitação registrada em docs/decisoes.md. */}
-      <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs leading-tight text-amber-900">
-        Classificação preliminar, não validada por agrônomo.
-      </p>
+      {/* Quem assina estas cores. Com um conjunto de critérios que fale deste
+          parâmetro, o nome do autor; sem ele, o aviso de que a classificação
+          é a preliminar do sistema. */}
+      <AssinaturaCriterio criterio={criterio} chaveParametro={chaveParametro} />
       </div>
     </aside>
   )

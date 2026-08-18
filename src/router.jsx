@@ -7,6 +7,7 @@ import Cadastro from './paginas/Cadastro.jsx'
 import Painel from './paginas/Painel.jsx'
 import Dados from './paginas/Dados.jsx'
 import Comparar from './paginas/Comparar.jsx'
+import Criterios from './paginas/Criterios.jsx'
 import GlebaDetalhe from './paginas/GlebaDetalhe.jsx'
 import NaoEncontrado from './paginas/NaoEncontrado.jsx'
 
@@ -34,6 +35,7 @@ export const router = createHashRouter([
           { path: '/', element: <Painel /> },
           { path: '/dados', element: <Dados /> },
           { path: '/comparar', element: <Comparar /> },
+          { path: '/criterios', element: <Criterios /> },
           { path: '/glebas/:id', element: <GlebaDetalhe /> },
         ],
       },

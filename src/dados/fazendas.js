@@ -13,7 +13,7 @@ export async function listarFazendasDoUsuario(usuarioId) {
   const linhas = checar(
     await supabase
       .from('fazenda_membros')
-      .select('papel, fazendas(id, nome, municipio, uf, sede_lat, sede_lng, criado_em)')
+      .select('papel, fazendas(id, nome, municipio, uf, sede_lat, sede_lng, criterio_id, criado_em)')
       .eq('usuario_id', usuarioId),
     'Falha ao carregar fazendas',
   )

@@ -5,12 +5,15 @@ import {
 } from '../src/lib/criterios.js'
 import { PARAMETROS, NIVEIS } from '../src/config/parametros.js'
 import { parametro } from '../src/lib/parametros.js'
+import { criarColoracao, temFaixas, faixasParaLegenda, ESTADO } from '../src/lib/coloracao.js'
+import { limiarDe, origemDoLimiar, compararAnos, VARIACAO } from '../src/lib/variacao.js'
 
 let falhas = 0
 function ok(nome, condicao, detalhe = '') {
   console.log(`  ${condicao ? 'OK  ' : 'FALHA'} ${nome}${detalhe ? '  ' + detalhe : ''}`)
   if (!condicao) falhas++
 }
+const perto = (a, b, tol = 1e-9) => Math.abs(a - b) < tol
 
 // Conjunto de exemplo: sobrescreve o pH, apaga a classificacao do Ca,
 // define delta_minimo do K sem mexer nas faixas dele, e nao fala do Mg.
@@ -171,6 +174,63 @@ ok('nenhum dos 14 parametros com faixa reprova', reprovados.length === 0,
    reprovados.map((r) => `${r.chave}: ${r.erros.join('; ')}`).join(' | '))
 ok('todos os niveis do config existem em NIVEIS',
    PARAMETROS.filter((p) => p.faixas).every((p) => p.faixas.every((f) => NIVEIS[f.nivel])))
+
+
+console.log('\n=== integracao: o criterio muda a COR do mapa ===')
+// pH 6,2. No config cai em "medio" (ate 7,0); no criterio cai em "bom"
+// (ate 6,5). Se a cor nao mudar, o conjunto nao esta chegando ao mapa.
+const analisesPh = [{ gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.2 }]
+const filtroPh = { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'ph_h2o' }
+
+const semCriterio = criarColoracao(analisesPh, filtroPh)('g1')
+const comCriterio = criarColoracao(analisesPh, filtroPh, CRITERIO)('g1')
+
+ok('sem criterio, pH 6,2 classifica pelo config', semCriterio.nivel === 'medio', semCriterio.rotuloNivel)
+ok('com criterio, o MESMO valor classifica diferente', comCriterio.nivel === 'bom', comCriterio.rotuloNivel)
+ok('e a cor acompanha', semCriterio.cor !== comCriterio.cor, `${semCriterio.cor} -> ${comCriterio.cor}`)
+ok('as duas sao COM_COR', semCriterio.estado === ESTADO.COM_COR && comCriterio.estado === ESTADO.COM_COR)
+
+console.log('\n=== integracao: "sem classificacao" apaga a cor de quem tinha ===')
+const analisesCa = [{ gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ca: 3.0 }]
+const filtroCa = { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'ca' }
+const caSem = criarColoracao(analisesCa, filtroCa)('g1')
+const caCom = criarColoracao(analisesCa, filtroCa, CRITERIO)('g1')
+ok('sem criterio o Ca tem cor', caSem.estado === ESTADO.COM_COR, caSem.rotuloNivel)
+ok('com criterio vira SEM_FAIXA', caCom.estado === ESTADO.SEM_FAIXA, caCom.estado)
+ok('mas o VALOR continua exibido', caCom.valorFormatado === caSem.valorFormatado, caCom.valorFormatado)
+ok('temFaixas acompanha', temFaixas('ca') === true && temFaixas('ca', CRITERIO) === false)
+ok('a legenda do Ca some', faixasParaLegenda('ca', CRITERIO).length === 0)
+ok('a legenda do pH passa a ter 3 linhas', faixasParaLegenda('ph_h2o', CRITERIO).length === 3)
+
+console.log('\n=== integracao: o limiar da Fase 5 anda junto com as faixas ===')
+ok('delta_minimo declarado no criterio vale', limiarDe('k', CRITERIO) === 3, String(limiarDe('k', CRITERIO)))
+ok('sem ele, 5% da amplitude do config', perto(limiarDe('k'), 5.25), String(limiarDe('k')))
+ok('origem: declarado x derivado das faixas',
+   origemDoLimiar('k', CRITERIO) === 'declarado' && origemDoLimiar('k') === 'faixas')
+
+// pH: amplitude do config e 2,5 (4,5 a 7,0) -> limiar 0,125.
+// No criterio a amplitude e 1,5 (5,0 a 6,5) -> limiar 0,075.
+ok('editar as faixas muda o limiar derivado',
+   perto(limiarDe('ph_h2o'), 0.125) && perto(limiarDe('ph_h2o', CRITERIO), 0.075),
+   `${limiarDe('ph_h2o')} -> ${limiarDe('ph_h2o', CRITERIO)}`)
+
+// A consequencia visivel: a MESMA variacao de 0,1 muda de estado.
+const glebas1 = [{ id: 'g1', codigo: 'A-01', nome: null }]
+const analisesVar = [
+  { gleba_id: 'g1', ano_safra: '24-25', profundidade: '0-20', ph_h2o: 6.0 },
+  { gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.1 },
+]
+const filtroVar = { anoA: '24-25', anoB: '25-26', profundidade: '0-20', chaveParametro: 'ph_h2o' }
+const varSem = compararAnos(analisesVar, glebas1, filtroVar).linhas[0]
+const varCom = compararAnos(analisesVar, glebas1, filtroVar, CRITERIO).linhas[0]
+ok('0,1 e estavel pelo config (limiar 0,125)', varSem.estado === VARIACAO.ESTAVEL)
+ok('e vira alta significativa pelo criterio (limiar 0,075)', varCom.estado === VARIACAO.ALTA)
+ok('a cor da gleba muda junto', varSem.cor !== varCom.cor, `${varSem.cor} -> ${varCom.cor}`)
+
+console.log('\n=== nada disso vaza para quem nao usa criterio ===')
+ok('criarColoracao sem 3o argumento e igual a com null',
+   criarColoracao(analisesPh, filtroPh)('g1').cor === criarColoracao(analisesPh, filtroPh, null)('g1').cor)
+ok('limiarDe sem 2o argumento e igual a com null', limiarDe('ca') === limiarDe('ca', null))
 
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)
 process.exit(falhas === 0 ? 0 : 1)
