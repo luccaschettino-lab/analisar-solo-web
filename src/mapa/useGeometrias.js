@@ -27,10 +27,24 @@ function rotulo(item) {
  * O destaque é aplicado num efeito próprio, alterando o estilo das camadas
  * que já existem. Reconstruir tudo a cada seleção faria o mapa piscar e
  * perderia o tooltip aberto sob o cursor.
+ *
+ * `conteudoTooltip` é opcional e existe para a tela de comparação: o mapa
+ * divergente pinta pelas mesmas regras de `cor` e `hachurado`, mas o que ele
+ * tem a dizer sobre uma gleba é outra coisa — dois valores e a variação entre
+ * eles, não um valor e sua classificação. Sem ele, vale o tooltip da Fase 4.
  */
 export function useGeometrias(
   mapa,
-  { talhoes, glebas, selecionado, aoSelecionar, revisao = 0, coloracao = null, filtro = null },
+  {
+    talhoes,
+    glebas,
+    selecionado,
+    aoSelecionar,
+    revisao = 0,
+    coloracao = null,
+    filtro = null,
+    conteudoTooltip = null,
+  },
 ) {
   const grupoTalhoes = useRef(null)
   const grupoGlebas = useRef(null)
@@ -183,12 +197,14 @@ export function useGeometrias(
       registro.camada.setStyle(estilo)
 
       registro.camada.setTooltipContent(
-        conteudoTooltipGleba(registro.gleba, info, filtro?.chaveParametro),
+        conteudoTooltip
+          ? conteudoTooltip(registro.gleba, info)
+          : conteudoTooltipGleba(registro.gleba, info, filtro?.chaveParametro),
       )
 
       if (ativo) registro.camada.bringToFront()
     }
-  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro])
+  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro, conteudoTooltip])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.

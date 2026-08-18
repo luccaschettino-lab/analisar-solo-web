@@ -61,9 +61,10 @@ Modelar isso errado faz o produto inteiro perder a razão de existir.
 **Turf granular, não `@turf/turf`.** O pacote completo arrasta dezenas de
 módulos para usarmos três funções. Os pacotes avulsos entregam o mesmo.
 
-**Bundle em 1,2 MB / 352 KB gzip.** Leaflet, Geoman, turf, Supabase e Chart.js
+**Bundle em 1,26 MB / 369 KB gzip.** Leaflet, Geoman, turf, Supabase e Chart.js
 somados. Pesado para o 3G do campo. A saída registrada é carregar mapa e
-gráficos por rota com `lazy` — não feito ainda.
+gráficos por rota com `lazy` — não feito ainda, e a tela de comparação da Fase 5
+somou mais 16 KB gzip por entrar no mesmo pedaço.
 
 Restrições: sem TypeScript, sem SSR, sem framework de UI além do Tailwind.
 
@@ -189,17 +190,20 @@ envelhece rápido; o que importa aqui é onde cada tipo de coisa mora.
 src/
   config/      dados de domínio: parametros.js (FONTE ÚNICA dos 24), mapa.js, graficos.js
   lib/         funções puras, testáveis fora do React: geo, numeros, parametros,
-               historico, comparacao, lote, permissoes, supabase
+               historico, comparacao, coloracao, lote, permissoes, supabase
+               + a família da variação: estadosVariacao (folha), variacao
+                 (cálculo), escalaDivergente (cor), textosVariacao, ordenarVariacao
   dados/       uma ida ao servidor por função, erro do Postgres traduzido
   hooks/       estado compartilhado: fazendas, hierarquia, análises, seleção, aviso
   mapa/        Leaflet e Geoman, imperativos, isolados do React
   componentes/ genéricos: Modal, formulário, guards, ErrorBoundary
   context/     AuthContext (sessão) e FazendaContext (fazenda aberta)
   layouts/     casca pública (login), casca autenticada e a BarraLateral
-  paginas/     Painel (mapa), Dados, GlebaDetalhe, Login, Cadastro
+  paginas/     Painel (mapa), Dados, Comparar, GlebaDetalhe, Login, Cadastro
     painel/    peças da tela do mapa, incluindo seus hooks
     gleba/     trilha, tabela e gráficos de /#/glebas/:id
     dados/     seletor em cascata, formulário e listagem de /#/dados
+    comparacao/ filtros, legenda divergente e tabela de /#/comparar
   features/importacao/pdf/   placeholder + README do contrato
 supabase/
   migrations/  aplicadas em ordem de timestamp
@@ -218,15 +222,25 @@ verdade. Componente não fala com o Supabase direto: passa por `dados/`.
 npm install
 npm run dev      # http://localhost:5173/analisar-solo-web/
 npm run build
-npm run testar   # regras de coloração do mapa
+npm run testar   # coloração do mapa, busca e variação entre safras
 ```
 
-**`npm run testar`** roda `testes/coloracao.mjs` no Node, sem navegador e sem
-framework. Cobre as regras que não podem quebrar: zero é dado e não ausência,
-ausência não vira zero nem se aproxima da faixa vizinha, parâmetro sem faixa no
-config não recebe cor, filtro incompleto desliga a coloração, e nenhuma legenda
-tem rótulo repetido nos 24 parâmetros. **Rode depois de mexer em
-`lib/coloracao.js` ou nas faixas de `config/parametros.js`.**
+**`npm run testar`** roda três arquivos no Node, sem navegador e sem framework:
+`testes/coloracao.mjs`, `testes/busca.mjs` e `testes/variacao.mjs`.
+
+`coloracao.mjs` cobre as regras que não podem quebrar na Fase 4: zero é dado e
+não ausência, ausência não vira zero nem se aproxima da faixa vizinha,
+parâmetro sem faixa no config não recebe cor, filtro incompleto desliga a
+coloração, e nenhuma legenda tem rótulo repetido nos 24 parâmetros.
+
+`variacao.mjs` cobre as da Fase 5: gleba medida num ano só nunca vira zero nem
+recebe cor de variação, gleba sem dado nos dois anos não some do mapa, a escala
+divergente é simétrica, o limiar cai para zero em parâmetro sem faixa, base
+zero não produz porcentagem, e linha sem valor afunda na ordenação nas duas
+direções.
+
+**Rode depois de mexer em `lib/coloracao.js`, `lib/variacao.js` ou nas faixas
+de `config/parametros.js`.**
 
 A RLS tem seu próprio teste, em `supabase/testes/teste_rls.sql`, para colar no
 SQL Editor.
@@ -269,16 +283,25 @@ a branch".
 laudos, tabela comparativa entre safras, gráficos de evolução, coloração do
 mapa por parâmetro e busca por lugar ou coordenada.
 
-**Fase 5 não iniciada** — comparação entre anos no mapa, mapa divergente e
-tabela de variação. Ainda não especificada.
+**Fase 5 concluída** — `/#/comparar`: mapa divergente entre dois anos-safra,
+com escala simétrica centrada em zero, e tabela de variação ordenável ao lado.
+Gleba medida em apenas um dos anos nunca é tratada como zero: fica hachurada no
+mapa e nomeia, na tabela, qual ano falta e por quê. **Ainda não exercitada no
+navegador** — o build passa e as regras puras têm teste, mas a tela só foi
+verificada por leitura.
+
+**Fase 6 não iniciada** — importação de GeoJSON do QGIS.
 
 **O que trava a próxima etapa:** as faixas de interpretação de
 `config/parametros.js` **não passaram por validação agronômica**, e o fósforo
 segue sem classificação por depender do P-Rem. Enquanto isso não for resolvido,
 a cor do mapa não sustenta decisão de adubação — a legenda avisa, mas aviso é
-remendo.
+remendo. **A Fase 5 herdou a dívida:** o limiar que separa "estável" de
+"variação significativa" é, por padrão, 5% da amplitude dessas mesmas faixas.
+O campo `delta_minimo` existe em `config/parametros.js` justamente para receber
+o valor validado, parâmetro a parâmetro — hoje nenhum o declara.
 
-**Outras pendências**: bundle em 352 KB gzip sem carregamento por rota; a
+**Outras pendências**: bundle em 369 KB gzip sem carregamento por rota; a
 fazenda real (Angra) nunca foi cadastrada; há 5 análises de demonstração no
 banco. Detalhe em [`docs/decisoes.md`](docs/decisoes.md).
 

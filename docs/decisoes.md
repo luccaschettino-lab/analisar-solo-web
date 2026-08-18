@@ -77,6 +77,33 @@ Levantadas na auditoria de 2026-08-14 e **aceitas explicitamente**.
 | **Todas as análises da fazenda carregam de uma vez.** | Trocar de parâmetro, safra ou profundidade é recorte do que já está em memória. Numa conexão de campo, é a diferença entre o filtro responder na hora e travar a cada clique. |
 | **Talhão mantém a cor do cadastro; só a gleba recebe cor de valor.** | O talhão é a moldura, a gleba é o dado. Colorir os dois competiria pela mesma leitura. |
 
+### Fase 5
+
+| Decisão | Motivo |
+|---|---|
+| **Cinco estados de variação, não três.** A spec previa queda, estabilidade e alta, mais os dois cinzas. | Os dois cinzas são estados de verdade e precisam de nome próprio no código, senão a regra "nunca tratar como zero" vira responsabilidade de cada componente. `SEM_UM_ANO` sai hachurado, `SEM_OS_DOIS` sai cinza neutro, e nenhum dos dois passa pela rampa de cor. |
+| **A escala divergente não reaproveita as cores de `NIVEIS`.** | `NIVEIS` afirma bom e ruim; a variação afirma só subiu e desceu. Alumínio que sobe é péssimo, cálcio que sobe é ótimo, e no pH o ideal fica no meio — pintar variação com a paleta da classificação prometeria um juízo que a conta não faz. O par vermelho/azul saiu do ColorBrewer RdBu, que preserva contraste nos tipos mais comuns de daltonismo. |
+| **`delta_minimo` é opcional e ninguém declara ainda.** O padrão é 5% da amplitude das faixas — distância entre o menor e o maior limite finito. | Precisava de um padrão que saísse da mesma régua já usada para classificar, em vez de um número escolhido a esmo. No K, cujos limites vão de 15 a 120, dá 5,25 mg/dm³. |
+| **Parâmetro sem faixas fica com limiar zero, não com um limiar inventado.** | Sem escala de interpretação não há como afirmar o que é ruído de laboratório. Zero preserva o fato bruto: toda diferença aparece como diferença. Inventar uma zona de estabilidade esconderia mudança real — e são justamente os 10 parâmetros sem faixa, o fósforo entre eles. O seletor e a legenda avisam. |
+| **A escala é simétrica por construção: os dois lados ancoram em `max(\|Δ\|)`.** | Ancorar cada lado no seu próprio máximo faria uma queda de 0,3 sair tão vermelha quanto uma alta de 2,0 sai azul. Duas mudanças de tamanhos diferentes com a mesma intensidade na tela é leitura falsa. |
+| **A legenda desenha a zona estável com largura proporcional a `limiar / max`.** | É a única forma de a legenda responder "o quanto desta escala conta como parado". Com limiar grande diante de variações pequenas, a barra sai quase toda neutra — que é exatamente o que o mapa mostra. |
+| **A legenda diz de onde veio o limiar** — config, 5% da amplitude, ou sem faixas. | "Estável até 0,18" é afirmação forte sobre a terra de alguém. Quem lê tem direito de saber se o número foi validado ou se é a regra genérica. |
+| **Linha sem valor afunda na ordenação nas duas direções.** | Ausência não é o menor valor nem o maior. Ordenando junto com os números, a pergunta "quem menos variou?" seria respondida por uma gleba que não variou coisa nenhuma — ela não foi medida. |
+| **A ordem padrão (maior \|Δ\|) tem botão próprio, porque a coluna Diferença ordena com sinal.** | Ordenar com sinal separa as maiores quedas das maiores altas, e é o que a coluna mostra. Mas aí a ordem de abertura não voltaria por clique nenhum, e a pergunta central da tela — quem mais mudou — ficaria inalcançável. |
+| **`useGeometrias` ganhou `conteudoTooltip` opcional em vez de uma cópia.** | O mapa divergente usa as mesmas geometrias, a mesma hachura e a mesma seleção; só a cor e o texto mudam. Duas cópias do desenho das camadas divergiriam na primeira correção — foi o que já quase aconteceu entre destaque e coloração na Fase 4. |
+| **A fazenda aparece nos filtros da tela *e* na barra lateral, com um estado só.** | No celular a barra é gaveta fechada, e trocar de fazenda no meio de uma comparação exigiria abrir outro painel. Como as duas entradas escrevem no `FazendaContext`, não há como divergirem. |
+| **Base zero mostra "partiu de zero", não célula vazia.** | (B − A) / 0 não existe, e omitir a porcentagem deixaria parecer que a conta falhou. O `delta` continua válido e continua colorindo o mapa. |
+| **Os filtros começam vazios, como na Fase 4.** | Abrir já comparando dois anos escolhidos por nós afirmaria algo sobre a terra sem ninguém ter pedido — e aqui a afirmação é mais forte, porque a tela diz o que melhorou e o que piorou. |
+
+#### Correções da auditoria da Fase 5
+
+| Decisão | Motivo |
+|---|---|
+| **`variacao.js` dividido em cinco arquivos**: `estadosVariacao` (folha), `variacao` (cálculo), `escalaDivergente` (cor), `textosVariacao` (apresentação), `ordenarVariacao` (tabela). | O arquivo chegou a 460 linhas misturando quatro responsabilidades. O quinto arquivo — as constantes de estado — não estava na proposta: apareceu porque o cálculo precisa da cor e a cor precisa dos estados, o que fechava um ciclo de imports. Ciclo em módulo ES funciona por acidente da ordem de avaliação e quebra no dia em que alguém ler a constante no topo do arquivo em vez de dentro de uma função. `variacao.js` reexporta `LADO` e `VARIACAO`, então a superfície pública não mudou. |
+| **Erro de carga vem antes de qualquer mensagem de "não tem".** Os três erros — fazendas, hierarquia, análises — saem juntos na faixa de alerta dos filtros; o mapa e a tabela apontam para lá. | A tela dizia "Esta fazenda ainda não tem glebas cadastradas" quando as glebas tinham **falhado** ao carregar, e a mesma frase enquanto ainda carregavam. Não saber distinguir "falhou" de "está vazio" é o pior que esta tela pode fazer: as duas leem igual e só uma é problema de quem está olhando. |
+| **`useEnquadramentoDaFazenda` extraído de `useMapaDaFazenda`.** | A tela de comparação reusava o hook inteiro e levava junto o modo de marcar centro — estado, listener de clique e a escrita em `definirCentro` — numa tela que não escreve nada. Criar um hook novo e parecido duplicaria a regra de para onde o mapa vai ao abrir uma fazenda; extrair mantém uma cópia só. A API de `useMapaDaFazenda` não mudou, então o Painel não sentiu. |
+| **`ROTULO_VARIACAO` removido.** | Definido, exportado e usado em lugar nenhum — nem no código, nem no teste. Constante exportada que ninguém consome é pior que código feio: alguém a mantém. |
+
 ### Navegação em cascata
 
 Feita depois da Fase 4, a pedido do responsável, que não gostava das abas.
@@ -111,6 +138,21 @@ Feita depois da Fase 4, a pedido do responsável, que não gostava das abas.
   interpretação depende de cultura, textura e método de extração. Há um bloco
   de atenção no topo de `config/parametros.js`. **Validar antes de virar cor no
   mapa (Fase 4) ou recomendação.**
+
+- **O limiar de estabilidade da Fase 5 é heurística, não agronomia.** Nenhum
+  parâmetro declara `delta_minimo`, então todos usam o padrão: 5% da amplitude
+  das faixas — que são justamente as faixas não validadas do item acima. Na
+  prática, o que a tela chama de "estável" é uma régua derivada de outra régua
+  não conferida. A legenda diz de onde o número veio, mas dizer a origem não é
+  o mesmo que estar certo. **O caminho é preencher `delta_minimo` parâmetro a
+  parâmetro quando houver validação**, e o código já prefere o valor do config
+  ao padrão.
+
+- **Variação não é causa.** O mapa divergente mostra que o cálcio subiu, não
+  que a calagem funcionou: mudança de laboratório, de método de extração, de
+  ponto exato da coleta dentro da gleba e de umidade do solo aparecem todas
+  como variação. O sistema não guarda nada disso além do campo livre
+  `laboratorio`, e portanto não tem como descontar nenhuma delas.
 
 ### Escrita e concorrência
 
@@ -351,11 +393,37 @@ pinta com os três filtros escolhidos, parâmetro sem faixa validada fica cinza
 com o valor no tooltip, e a legenda carrega o aviso de que a classificação é
 preliminar. Nenhuma dessas três coisas é detalhe visual.
 
-### Fase 5 — não iniciada
+### Fase 5 — concluída
 
-Comparação entre anos no mapa, mapa divergente e tabela de variação. Ainda não
-especificada.
+- [x] Tela `/#/comparar`, no menu para qualquer usuário com acesso à fazenda
+- [x] Quatro seletores: fazenda, Ano A, Ano B, profundidade e parâmetro
+- [x] Anos iguais bloqueiam a comparação com mensagem, antes de qualquer conta
+- [x] Mapa divergente com as geometrias da Fase 4 e escala simétrica em zero
+- [x] Cinco estados: queda, estável, alta, sem dado em um ano, sem dado nos dois
+- [x] Limiar de estabilidade de `delta_minimo`, ou 5% da amplitude das faixas
+- [x] Legenda com a zona estável em tamanho real e a origem do limiar
+- [x] Tabela de seis colunas, ordenável, com ausência nomeada por ano e motivo
+- [x] Clicar na linha seleciona e centraliza a gleba no mapa
+- [x] `testes/variacao.mjs` cobrindo as regras críticas
+
+**A regra da Fase 3 e da Fase 4 continua valendo, e aqui é onde ela custa mais
+caro.** Uma gleba medida num ano só não tem variação zero — não tem variação
+nenhuma. Ela sai hachurada no mapa, sai com "sem dado" e o motivo na coluna do
+ano que falta, sai com "sem comparação" nas colunas de diferença, e afunda em
+qualquer ordenação. Nenhum valor é interpolado, estimado ou completado.
+
+**Não exercitada no navegador.** O build passa e as regras puras estão
+cobertas por teste, mas a tela em si — layout do mapa ao lado da tabela,
+enquadramento, hachura sobre o satélite — só foi verificada por leitura de
+código. Vale abrir `/#/comparar` com as 5 análises de demonstração antes de
+confiar nela.
 
 **Continua pendente:** as faixas de `config/parametros.js` não passaram por
-validação agronômica, e o fósforo segue sem classificação por depender do
-P-Rem. Ver as limitações em [`docs/decisoes.md`](docs/decisoes.md).
+validação agronômica, o fósforo segue sem classificação por depender do P-Rem,
+e agora o limiar de estabilidade herda essa mesma fragilidade. Ver as
+limitações acima.
+
+### Fase 6 — não iniciada
+
+Importação de GeoJSON do QGIS. Fora do escopo da Fase 5 por decisão do
+responsável.

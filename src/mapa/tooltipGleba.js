@@ -5,7 +5,7 @@ import { rotuloComUnidade } from '../lib/parametros.js'
  * Código e nome vêm do cadastro, digitados pelo usuário. O tooltip do Leaflet
  * aceita HTML, então tudo que vem de fora passa por aqui antes.
  */
-function escapar(texto) {
+export function escapar(texto) {
   return String(texto ?? '').replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],

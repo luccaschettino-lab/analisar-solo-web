@@ -50,6 +50,23 @@ export const GRUPOS = [
  *
  * `plausivel`: faixa de sanidade do dado, não de interpretação. Serve só para
  * avisar que o número provavelmente foi digitado errado. Nunca bloqueia.
+ *
+ * `delta_minimo` (opcional): o quanto o valor precisa mudar entre duas safras
+ * para a variação contar como significativa, na unidade do parâmetro. Existe
+ * porque parte do que muda de um ano para o outro é ruído de amostragem e de
+ * laboratório, não mudança no solo — pintar tudo que não é exatamente zero
+ * afirmaria movimento onde não houve.
+ *
+ * **Nenhum parâmetro define `delta_minimo` hoje.** Sem ele, o limiar é
+ * calculado em `src/lib/variacao.js`: 5% da amplitude das faixas, isto é, da
+ * distância entre o menor e o maior limite finito de `faixas`. No K, cujos
+ * limites vão de 15 a 120, dá 5,25 mg/dm³.
+ *
+ * Parâmetro sem faixas (`faixas: null`) fica com limiar **zero**. Sem escala
+ * de interpretação não há como afirmar o que é ruído, e zero preserva o fato
+ * bruto: qualquer diferença aparece como diferença, sem inventar uma zona de
+ * estabilidade que ninguém validou. Preencher `delta_minimo` sobrescreve os
+ * dois casos, e é o caminho quando houver validação agronômica.
  */
 export const PARAMETROS = [
   // ---- Granulometria (%) ----

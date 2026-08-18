@@ -135,3 +135,26 @@ export const ESTILO_PONTO_SEM_DADO = {
   fillColor: '#ffffff',
   fillOpacity: 0.3,
 }
+
+/**
+ * Escala divergente da comparação entre safras.
+ *
+ * Vermelho para queda, azul para alta, neutro no meio. **É direção, não
+ * julgamento.** As cores de `NIVEIS` afirmam "bom" e "ruim"; estas afirmam só
+ * "subiu" e "desceu", e as duas leituras não podem dividir a mesma paleta —
+ * alumínio que sobe é péssimo, cálcio que sobe é ótimo, e no pH o ideal fica
+ * no meio. Reaproveitar o verde e o vermelho da classificação faria o mapa de
+ * variação prometer uma qualidade que ele não calcula.
+ *
+ * Cada lado tem duas pontas: a `fraca`, logo depois do limiar de
+ * significância, e a `forte`, no extremo da escala. A interpolação entre elas
+ * mora em `src/lib/variacao.js` — aqui só os dados.
+ *
+ * Par vermelho/azul do ColorBrewer RdBu, que preserva contraste nos tipos mais
+ * comuns de daltonismo. Um par verde/vermelho não preservaria.
+ */
+export const ESCALA_DIVERGENTE = {
+  queda: { fraca: '#f4a582', forte: '#b2182b' },
+  estavel: '#f7f7f7',
+  alta: { fraca: '#92c5de', forte: '#2166ac' },
+}

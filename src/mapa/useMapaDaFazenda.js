@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { enquadrarGeometrias } from './enquadrar.js'
+import { useCallback, useEffect, useState } from 'react'
+import { useEnquadramentoDaFazenda } from './useEnquadramentoDaFazenda.js'
 import { definirCentro } from '../dados/fazendas.js'
-import { ZOOM_PADRAO } from '../config/mapa.js'
 
 /**
  * Tudo que é do mapa em função da fazenda aberta: enquadramento inicial,
  * remedição ao recolher o painel, e o modo de marcar o centro.
+ *
+ * O enquadramento saiu para `useEnquadramentoDaFazenda`, que a tela de
+ * comparação usa sozinho — ela é só leitura e não deveria carregar o modo de
+ * marcar centro junto. Daqui a API não mudou.
  */
 export function useMapaDaFazenda({
   mapa,
@@ -19,10 +22,13 @@ export function useMapaDaFazenda({
   const [marcandoCentro, setMarcandoCentro] = useState(false)
   const [gravandoCentro, setGravandoCentro] = useState(false)
 
-  const geometriasDosTalhoes = useMemo(
-    () => talhoes.map((t) => t.geometria).filter(Boolean),
-    [talhoes],
-  )
+  const { geometriasDosTalhoes } = useEnquadramentoDaFazenda({
+    mapa,
+    fazendaSelecionada,
+    talhoes,
+    carregandoHierarquia,
+    recolhido,
+  })
 
   // Estado inicial: a fazenda não tem desenho nem centro, então não há para
   // onde levar o mapa. Vira convite para o usuário navegar e marcar o ponto.
@@ -31,36 +37,6 @@ export function useMapaDaFazenda({
     !carregandoHierarquia &&
     geometriasDosTalhoes.length === 0 &&
     fazendaSelecionada.centro_lat == null
-
-  /**
-   * Enquadramento de abertura, uma vez por fazenda:
-   *   1. limites de todos os talhões desenhados;
-   *   2. centro gravado;
-   *   3. nada — quem mostra o convite é `semReferencia`.
-   *
-   * O ref impede reenquadrar a cada render: quem deu zoom para conferir um
-   * vértice não quer o mapa pulando de volta sozinho.
-   */
-  const ultimoEnquadrado = useRef(null)
-  useEffect(() => {
-    if (!mapa || !fazendaSelecionada || carregandoHierarquia) return
-    if (ultimoEnquadrado.current === fazendaSelecionada.id) return
-    ultimoEnquadrado.current = fazendaSelecionada.id
-
-    if (enquadrarGeometrias(mapa, geometriasDosTalhoes)) return
-
-    const { centro_lat: lat, centro_lng: lng } = fazendaSelecionada
-    if (lat != null && lng != null) mapa.setView([lat, lng], ZOOM_PADRAO)
-  }, [mapa, fazendaSelecionada, carregandoHierarquia, geometriasDosTalhoes])
-
-  // O painel muda a largura útil do mapa; sem invalidateSize o Leaflet continua
-  // achando que o container tem o tamanho antigo e os tiles ficam desalinhados
-  // até o próximo pan. O atraso acompanha a troca de layout.
-  useEffect(() => {
-    if (!mapa) return
-    const t = setTimeout(() => mapa.invalidateSize(), 220)
-    return () => clearTimeout(t)
-  }, [mapa, recolhido])
 
   // Modo de marcação: o próximo clique no mapa vira o centro da fazenda.
   useEffect(() => {

@@ -225,7 +225,13 @@ export default function BarraLateral({ aoNavegar }) {
         )}
 
         <div className="mt-3 border-t border-slate-200 pt-2">
-          <NavLink to="/dados" className={({ isActive }) => `${ITEM} font-medium ${isActive ? 'bg-solo-50 text-solo-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={aoNavegar}>
+          {/* Comparação entre anos. Sem guard de papel: quem enxerga a fazenda
+              enxerga o histórico dela — a RLS já decide isso na leitura. */}
+          <NavLink to="/comparar" className={({ isActive }) => `${ITEM} font-medium ${isActive ? 'bg-solo-50 text-solo-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={aoNavegar}>
+            <span aria-hidden="true">📈</span> Comparar anos
+          </NavLink>
+
+          <NavLink to="/dados" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? 'bg-solo-50 text-solo-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={aoNavegar}>
             <span aria-hidden="true">📋</span> Dados
           </NavLink>
           <ul className="ml-4 border-l border-slate-200 pl-1">
