@@ -54,7 +54,7 @@ export default function BuscaLocal({ aoIrPara }) {
   }
 
   return (
-    <div className="w-72 rounded-lg border border-slate-200 bg-white shadow-lg">
+    <div className="vidro-forte w-72 rounded-lg border border-slate-200 shadow-painel dark:border-white/15">
       <form onSubmit={enviar} className="flex gap-1 p-2">
         <input
           type="search"
@@ -62,25 +62,25 @@ export default function BuscaLocal({ aoIrPara }) {
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Lugar ou -20.7546, -42.8825"
           aria-label="Buscar lugar ou coordenada"
-          className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100"
+          className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-solo-500 dark:focus:ring-solo-500/30"
         />
         <button
           type="submit"
           disabled={buscando}
-          className="shrink-0 rounded-md bg-solo-700 px-3 text-sm font-medium text-white hover:bg-solo-800 disabled:bg-slate-300"
+          className="shrink-0 rounded-md bg-solo-700 px-3 text-sm font-medium text-white hover:bg-solo-800 disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600"
         >
           {buscando ? '…' : 'Ir'}
         </button>
       </form>
 
       {erro && (
-        <p role="alert" className="border-t border-slate-200 px-3 py-2 text-xs text-red-700">
+        <p role="alert" className="border-t border-slate-200 px-3 py-2 text-xs text-red-700 dark:border-white/10 dark:text-red-300">
           {erro}
         </p>
       )}
 
       {inversao && (
-        <div className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <div className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-200">
           Esse ponto cai fora do Brasil. Latitude e longitude podem estar trocadas.{' '}
           <button
             onClick={() => {
@@ -95,7 +95,7 @@ export default function BuscaLocal({ aoIrPara }) {
       )}
 
       {resultados && resultados.length === 0 && (
-        <p className="border-t border-slate-200 px-3 py-2 text-xs text-slate-500">
+        <p className="border-t border-slate-200 px-3 py-2 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
           Nada encontrado. Propriedade rural quase nunca está no mapa por nome — tente
           o município, ou cole a coordenada.
         </p>
@@ -103,23 +103,23 @@ export default function BuscaLocal({ aoIrPara }) {
 
       {resultados && resultados.length > 0 && (
         <>
-          <ul className="max-h-60 overflow-y-auto border-t border-slate-200">
+          <ul className="max-h-60 overflow-y-auto border-t border-slate-200 dark:border-white/10">
             {resultados.map((r) => (
               <li key={r.id}>
                 <button
                   onClick={() => aoIrPara(r)}
-                  className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 focus:outline-none focus-visible:bg-slate-50"
+                  className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 focus:outline-none focus-visible:bg-slate-50 dark:hover:bg-white/10 dark:focus-visible:bg-white/10"
                 >
-                  <span className="block font-medium text-slate-800">
+                  <span className="block font-medium text-slate-800 dark:text-slate-100">
                     {r.nome.split(',')[0]}
                   </span>
-                  <span className="block truncate text-slate-500">{r.nome}</span>
+                  <span className="block truncate text-slate-500 dark:text-slate-400">{r.nome}</span>
                 </button>
               </li>
             ))}
           </ul>
           {/* Crédito exigido pela política de uso do Nominatim. */}
-          <p className="border-t border-slate-200 px-3 py-1.5 text-[11px] text-slate-400">
+          <p className="border-t border-slate-200 px-3 py-1.5 text-[11px] text-slate-400 dark:border-white/10 dark:text-slate-500">
             Resultados de busca ©{' '}
             <a
               href="https://www.openstreetmap.org/copyright"

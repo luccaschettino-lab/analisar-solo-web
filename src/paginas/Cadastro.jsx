@@ -46,12 +46,12 @@ export default function Cadastro() {
   if (aguardandoConfirmacao) {
     return (
       <div className="space-y-4">
-        <h1 className="text-lg font-semibold text-slate-900">Confirme seu e-mail</h1>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Confirme seu e-mail</h1>
         <Aviso tipo="sucesso">
           Enviamos um link de confirmação para <strong>{email}</strong>. Abra o link para ativar a
           conta e depois faça login.
         </Aviso>
-        <Link to="/login" className="block text-center text-sm font-medium text-solo-700 hover:underline">
+        <Link to="/login" className="block text-center text-sm font-medium text-solo-700 hover:underline dark:text-solo-400">
           Ir para o login
         </Link>
       </div>
@@ -61,8 +61,8 @@ export default function Cadastro() {
   return (
     <form onSubmit={aoEnviar} className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-lg font-semibold text-slate-900">Criar conta</h1>
-        <p className="text-sm text-slate-500">Cadastre-se para gerenciar suas fazendas.</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Criar conta</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Cadastre-se para gerenciar suas fazendas.</p>
       </header>
 
       <Aviso>{erro}</Aviso>
@@ -113,9 +113,9 @@ export default function Cadastro() {
         {enviando ? 'Criando conta…' : 'Criar conta'}
       </BotaoPrincipal>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         Já tem conta?{' '}
-        <Link to="/login" className="font-medium text-solo-700 hover:underline">
+        <Link to="/login" className="font-medium text-solo-700 hover:underline dark:text-solo-400">
           Entrar
         </Link>
       </p>

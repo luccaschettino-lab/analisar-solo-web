@@ -127,14 +127,14 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
   return (
     <form onSubmit={enviar} className="space-y-5 p-6">
       {selecao.fazendaId && !selecao.podeLancar && (
-        <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-white/10 dark:bg-noite-950 dark:text-slate-400">
           Seu papel nesta fazenda permite apenas consulta.
         </p>
       )}
 
       <SeletorGleba selecao={selecao} desabilitado={salvando || Boolean(emEdicao)} />
       {emEdicao && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Editando uma análise existente — a gleba não pode ser trocada. Cancele para
           lançar em outra.
         </p>
@@ -151,7 +151,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
           disabled={bloqueado}
         />
         <div>
-          <label htmlFor="profundidade" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="profundidade" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             Profundidade (cm)
           </label>
           <select
@@ -159,7 +159,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
             value={cabecalho.profundidade}
             onChange={(e) => mudarCampo('profundidade', e.target.value)}
             disabled={bloqueado}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50"
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5"
           >
             {PROFUNDIDADES.map((p) => (
               <option key={p} value={p}>
@@ -192,7 +192,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
         />
       </div>
 
-      <p className="-mt-2 text-xs text-slate-500">
+      <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
         O número da amostra é a referência do laudo deste ano. A identidade da gleba é
         o cadastro dela, não esse número.
       </p>
@@ -200,7 +200,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
       <CamposParametros valores={valores} aoMudar={mudarParametro} desabilitado={bloqueado} />
 
       <div>
-        <label htmlFor="observacoes" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="observacoes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           Observações
         </label>
         <textarea
@@ -209,7 +209,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
           value={cabecalho.observacoes}
           onChange={(e) => mudarCampo('observacoes', e.target.value)}
           disabled={bloqueado}
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50"
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5"
         />
       </div>
 
@@ -228,7 +228,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
             type="button"
             onClick={aoCancelarEdicao}
             disabled={salvando}
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10"
           >
             Cancelar edição
           </button>

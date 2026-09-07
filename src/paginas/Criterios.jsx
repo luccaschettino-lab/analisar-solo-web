@@ -8,11 +8,11 @@ import { aplicarCriterioNaFazenda } from '../dados/criterios.js'
 import EditorCriterio from './criterios/EditorCriterio.jsx'
 
 const BOTAO =
-  'rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300'
+  'rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:bg-noite-900 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600'
 const BOTAO_PRIMARIO =
   'rounded-md bg-solo-700 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300'
 const CAMPO =
-  'w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100'
+  'w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30'
 
 /**
  * Critérios de interpretação: onde o consultor define o que é bom e o que é
@@ -151,23 +151,23 @@ export default function Criterios() {
   const emVigor = fazendaSelecionada?.criterio_id === idAberto
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50">
+    <div className="h-full overflow-y-auto bg-slate-50 dark:bg-noite-950">
       <div className="mx-auto max-w-4xl px-3 py-4 sm:px-4">
         <header>
-          <h1 className="text-lg font-semibold text-slate-900">Critérios de interpretação</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Critérios de interpretação</h1>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             O que é <strong>muito baixo</strong>, <strong>bom</strong> ou <strong>muito bom</strong> em
             cada parâmetro. Interpretação de solo depende de cultura, textura e método de extração —
             por isso são conjuntos nomeados, e não uma tabela só.
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Parâmetro que você não personalizar continua usando a tabela preliminar do sistema, e a
             legenda do mapa diz isso.
           </p>
         </header>
 
         {erro && (
-          <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
             {erro}
           </p>
         )}
@@ -203,8 +203,8 @@ export default function Criterios() {
         </div>
 
         {fazendaSelecionada && aberto && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
-            <span className="text-xs text-slate-600">
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-noite-900">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
               Em <strong>{fazendaSelecionada.nome}</strong>:{' '}
               {emVigor ? 'este conjunto está em vigor.' : 'usando o padrão do sistema ou outro conjunto.'}
             </span>
@@ -232,7 +232,7 @@ export default function Criterios() {
         )}
 
         {!editor && fazendaSelecionada && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             Você tem acesso de leitura nesta fazenda, então não pode trocar o conjunto em vigor.
           </p>
         )}
@@ -240,7 +240,7 @@ export default function Criterios() {
         {aberto && rascunho && (
           <div className="mt-4">
             {!souAutor && (
-              <p className="mb-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+              <p className="mb-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 dark:border-white/10 dark:bg-noite-900 dark:text-slate-400">
                 Este conjunto é de <strong>{aberto.autor_nome ?? 'outro usuário'}</strong>. Você o vê
                 porque ele está aplicado a uma fazenda sua, mas só o autor edita. Use{' '}
                 <strong>Duplicar</strong> para partir dele e assinar a sua versão.
@@ -249,7 +249,7 @@ export default function Criterios() {
 
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-medium text-slate-600">Nome</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Nome</span>
                 <input
                   value={rascunho.nome}
                   disabled={!souAutor}
@@ -258,7 +258,7 @@ export default function Criterios() {
                 />
               </label>
               <label className="block">
-                <span className="text-xs font-medium text-slate-600">Descrição</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Descrição</span>
                 <input
                   value={rascunho.descricao}
                   disabled={!souAutor}
@@ -269,7 +269,7 @@ export default function Criterios() {
               </label>
             </div>
 
-            <div className="sticky top-0 z-10 -mx-1 mt-3 flex flex-wrap items-center gap-2 bg-slate-50/95 px-1 py-2 backdrop-blur">
+            <div className="sticky top-0 z-10 -mx-1 mt-3 flex flex-wrap items-center gap-2 bg-slate-50/95 px-1 py-2 backdrop-blur dark:bg-noite-950/95">
               <button
                 type="button"
                 onClick={gravar}
@@ -278,9 +278,9 @@ export default function Criterios() {
               >
                 {salvando ? 'Salvando…' : 'Salvar'}
               </button>
-              {sujo && <span className="text-xs text-amber-800">alterações não salvas</span>}
+              {sujo && <span className="text-xs text-amber-800 dark:text-amber-200">alterações não salvas</span>}
               {!validacao.valido && (
-                <span className="text-xs font-medium text-red-700">
+                <span className="text-xs font-medium text-red-700 dark:text-red-300">
                   Corrija os erros antes de salvar.
                 </span>
               )}
@@ -298,7 +298,7 @@ export default function Criterios() {
         )}
 
         {!carregando && criterios.length === 0 && (
-          <p className="mt-6 rounded-md border border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">
+          <p className="mt-6 rounded-md border border-slate-200 bg-white px-3 py-4 text-sm text-slate-600 dark:border-white/10 dark:bg-noite-900 dark:text-slate-400">
             Nenhum conjunto ainda. Crie o primeiro em <strong>+ Novo</strong>: ele nasce usando a
             tabela do sistema em tudo, e você personaliza só os parâmetros que quiser mudar.
           </p>

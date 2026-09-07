@@ -8,8 +8,60 @@ body,
   height: 100%;
 }
 
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
 body {
   @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+/*
+ * Seletor `.dark` direto, com valor literal — não `@apply`. Este setup do
+ * Tailwind não resolve `@apply` para uma cor customizada (`noite`) definida
+ * em theme.extend, dentro de um arquivo CSS puro; só funciona via classe
+ * usada direto no JSX. `#050b16` e `#e2e8f0` são exatamente `noite-950` e
+ * `slate-200` do tailwind.config.js — mantenha os dois em sincronia se a
+ * paleta mudar.
+ */
+.dark body {
+  background-color: #050b16;
+  color: #e2e8f0;
+}
+
+/*
+ * Vidro do chrome técnico: header, barra lateral e painéis flutuantes sobre
+ * o mapa (legenda, filtros, busca, detalhe da gleba). Duas variações porque
+ * nem todo painel pode ficar igualmente transparente — um card com poucas
+ * palavras sobre o mapa lê bem quase transparente; um painel com tabela ou
+ * texto denso precisa de mais opacidade para não brigar com o satélite atrás.
+ *
+ * A cor muda com o tema pela regra `.dark`, não por uma classe `dark:`
+ * utilitária — assim qualquer elemento que use `.vidro` já troca sozinho,
+ * sem repetir a variação em cada lugar que a classe aparece.
+ */
+.vidro {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dark .vidro {
+  background: rgba(10, 21, 38, 0.7);
+}
+
+.vidro-forte {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.dark .vidro-forte {
+  background: rgba(8, 16, 30, 0.92);
 }
 
 /*

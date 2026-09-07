@@ -37,34 +37,34 @@ export default function EditorCriterio({ parametros, aoMudar, problemas, somente
         const comErro = doGrupo.filter((p) => problemas?.[p.chave]?.erros?.length).length
 
         return (
-          <section key={grupo.chave} className="rounded-lg border border-slate-200 bg-white">
+          <section key={grupo.chave} className="rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-noite-900">
             <button
               type="button"
               onClick={() => alternar(grupo.chave)}
               aria-expanded={aberto}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-800 hover:bg-slate-50"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-800 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10"
             >
-              <span aria-hidden="true" className="w-3 text-xs text-slate-400">
+              <span aria-hidden="true" className="w-3 text-xs text-slate-400 dark:text-slate-500">
                 {aberto ? '▾' : '▸'}
               </span>
               {grupo.rotulo}
               <span className="ml-auto flex items-center gap-2 text-xs font-normal">
                 {comErro > 0 && (
-                  <span className="rounded bg-red-100 px-1.5 py-0.5 text-red-700">
+                  <span className="rounded bg-red-100 px-1.5 py-0.5 text-red-700 dark:bg-red-500/10 dark:text-red-300">
                     {comErro} com erro
                   </span>
                 )}
                 {tocados > 0 && (
-                  <span className="rounded bg-solo-50 px-1.5 py-0.5 text-solo-800">
+                  <span className="rounded bg-solo-50 px-1.5 py-0.5 text-solo-800 dark:bg-solo-500/10 dark:text-solo-300">
                     {tocados} personalizado{tocados > 1 ? 's' : ''}
                   </span>
                 )}
-                <span className="text-slate-400">{doGrupo.length}</span>
+                <span className="text-slate-400 dark:text-slate-500">{doGrupo.length}</span>
               </span>
             </button>
 
             {aberto && (
-              <div className="space-y-2 border-t border-slate-100 p-3">
+              <div className="space-y-2 border-t border-slate-100 p-3 dark:border-white/10">
                 {doGrupo.map((p) => (
                   <EditorParametro
                     key={p.chave}

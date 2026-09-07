@@ -32,12 +32,22 @@ export function corDaProfundidade(profundidade) {
 }
 
 // Tinta do texto: rótulo e valor nunca vestem a cor da série. A identidade
-// quem carrega é a marca colorida ao lado.
-const TINTA = '#475569'
-const TINTA_FRACA = '#94a3b8'
-const GRADE = '#e2e8f0'
+// quem carrega é a marca colorida ao lado. Duas rampas porque o Chart.js
+// desenha em canvas — não há `dark:` de CSS que alcance isso, o tema tem que
+// escolher a cor na hora de montar as opções.
+const TINTA_CLARO = '#475569'
+const TINTA_FRACA_CLARO = '#94a3b8'
+const GRADE_CLARO = '#e2e8f0'
 
-export function opcoesDoGrafico({ rotuloEixoY, formatarValor }) {
+const TINTA_ESCURO = '#cbd5e1'
+const TINTA_FRACA_ESCURO = '#94a3b8'
+const GRADE_ESCURO = 'rgba(255, 255, 255, 0.08)'
+
+export function opcoesDoGrafico({ rotuloEixoY, formatarValor, escuro = false }) {
+  const tinta = escuro ? TINTA_ESCURO : TINTA_CLARO
+  const tintaFraca = escuro ? TINTA_FRACA_ESCURO : TINTA_FRACA_CLARO
+  const grade = escuro ? GRADE_ESCURO : GRADE_CLARO
+
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -49,7 +59,7 @@ export function opcoesDoGrafico({ rotuloEixoY, formatarValor }) {
       legend: {
         display: true,
         position: 'bottom',
-        labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, color: TINTA, padding: 12 },
+        labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, color: tinta, padding: 12 },
       },
       tooltip: {
         callbacks: {
@@ -64,15 +74,15 @@ export function opcoesDoGrafico({ rotuloEixoY, formatarValor }) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: TINTA_FRACA, font: { size: 11 } },
-        border: { color: GRADE },
+        ticks: { color: tintaFraca, font: { size: 11 } },
+        border: { color: grade },
       },
       y: {
         title: rotuloEixoY
-          ? { display: true, text: rotuloEixoY, color: TINTA_FRACA, font: { size: 11 } }
+          ? { display: true, text: rotuloEixoY, color: tintaFraca, font: { size: 11 } }
           : { display: false },
-        grid: { color: GRADE, drawTicks: false },
-        ticks: { color: TINTA_FRACA, font: { size: 11 }, padding: 6 },
+        grid: { color: grade, drawTicks: false },
+        ticks: { color: tintaFraca, font: { size: 11 }, padding: 6 },
         border: { display: false },
         // Não força começar em zero: numa faixa de pH entre 5 e 6, ancorar em
         // zero achataria a variação que o produtor precisa enxergar.

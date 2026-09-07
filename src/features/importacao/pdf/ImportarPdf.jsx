@@ -13,34 +13,34 @@ export default function ImportarPdf() {
     <div className="mx-auto max-w-2xl p-6">
       <div
         aria-disabled="true"
-        className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center"
+        className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center dark:border-white/15 dark:bg-noite-950"
       >
-        <p className="text-3xl text-slate-300" aria-hidden="true">
+        <p className="text-3xl text-slate-300 dark:text-slate-600" aria-hidden="true">
           ⬆
         </p>
-        <p className="mt-3 text-sm font-medium text-slate-500">
+        <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
           Arraste o laudo em PDF aqui
         </p>
-        <p className="mt-1 text-sm text-slate-400">ou clique para escolher o arquivo</p>
+        <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">ou clique para escolher o arquivo</p>
 
         <button
           type="button"
           disabled
-          className="mt-4 cursor-not-allowed rounded-md bg-slate-200 px-4 py-2 text-sm font-medium text-slate-400"
+          className="mt-4 cursor-not-allowed rounded-md bg-slate-200 px-4 py-2 text-sm font-medium text-slate-400 dark:bg-white/10 dark:text-slate-600"
         >
           Escolher arquivo
         </button>
       </div>
 
-      <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
-        <p className="text-sm font-medium text-amber-900">Em desenvolvimento</p>
-        <p className="mt-1 text-sm text-amber-800">
+      <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-400/30 dark:bg-amber-400/10">
+        <p className="text-sm font-medium text-amber-900 dark:text-amber-200">Em desenvolvimento</p>
+        <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
           Outro time está implementando a extração por IA. Enquanto isso, lance os
           laudos pela aba <strong>Entrada manual</strong>.
         </p>
       </div>
 
-      <p className="mt-4 text-xs text-slate-400">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
         Quando estiver pronto, o PDF será lido e cada amostra virará uma análise,
         com sugestão de vínculo de gleba pelo número da amostra do laboratório —
         sempre para você conferir antes de gravar.

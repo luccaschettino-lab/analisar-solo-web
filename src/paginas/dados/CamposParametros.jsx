@@ -19,9 +19,9 @@ function Campo({ p, valor, aoMudar, desabilitado }) {
 
   return (
     <div>
-      <label htmlFor={p.chave} className="block text-xs font-medium text-slate-600">
+      <label htmlFor={p.chave} className="block text-xs font-medium text-slate-600 dark:text-slate-400">
         {p.rotulo}
-        {p.unidade && <span className="ml-1 font-normal text-slate-400">({p.unidade})</span>}
+        {p.unidade && <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">({p.unidade})</span>}
       </label>
       <input
         id={p.chave}
@@ -36,21 +36,21 @@ function Campo({ p, valor, aoMudar, desabilitado }) {
         aria-invalid={invalido || undefined}
         aria-describedby={invalido || implausivel ? idAviso : undefined}
         title={p.nota ?? undefined}
-        className={`mt-1 w-full rounded-md border px-2 py-1.5 text-sm tabular-nums outline-none transition disabled:bg-slate-50 ${
+        className={`mt-1 w-full rounded-md border px-2 py-1.5 text-sm tabular-nums outline-none transition disabled:bg-slate-50 dark:bg-noite-800 dark:text-slate-100 dark:disabled:bg-white/5 ${
           invalido
-            ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
+            ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 dark:border-red-400/60 dark:focus:ring-red-500/30'
             : implausivel
-              ? 'border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
-              : 'border-slate-300 focus:border-solo-600 focus:ring-2 focus:ring-solo-100'
+              ? 'border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 dark:border-amber-400/60 dark:focus:ring-amber-500/30'
+              : 'border-slate-300 focus:border-solo-600 focus:ring-2 focus:ring-solo-100 dark:border-white/15 dark:focus:border-solo-500 dark:focus:ring-solo-500/30'
         }`}
       />
       {invalido && (
-        <p id={idAviso} className="mt-0.5 text-xs text-red-700">
+        <p id={idAviso} className="mt-0.5 text-xs text-red-700 dark:text-red-300">
           Não é um número.
         </p>
       )}
       {implausivel && (
-        <p id={idAviso} className="mt-0.5 text-xs text-amber-700">
+        <p id={idAviso} className="mt-0.5 text-xs text-amber-700 dark:text-amber-200">
           Fora do usual ({textoDaFaixaPlausivel(p.chave)}). Confira — dá para salvar assim.
         </p>
       )}
@@ -63,7 +63,7 @@ export default function CamposParametros({ valores, aoMudar, desabilitado }) {
     <div className="space-y-5">
       {GRUPOS.map((grupo) => (
         <fieldset key={grupo.chave} disabled={desabilitado}>
-          <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {grupo.rotulo}
           </legend>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">

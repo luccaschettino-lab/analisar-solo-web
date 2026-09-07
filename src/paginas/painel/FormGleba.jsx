@@ -73,7 +73,7 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
         {foraDoTalhao && (
           <div
             role="alert"
-            className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+            className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200"
           >
             <p className="font-medium">
               {ponto ? 'Este ponto está' : 'Esta sub-área está'} fora do talhão {talhao.codigo}.
@@ -110,18 +110,18 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
           </div>
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Este código é seu e não muda entre safras. O número que o laboratório
           imprime no laudo é outro, e vai junto da análise.
         </p>
 
-        <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-400">
           {ponto ? (
-            <>Registrada como <strong className="text-slate-900">ponto de coleta</strong>, sem área.</>
+            <>Registrada como <strong className="text-slate-900 dark:text-slate-100">ponto de coleta</strong>, sem área.</>
           ) : (
             <>
               Área desenhada:{' '}
-              <strong className="text-slate-900">
+              <strong className="text-slate-900 dark:text-slate-100">
                 {areaHa != null
                   ? `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
                   : '—'}
@@ -135,7 +135,7 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
             type="button"
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
           >
             Cancelar
           </button>

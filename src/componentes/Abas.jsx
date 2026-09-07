@@ -7,7 +7,7 @@
  */
 export default function Abas({ abas, ativa, aoTrocar, rotulo = 'Seções' }) {
   return (
-    <div role="tablist" aria-label={rotulo} className="flex gap-1 border-b border-slate-200">
+    <div role="tablist" aria-label={rotulo} className="flex gap-1 border-b border-slate-200 dark:border-white/10">
       {abas.map((aba) => {
         const selecionada = aba.chave === ativa
         return (
@@ -18,15 +18,15 @@ export default function Abas({ abas, ativa, aoTrocar, rotulo = 'Seções' }) {
             aria-controls={`painel-${aba.chave}`}
             id={`aba-${aba.chave}`}
             onClick={() => aoTrocar(aba.chave)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 ${
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500 ${
               selecionada
-                ? 'border-solo-700 text-solo-800'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800'
+                ? 'border-solo-700 text-solo-800 dark:border-solo-500 dark:text-solo-300'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-slate-200'
             }`}
           >
             {aba.rotulo}
             {aba.contador != null && (
-              <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+              <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-white/10 dark:text-slate-300">
                 {aba.contador}
               </span>
             )}

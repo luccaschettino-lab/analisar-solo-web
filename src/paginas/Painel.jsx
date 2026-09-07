@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import PainelDetalhe from './painel/PainelDetalhe.jsx'
+import PainelGleba from './painel/PainelGleba.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
@@ -43,6 +44,10 @@ export default function Painel() {
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
   // de se mover — consultar a cada pixel de arrasto seria abuso do serviço.
   const [centroEstavel, setCentroEstavel] = useState(null)
+  // Preferência de largura do painel de gleba. Persiste entre seleções de
+  // propósito: quem abriu largo para ler o histórico não quer reabrir estreito
+  // a cada clique numa gleba diferente.
+  const [painelExpandido, setPainelExpandido] = useState(false)
 
   const { aviso, mostrar: mostrarAviso } = useAviso()
 
@@ -71,12 +76,18 @@ export default function Painel() {
     aoAvisar: mostrarAviso,
   })
 
+  // A gleba selecionada é quem abre o painel lateral de conteúdo — talhão não
+  // tem análise nem foto, então não tem o que mostrar lá.
+  const glebaSelecionada = selecionado?.tipo === 'gleba' ? item.itemSelecionado : null
+
   const mapaDaFazenda = useMapaDaFazenda({
     mapa,
     fazendaSelecionada,
     talhoes,
     carregandoHierarquia,
-    recolhido: false,
+    // Muda quando o painel abre, fecha ou troca de largura — é só isso que
+    // dispara o invalidateSize do mapa em `useEnquadramentoDaFazenda`.
+    larguraPainel: glebaSelecionada ? (painelExpandido ? 'expandido' : 'compacto') : 'fechado',
     aplicarFazenda,
     mostrarAviso,
   })
@@ -148,154 +159,169 @@ export default function Painel() {
   }
 
   return (
-    <div className="relative h-full">
-      <Mapa aoCriarMapa={aoCriarMapa} aoTrocarCamada={aoTrocarCamada} />
+    <div className="relative flex h-full">
+      <div className="relative min-h-0 min-w-0 flex-1">
+        <Mapa aoCriarMapa={aoCriarMapa} aoTrocarCamada={aoTrocarCamada} />
 
-      <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
+        <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
 
-      {/* Ações da fazenda, no canto oposto ao dos controles do mapa. */}
-      <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
-        <button
-          onClick={() => setFormFazenda('nova')}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
-        >
-          Nova fazenda
-        </button>
-        {fazendaSelecionada && editor && (
-          <>
-            <button
-              onClick={() => setFormFazenda('editar')}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
-            >
-              Editar
-            </button>
-            <button
-              onClick={mapaDaFazenda.iniciarMarcacao}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
-            >
-              Marcar sede
-            </button>
-          </>
-        )}
-        {/* Fora do bloco de editor: ir ate a sede e leitura, nao edicao.
-            Um consultor com papel de leitor tambem precisa se localizar. */}
-        {fazendaSelecionada && mapaDaFazenda.temSede && (
+        {/* Ações da fazenda, no canto oposto ao dos controles do mapa. */}
+        <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
           <button
-            onClick={mapaDaFazenda.irParaSede}
-            title="Centralizar o mapa na sede da fazenda"
-            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
+            onClick={() => setFormFazenda('nova')}
+            className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
           >
-            <span aria-hidden="true">⌂</span> Ir para a sede
+            Nova fazenda
           </button>
-        )}
-        {fazendaSelecionada && (
+          {fazendaSelecionada && editor && (
+            <>
+              <button
+                onClick={() => setFormFazenda('editar')}
+                className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+              >
+                Editar
+              </button>
+              <button
+                onClick={mapaDaFazenda.iniciarMarcacao}
+                className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+              >
+                Marcar sede
+              </button>
+            </>
+          )}
+          {/* Fora do bloco de editor: ir ate a sede e leitura, nao edicao.
+              Um consultor com papel de leitor tambem precisa se localizar. */}
+          {fazendaSelecionada && mapaDaFazenda.temSede && (
+            <button
+              onClick={mapaDaFazenda.irParaSede}
+              title="Centralizar o mapa na sede da fazenda"
+              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+            >
+              <span aria-hidden="true">⌂</span> Ir para a sede
+            </button>
+          )}
+          {fazendaSelecionada && (
+            <button
+              // Um de cada vez: os dois abrem no mesmo canto.
+              onClick={() => {
+                setFiltrosAbertos((a) => !a)
+                setBuscaAberta(false)
+              }}
+              aria-expanded={filtrosAbertos}
+              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+            >
+              Colorir o mapa
+            </button>
+          )}
+          {/* Buscar não depende de fazenda selecionada: é justamente o que se usa
+              para achar a propriedade antes de existir qualquer cadastro. */}
           <button
-            // Um de cada vez: os dois abrem no mesmo canto.
             onClick={() => {
-              setFiltrosAbertos((a) => !a)
-              setBuscaAberta(false)
+              setBuscaAberta((a) => !a)
+              setFiltrosAbertos(false)
             }}
-            aria-expanded={filtrosAbertos}
-            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
+            aria-expanded={buscaAberta}
+            className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
           >
-            Colorir o mapa
+            🔍 Buscar
           </button>
+        </div>
+
+        {buscaAberta && (
+          <div className="absolute left-3 top-14 z-[1100]">
+            <BuscaLocal aoIrPara={alfinete.irPara} />
+          </div>
         )}
-        {/* Buscar não depende de fazenda selecionada: é justamente o que se usa
-            para achar a propriedade antes de existir qualquer cadastro. */}
-        <button
-          onClick={() => {
-            setBuscaAberta((a) => !a)
-            setFiltrosAbertos(false)
-          }}
-          aria-expanded={buscaAberta}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow hover:bg-slate-50"
-        >
-          🔍 Buscar
-        </button>
+
+        {filtrosAbertos && fazendaSelecionada && (
+          <div className="vidro-forte absolute left-3 top-14 z-[1100] w-64 rounded-lg border border-slate-200 shadow-painel dark:border-white/15">
+            <FiltrosMapa
+              filtro={filtro}
+              aoMudar={definirFiltro}
+              anos={anos}
+              carregando={carregandoAnalises}
+              erro={erroAnalises}
+            />
+          </div>
+        )}
+
+        {item.itemSelecionado && (
+          <div className="vidro-forte absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 shadow-painel dark:border-white/15 sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-52 sm:rounded-lg sm:border">
+            <PainelDetalhe
+              item={item.itemSelecionado}
+              tipo={selecionado.tipo}
+              talhaoPai={item.talhaoPai}
+              quantidadeGlebas={
+                selecionado.tipo === 'talhao' ? glebasDoTalhao(glebas, selecionado.id).length : 0
+              }
+              editor={editor}
+              editandoGeometria={item.editandoGeometria}
+              gravandoGeometria={item.gravandoGeometria}
+              carregandoExclusao={item.carregandoExclusao}
+              aoEditarDados={item.abrirEdicaoDados}
+              aoEditarGeometria={item.iniciarEdicaoGeometria}
+              aoSalvarGeometria={item.salvarGeometria}
+              aoCancelarGeometria={item.cancelarGeometria}
+              aoExcluir={item.abrirExclusao}
+              aoFechar={item.limparSelecao}
+            />
+          </div>
+        )}
+
+        {coloracao && (
+          <LegendaMapa
+            chaveParametro={filtro.chaveParametro}
+            anoSafra={filtro.anoSafra}
+            profundidade={filtro.profundidade}
+            elevada={Boolean(item.itemSelecionado)}
+            criterio={criterio}
+          />
+        )}
+
+        <SobreposicoesDoMapa
+          semReferencia={mapaDaFazenda.semReferencia}
+          editor={editor}
+          marcandoSede={mapaDaFazenda.marcandoSede}
+          gravandoSede={mapaDaFazenda.gravandoSede}
+          desenhando={criacao.desenhando}
+          aviso={aviso}
+          aoMarcarSede={mapaDaFazenda.iniciarMarcacao}
+          aoCancelarMarcacao={mapaDaFazenda.cancelarMarcacao}
+          aoAbortarDesenho={criacao.abortar}
+        />
+
+        <ModaisDoPainel
+          fazendaSelecionada={fazendaSelecionada}
+          glebas={glebas}
+          mapa={mapa}
+          criacao={criacao}
+          item={item}
+          aplicarFazenda={aplicarFazenda}
+          aplicarTalhao={aplicarTalhao}
+          aplicarGleba={aplicarGleba}
+          aplicarGlebas={aplicarGlebas}
+          mostrarAviso={mostrarAviso}
+          formFazenda={formFazenda}
+          aoFecharFormFazenda={() => setFormFazenda(null)}
+          aoSelecionarFazenda={selecionarFazenda}
+          confirmandoFazenda={confirmandoFazenda}
+          aoFecharConfirmacaoFazenda={() => setConfirmandoFazenda(null)}
+          aoConfirmarExclusaoFazenda={confirmarExclusaoFazenda}
+        />
       </div>
 
-      {buscaAberta && (
-        <div className="absolute left-3 top-14 z-[1100]">
-          <BuscaLocal aoIrPara={alfinete.irPara} />
-        </div>
-      )}
-
-      {filtrosAbertos && fazendaSelecionada && (
-        <div className="absolute left-3 top-14 z-[1100] w-64 rounded-lg border border-slate-200 bg-white shadow-lg">
-          <FiltrosMapa
-            filtro={filtro}
-            aoMudar={definirFiltro}
-            anos={anos}
-            carregando={carregandoAnalises}
-            erro={erroAnalises}
-          />
-        </div>
-      )}
-
-      {item.itemSelecionado && (
-        <div className="absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 bg-white shadow-lg sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-72 sm:rounded-lg sm:border">
-          <PainelDetalhe
-            item={item.itemSelecionado}
-            tipo={selecionado.tipo}
-            talhaoPai={item.talhaoPai}
-            quantidadeGlebas={
-              selecionado.tipo === 'talhao' ? glebasDoTalhao(glebas, selecionado.id).length : 0
-            }
-            editor={editor}
-            editandoGeometria={item.editandoGeometria}
-            gravandoGeometria={item.gravandoGeometria}
-            carregandoExclusao={item.carregandoExclusao}
-            aoEditarDados={item.abrirEdicaoDados}
-            aoEditarGeometria={item.iniciarEdicaoGeometria}
-            aoSalvarGeometria={item.salvarGeometria}
-            aoCancelarGeometria={item.cancelarGeometria}
-            aoExcluir={item.abrirExclusao}
-            aoFechar={item.limparSelecao}
-          />
-        </div>
-      )}
-
-      {coloracao && (
-        <LegendaMapa
-          chaveParametro={filtro.chaveParametro}
-          anoSafra={filtro.anoSafra}
-          profundidade={filtro.profundidade}
-          elevada={Boolean(item.itemSelecionado)}
-          criterio={criterio}
+      {glebaSelecionada && (
+        <PainelGleba
+          gleba={glebaSelecionada}
+          talhao={item.talhaoPai}
+          fazendaId={fazendaSelecionada.id}
+          editor={editor}
+          expandido={painelExpandido}
+          aoAlternarExpandido={() => setPainelExpandido((e) => !e)}
+          aoFechar={item.limparSelecao}
+          aoAtualizarGleba={aplicarGleba}
         />
       )}
-
-      <SobreposicoesDoMapa
-        semReferencia={mapaDaFazenda.semReferencia}
-        editor={editor}
-        marcandoSede={mapaDaFazenda.marcandoSede}
-        gravandoSede={mapaDaFazenda.gravandoSede}
-        desenhando={criacao.desenhando}
-        aviso={aviso}
-        aoMarcarSede={mapaDaFazenda.iniciarMarcacao}
-        aoCancelarMarcacao={mapaDaFazenda.cancelarMarcacao}
-        aoAbortarDesenho={criacao.abortar}
-      />
-
-      <ModaisDoPainel
-        fazendaSelecionada={fazendaSelecionada}
-        glebas={glebas}
-        mapa={mapa}
-        criacao={criacao}
-        item={item}
-        aplicarFazenda={aplicarFazenda}
-        aplicarTalhao={aplicarTalhao}
-        aplicarGleba={aplicarGleba}
-        aplicarGlebas={aplicarGlebas}
-        mostrarAviso={mostrarAviso}
-        formFazenda={formFazenda}
-        aoFecharFormFazenda={() => setFormFazenda(null)}
-        aoSelecionarFazenda={selecionarFazenda}
-        confirmandoFazenda={confirmandoFazenda}
-        aoFecharConfirmacaoFazenda={() => setConfirmandoFazenda(null)}
-        aoConfirmarExclusaoFazenda={confirmarExclusaoFazenda}
-      />
     </div>
   )
 }

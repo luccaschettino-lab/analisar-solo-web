@@ -1,10 +1,10 @@
 const SELECT =
-  'mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400'
+  'mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-600'
 
 function Nivel({ id, rotulo, valor, aoMudar, opcoes, desabilitado, vazio, rotularOpcao }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-xs font-medium text-slate-600">
+      <label htmlFor={id} className="block text-xs font-medium text-slate-600 dark:text-slate-400">
         {rotulo}
       </label>
       <select
@@ -49,13 +49,13 @@ export default function SeletorGleba({ selecao, desabilitado }) {
       {erro && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-3"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300 sm:col-span-3"
         >
           <span>{erro}</span>
           <button
             type="button"
             onClick={recarregar}
-            className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-400/30 dark:text-red-300 dark:hover:bg-red-500/10"
           >
             Tentar de novo
           </button>

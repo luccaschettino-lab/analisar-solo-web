@@ -66,12 +66,12 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
           </div>
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           O código vem da coluna <strong>Lote</strong> do laudo do laboratório.
         </p>
 
         <div className="space-y-1">
-          <span className="block text-sm font-medium text-slate-700">Cor no mapa</span>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">Cor no mapa</span>
           <div className="flex flex-wrap gap-2">
             {CORES_TALHAO.map((c) => (
               <button
@@ -90,9 +90,9 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
           </div>
         </div>
 
-        <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-400">
           Área desenhada:{' '}
-          <strong className="text-slate-900">
+          <strong className="text-slate-900 dark:text-slate-100">
             {areaHa != null
               ? `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
               : '—'}
@@ -104,7 +104,7 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
             type="button"
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
           >
             Cancelar
           </button>

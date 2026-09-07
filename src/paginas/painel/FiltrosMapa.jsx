@@ -4,12 +4,12 @@ import { filtroCompleto } from '../../lib/coloracao.js'
 
 const SEM_FILTRO = ''
 const SELECT =
-  'mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400'
+  'mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-500'
 
 function Campo({ id, rotulo, children }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-xs font-medium text-slate-600">
+      <label htmlFor={id} className="block text-xs font-medium text-slate-600 dark:text-slate-300">
         {rotulo}
       </label>
       {children}
@@ -31,13 +31,13 @@ export default function FiltrosMapa({ filtro, aoMudar, anos, carregando, erro })
   }
 
   return (
-    <section className="border-t border-slate-200 px-4 py-3">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <section className="border-t border-slate-200 px-4 py-3 dark:border-white/10">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
         Colorir o mapa
       </h3>
 
       {erro && (
-        <p role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700">
+        <p role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
           {erro}
         </p>
       )}
@@ -108,7 +108,7 @@ export default function FiltrosMapa({ filtro, aoMudar, anos, carregando, erro })
       </div>
 
       {!completo && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           Escolha os três para colorir as glebas. Com qualquer um em "Sem filtro",
           o mapa fica em cinza neutro.
         </p>

@@ -102,11 +102,11 @@ export default function ModaisDoPainel({
           ficava olhando o mapa sem entender. */}
       {criacao.pendente?.tipo === 'gleba' && !criacao.talhaoPendente && (
         <Modal titulo="Talhão não encontrado" aoFechar={criacao.fecharPendente}>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             O desenho foi concluído, mas o talhão a que ele pertenceria não está mais na lista —
             ele pode ter sido apagado em outra aba, ou a fazenda foi trocada no meio do caminho.
           </p>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             A gleba <strong>não foi criada</strong>. Recarregue a página e desenhe de novo.
           </p>
           <div className="mt-4 flex justify-end">

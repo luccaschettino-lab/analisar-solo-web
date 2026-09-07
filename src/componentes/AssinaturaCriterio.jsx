@@ -25,11 +25,11 @@ export default function AssinaturaCriterio({ criterio, chaveParametro, carregand
   if (origem === ORIGEM.CRITERIO) {
     const data = criterio.atualizado_em ?? criterio.criado_em
     return (
-      <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600">
-        <span className="font-medium text-slate-800">{criterio.nome}</span>
+      <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+        <span className="font-medium text-slate-800 dark:text-slate-100">{criterio.nome}</span>
         {criterio.autor_nome && <span className="block">por {criterio.autor_nome}</span>}
         {data && (
-          <span className="block text-slate-500">
+          <span className="block text-slate-500 dark:text-slate-400">
             atualizado em {new Date(data).toLocaleDateString('pt-BR')}
           </span>
         )}
@@ -40,7 +40,7 @@ export default function AssinaturaCriterio({ criterio, chaveParametro, carregand
   // Sem conjunto, ou com um que não fala deste parâmetro: o aviso da Fase 4
   // continua valendo, porque quem está pintando é a tabela não validada.
   return (
-    <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-tight text-amber-900">
+    <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-tight text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
       Classificação preliminar do sistema, não validada por agrônomo.
       {criterio && (
         <span className="mt-0.5 block">

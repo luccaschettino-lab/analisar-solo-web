@@ -40,27 +40,27 @@ export default function ConfirmarSubstituicao({
   return (
     <Modal titulo="Já existe uma análise para essa combinação" aoFechar={salvando ? () => {} : aoFechar}>
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           Esta gleba já tem uma análise de <strong>{anoSafra}</strong> na profundidade{' '}
           <strong>{profundidade} cm</strong>.
         </p>
 
-        <dl className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+        <dl className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-noite-950">
           <div className="flex justify-between">
-            <dt className="text-slate-500">Coleta</dt>
-            <dd className="font-medium text-slate-800">{formatarData(existente.data_coleta)}</dd>
+            <dt className="text-slate-500 dark:text-slate-400">Coleta</dt>
+            <dd className="font-medium text-slate-800 dark:text-slate-200">{formatarData(existente.data_coleta)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-slate-500">Amostra do laboratório</dt>
-            <dd className="font-medium text-slate-800">{existente.numero_amostra_lab || '—'}</dd>
+            <dt className="text-slate-500 dark:text-slate-400">Amostra do laboratório</dt>
+            <dd className="font-medium text-slate-800 dark:text-slate-200">{existente.numero_amostra_lab || '—'}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-slate-500">Origem</dt>
-            <dd className="font-medium text-slate-800">{existente.origem}</dd>
+            <dt className="text-slate-500 dark:text-slate-400">Origem</dt>
+            <dd className="font-medium text-slate-800 dark:text-slate-200">{existente.origem}</dd>
           </div>
         </dl>
 
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
           Substituir troca <strong>todos</strong> os valores da análise existente pelos
           que você preencheu — inclusive apagando os que você deixou em branco.
           {moveria && (
@@ -78,7 +78,7 @@ export default function ConfirmarSubstituicao({
           <button
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
           >
             Cancelar
           </button>

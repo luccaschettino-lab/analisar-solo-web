@@ -62,26 +62,26 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
   return (
     // No celular ocupa a tela toda: 26rem é mais largo que um aparelho comum,
     // e a prévia dos pontos não caberia ao lado de qualquer jeito.
-    <aside className="absolute inset-0 z-[2000] flex flex-col border-slate-200 bg-white shadow-xl sm:inset-y-0 sm:left-0 sm:right-auto sm:w-[26rem] sm:border-r">
-      <div className="flex items-start justify-between border-b border-slate-200 px-4 py-3">
+    <aside className="absolute inset-0 z-[2000] flex flex-col border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-noite-900 sm:inset-y-0 sm:left-0 sm:right-auto sm:w-[26rem] sm:border-r">
+      <div className="flex items-start justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Glebas em lote · talhão {talhao.codigo}
           </h2>
-          <p className="text-xs text-slate-500">Uma gleba por linha, como ponto de coleta.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Uma gleba por linha, como ponto de coleta.</p>
         </div>
         <button
           onClick={aoFechar}
           aria-label="Fechar"
-          className="rounded px-2 py-1 text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="rounded px-2 py-1 text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-300"
         >
           ✕
         </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto px-4 py-3">
-        <label htmlFor="lote-texto" className="block text-xs font-medium text-slate-600">
-          Cole no formato <code className="rounded bg-slate-100 px-1">código, latitude, longitude</code>
+        <label htmlFor="lote-texto" className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+          Cole no formato <code className="rounded bg-slate-100 px-1 dark:bg-white/10">código, latitude, longitude</code>
         </label>
         <textarea
           id="lote-texto"
@@ -91,9 +91,9 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
           spellCheck={false}
           disabled={salvando}
           rows={10}
-          className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 font-mono text-xs outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50"
+          className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 font-mono text-xs outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5"
         />
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Graus decimais. Ponto e vírgula e vírgula decimal, como o Excel exporta,
           também funcionam.
         </p>
@@ -101,11 +101,11 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
         <Aviso>{erro}</Aviso>
 
         {itens.length > 0 && (
-          <div className="mt-3 rounded-md border border-solo-100 bg-solo-50 px-3 py-2">
-            <p className="text-sm font-medium text-solo-800">
+          <div className="mt-3 rounded-md border border-solo-100 bg-solo-50 px-3 py-2 dark:border-solo-500/30 dark:bg-solo-500/10">
+            <p className="text-sm font-medium text-solo-800 dark:text-solo-300">
               {itens.length} {itens.length === 1 ? 'gleba pronta' : 'glebas prontas'} para gravar
             </p>
-            <p className="mt-0.5 text-xs text-solo-700">
+            <p className="mt-0.5 text-xs text-solo-700 dark:text-solo-300">
               Confira a posição dos pontos no mapa antes de confirmar.
             </p>
           </div>
@@ -114,7 +114,7 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
         {foraDoTalhao.length > 0 && (
           <div
             role="alert"
-            className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900"
+            className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200"
           >
             <p className="font-medium">
               {foraDoTalhao.length}{' '}
@@ -129,32 +129,32 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
         )}
 
         {erros.length > 0 && (
-          <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2">
-            <p className="text-xs font-medium text-red-800">
+          <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-400/30 dark:bg-red-500/10">
+            <p className="text-xs font-medium text-red-800 dark:text-red-300">
               {erros.length} {erros.length === 1 ? 'linha ignorada' : 'linhas ignoradas'}
             </p>
             <ul className="mt-1 space-y-1">
               {erros.map((e) => (
-                <li key={e.linha} className="text-xs text-red-700">
+                <li key={e.linha} className="text-xs text-red-700 dark:text-red-300">
                   <span className="font-mono">linha {e.linha}</span>: {e.motivo}
                   {e.texto && (
-                    <span className="block truncate font-mono text-red-500">{e.texto}</span>
+                    <span className="block truncate font-mono text-red-500 dark:text-red-400">{e.texto}</span>
                   )}
                 </li>
               ))}
             </ul>
-            <p className="mt-1.5 text-xs text-red-700">
+            <p className="mt-1.5 text-xs text-red-700 dark:text-red-300">
               As demais linhas serão gravadas normalmente.
             </p>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+      <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3 dark:border-white/10">
         <button
           onClick={aoFechar}
           disabled={salvando}
-          className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+          className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
         >
           Cancelar
         </button>

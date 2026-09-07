@@ -3,9 +3,9 @@ import { useFotoDaGleba } from '../../hooks/useFotoDaGleba.js'
 import { formatarTamanho } from '../../lib/imagem.js'
 
 const BOTAO =
-  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300'
+  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600'
 const BOTAO_PRIMARIO =
-  'rounded-md bg-solo-700 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300'
+  'rounded-md bg-solo-700 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600'
 
 function dataLegivel(iso) {
   if (!iso) return null
@@ -51,15 +51,15 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
   return (
     <div className="p-3 sm:p-4">
       {erro && (
-        <p role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
           {erro}
         </p>
       )}
 
       {temFoto ? (
-        <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
           {carregando && !url ? (
-            <div className="flex h-48 items-center justify-center text-sm text-slate-500">
+            <div className="flex h-48 items-center justify-center text-sm text-slate-500 dark:text-slate-400">
               Carregando foto…
             </div>
           ) : url ? (
@@ -68,22 +68,22 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
               alt={`Solo da gleba ${gleba.codigo}${gleba.nome ? ` — ${gleba.nome}` : ''}`}
               // A altura limitada evita que uma foto em retrato empurre os
               // botões para fora da tela no celular.
-              className="max-h-[60vh] w-full bg-slate-100 object-contain"
+              className="max-h-[60vh] w-full bg-slate-100 object-contain dark:bg-noite-950"
             />
           ) : (
-            <div className="flex h-48 items-center justify-center px-4 text-center text-sm text-slate-500">
+            <div className="flex h-48 items-center justify-center px-4 text-center text-sm text-slate-500 dark:text-slate-400">
               A foto está registrada nesta gleba, mas não foi possível carregá-la agora.
             </div>
           )}
 
-          <figcaption className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+          <figcaption className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
             {gleba.foto_em ? `Enviada em ${dataLegivel(gleba.foto_em)}` : 'Data de envio não registrada'}
           </figcaption>
         </figure>
       ) : (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
-          <p className="text-sm font-medium text-slate-700">Esta gleba ainda não tem foto do solo.</p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-8 text-center dark:border-white/15 dark:bg-white/5">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Esta gleba ainda não tem foto do solo.</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
             Uma foto do perfil ou da superfície ajuda a lembrar o que os números não dizem: cor,
             textura, pedra, raiz, encharcamento.
           </p>
@@ -120,7 +120,7 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
 
           {ultimaReducao && (
             // Explica a espera de um jeito que barra de progresso não explica.
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {formatarTamanho(ultimaReducao.tamanhoOriginal)} →{' '}
               {formatarTamanho(ultimaReducao.tamanhoFinal)} ({ultimaReducao.largura}×
               {ultimaReducao.altura})
@@ -128,13 +128,13 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
           )}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
           Você tem acesso de leitura nesta fazenda, então não pode alterar a foto.
         </p>
       )}
 
       {editor && (
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
           A foto é reduzida no seu aparelho antes de subir, para funcionar na conexão do campo.
           Substituir apaga a anterior.
         </p>

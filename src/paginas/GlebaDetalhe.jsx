@@ -39,7 +39,7 @@ export default function GlebaDetalhe() {
   if (erro) {
     return (
       <Centralizado>
-        <span role="alert" className="text-red-700">
+        <span role="alert" className="text-red-700 dark:text-red-300">
           {erro}
         </span>
       </Centralizado>
@@ -50,11 +50,11 @@ export default function GlebaDetalhe() {
     return (
       <Centralizado>
         <div className="text-center">
-          <p className="font-medium text-slate-700">Gleba não encontrada.</p>
-          <p className="mt-1 text-slate-500">
+          <p className="font-medium text-slate-700 dark:text-slate-300">Gleba não encontrada.</p>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
             Ela pode ter sido apagada, ou você não tem acesso a esta fazenda.
           </p>
-          <Link to="/" className="mt-3 inline-block font-medium text-solo-700 hover:underline">
+          <Link to="/" className="mt-3 inline-block font-medium text-solo-700 hover:underline dark:text-solo-400">
             Voltar ao mapa
           </Link>
         </div>
@@ -75,9 +75,9 @@ export default function GlebaDetalhe() {
     <div className="flex h-full flex-col">
       {/* Sem abas: a barra lateral já leva a Análises e Histórico. Aqui fica
           só a trilha, que diz onde se está. */}
-      <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+      <header className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 dark:border-white/10 dark:bg-noite-900">
         <TrilhaNavegacao fazenda={fazenda} talhao={talhao} gleba={gleba} />
-        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
           {abaAtiva === 'historico' && 'Histórico'}
           {abaAtiva === 'foto' && 'Foto do solo'}
           {abaAtiva === 'analises' && `Análises · ${analises.length}`}
@@ -100,15 +100,15 @@ export default function GlebaDetalhe() {
 
         {abaAtiva !== 'foto' &&
           (carregandoAnalises ? (
-          <p className="p-6 text-sm text-slate-400">Carregando análises…</p>
+          <p className="p-6 text-sm text-slate-400 dark:text-slate-500">Carregando análises…</p>
         ) : erroAnalises ? (
-          <p role="alert" className="m-6 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="m-6 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
             {erroAnalises}
           </p>
         ) : analises.length === 0 ? (
           <div className="p-6 text-sm">
-            <p className="font-medium text-slate-700">Nenhuma análise nesta gleba ainda.</p>
-            <p className="mt-1 text-slate-500">
+            <p className="font-medium text-slate-700 dark:text-slate-300">Nenhuma análise nesta gleba ainda.</p>
+            <p className="mt-1 text-slate-500 dark:text-slate-400">
               Lance o primeiro laudo para começar a acompanhar a evolução do solo.
             </p>
             <Link

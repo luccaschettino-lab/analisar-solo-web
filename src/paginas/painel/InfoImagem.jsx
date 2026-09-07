@@ -57,6 +57,9 @@ export default function InfoImagem({ camadaAtiva, centro }) {
   return (
     <div
       // Acima dos controles do Leaflet, colado à barra de atribuição.
+      // Sempre escuro nos dois temas: fica sobre a foto de satélite, não
+      // sobre o chrome do app, e precisa de contraste contra qualquer cor
+      // que a imagem tiver embaixo.
       className="pointer-events-none absolute bottom-8 left-3 z-[1100] rounded bg-slate-900/70 px-2 py-1 text-[11px] text-white"
       title={
         meta?.precisaoM

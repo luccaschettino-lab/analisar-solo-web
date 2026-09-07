@@ -23,7 +23,7 @@ export function useMapaDaFazenda({
   fazendaSelecionada,
   talhoes,
   carregandoHierarquia,
-  recolhido,
+  larguraPainel,
   aplicarFazenda,
   mostrarAviso,
 }) {
@@ -35,7 +35,7 @@ export function useMapaDaFazenda({
     fazendaSelecionada,
     talhoes,
     carregandoHierarquia,
-    recolhido,
+    larguraPainel,
   })
 
   const lat = fazendaSelecionada?.sede_lat

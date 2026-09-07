@@ -19,7 +19,7 @@ export function useEnquadramentoDaFazenda({
   fazendaSelecionada,
   talhoes,
   carregandoHierarquia,
-  recolhido = false,
+  larguraPainel = false,
 }) {
   const geometriasDosTalhoes = useMemo(
     () => talhoes.map((t) => t.geometria).filter(Boolean),
@@ -47,14 +47,16 @@ export function useEnquadramentoDaFazenda({
     if (lat != null && lng != null) mapa.setView([lat, lng], ZOOM_PADRAO)
   }, [mapa, fazendaSelecionada, carregandoHierarquia, geometriasDosTalhoes])
 
-  // O painel muda a largura útil do mapa; sem invalidateSize o Leaflet continua
-  // achando que o container tem o tamanho antigo e os tiles ficam desalinhados
-  // até o próximo pan. O atraso acompanha a troca de layout.
+  // O painel muda a largura útil do mapa — o da barra lateral colapsando, e
+  // agora o painel de gleba abrindo, fechando ou expandindo. Sem
+  // invalidateSize o Leaflet continua achando que o container tem o tamanho
+  // antigo e os tiles ficam desalinhados até o próximo pan. O atraso
+  // acompanha a transição CSS da largura.
   useEffect(() => {
     if (!mapa) return
     const t = setTimeout(() => mapa.invalidateSize(), 220)
     return () => clearTimeout(t)
-  }, [mapa, recolhido])
+  }, [mapa, larguraPainel])
 
   // Devolvido porque `semReferencia` precisa saber se há desenho, e recalcular
   // a lista lá dentro criaria um segundo `useMemo` sobre os mesmos talhões.

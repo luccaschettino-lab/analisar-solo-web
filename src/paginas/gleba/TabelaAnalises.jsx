@@ -13,11 +13,11 @@ function formatarData(iso) {
 }
 
 const SELECT =
-  'mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100'
+  'mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30'
 
 // A coluna do nome do parâmetro fica presa: é a referência da linha, e sem ela
 // um número solto no meio da tabela não diz de que parâmetro é.
-const PRESA = 'sticky left-0 z-10 bg-white'
+const PRESA = 'sticky left-0 z-10 bg-white dark:bg-noite-900'
 const CELULA = 'whitespace-nowrap px-3 py-1.5 text-right tabular-nums'
 
 export default function TabelaAnalises({ analises }) {
@@ -87,7 +87,7 @@ export default function TabelaAnalises({ analises }) {
     <div className="p-4 sm:p-6">
       <div className="mb-3 flex flex-wrap items-end gap-3 sm:gap-4">
         <div>
-          <label htmlFor="safra-atual" className="block text-xs font-medium text-slate-500">
+          <label htmlFor="safra-atual" className="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Safra
           </label>
           <select
@@ -105,7 +105,7 @@ export default function TabelaAnalises({ analises }) {
         </div>
 
         <div>
-          <label htmlFor="safra-comparada" className="block text-xs font-medium text-slate-500">
+          <label htmlFor="safra-comparada" className="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Comparar com
           </label>
           <select
@@ -126,7 +126,7 @@ export default function TabelaAnalises({ analises }) {
         </div>
 
         <div>
-          <label htmlFor="prof-foco" className="block text-xs font-medium text-slate-500">
+          <label htmlFor="prof-foco" className="block text-xs font-medium text-slate-500 dark:text-slate-400">
             Profundidade
           </label>
           <select
@@ -145,33 +145,33 @@ export default function TabelaAnalises({ analises }) {
           </select>
         </div>
 
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 pb-1 text-xs text-slate-600 sm:min-h-0">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 pb-1 text-xs text-slate-600 dark:text-slate-400 sm:min-h-0">
           <input
             type="checkbox"
             checked={ocultarVazios}
             onChange={(e) => setOcultarVazios(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-solo-700 focus:ring-solo-600"
+            className="h-4 w-4 rounded border-slate-300 text-solo-700 focus:ring-solo-600 dark:border-white/20 dark:bg-noite-800"
           />
           Ocultar sem medição
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10">
         <table className="min-w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-slate-50">
-              <th className={`${PRESA} border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-medium text-slate-600`}>
+            <tr className="bg-slate-50 dark:bg-white/5">
+              <th className={`${PRESA} border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300`}>
                 Parâmetro
               </th>
               {comparando ? (
                 <>
-                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600">
+                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600 dark:border-white/10 dark:text-slate-300">
                     {safraAtual}
                   </th>
-                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600">
+                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600 dark:border-white/10 dark:text-slate-300">
                     {safraComparada}
                   </th>
-                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600">
+                  <th className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600 dark:border-white/10 dark:text-slate-300">
                     variação
                   </th>
                 </>
@@ -179,10 +179,10 @@ export default function TabelaAnalises({ analises }) {
                 visiveis.map((a) => (
                   <th
                     key={a.id}
-                    className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600"
+                    className="border-b border-slate-200 px-3 py-2 text-right text-xs font-medium text-slate-600 dark:border-white/10 dark:text-slate-300"
                   >
                     <span className="block whitespace-nowrap">{a.profundidade} cm</span>
-                    <span className="block whitespace-nowrap font-normal text-slate-400">
+                    <span className="block whitespace-nowrap font-normal text-slate-400 dark:text-slate-500">
                       {formatarData(a.data_coleta)}
                     </span>
                   </th>
@@ -197,7 +197,7 @@ export default function TabelaAnalises({ analises }) {
                 <th
                   colSpan={colunas + 1}
                   scope="colgroup"
-                  className="border-b border-t border-slate-200 bg-slate-50/70 px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+                  className="border-b border-t border-slate-200 bg-slate-50/70 px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
                 >
                   {grupo.rotulo}
                 </th>
@@ -207,15 +207,15 @@ export default function TabelaAnalises({ analises }) {
                 const atual = visiveis[0]
                 const comparada = atual ? comparadaPorProf.get(atual.profundidade) : null
                 return (
-                  <tr key={p.chave} className="even:bg-slate-50/40">
+                  <tr key={p.chave} className="even:bg-slate-50/40 dark:even:bg-white/[0.03]">
                     <th
                       scope="row"
                       title={p.nota ?? undefined}
-                      className={`${PRESA} border-b border-r border-slate-200 px-3 py-1.5 text-left font-normal even:bg-slate-50`}
+                      className={`${PRESA} border-b border-r border-slate-200 px-3 py-1.5 text-left font-normal even:bg-slate-50 dark:border-white/10 dark:even:bg-white/[0.03]`}
                     >
-                      <span className="block whitespace-nowrap text-slate-800">{p.rotulo}</span>
+                      <span className="block whitespace-nowrap text-slate-800 dark:text-slate-200">{p.rotulo}</span>
                       {p.unidade && (
-                        <span className="block whitespace-nowrap text-xs text-slate-400">
+                        <span className="block whitespace-nowrap text-xs text-slate-400 dark:text-slate-500">
                           {p.unidade}
                         </span>
                       )}
@@ -223,13 +223,13 @@ export default function TabelaAnalises({ analises }) {
 
                     {comparando ? (
                       <>
-                        <td className={`${CELULA} border-b border-slate-200`}>
+                        <td className={`${CELULA} border-b border-slate-200 dark:border-white/10`}>
                           <Valor chave={p.chave} valor={atual?.[p.chave]} />
                         </td>
-                        <td className={`${CELULA} border-b border-slate-200`}>
+                        <td className={`${CELULA} border-b border-slate-200 dark:border-white/10`}>
                           <Valor chave={p.chave} valor={comparada?.[p.chave]} esmaecido />
                         </td>
-                        <td className={`${CELULA} border-b border-slate-200`}>
+                        <td className={`${CELULA} border-b border-slate-200 dark:border-white/10`}>
                           <Variacao
                             chave={p.chave}
                             atual={atual?.[p.chave]}
@@ -240,7 +240,7 @@ export default function TabelaAnalises({ analises }) {
                       </>
                     ) : (
                       visiveis.map((a) => (
-                        <td key={a.id} className={`${CELULA} border-b border-slate-200`}>
+                        <td key={a.id} className={`${CELULA} border-b border-slate-200 dark:border-white/10`}>
                           <Valor chave={p.chave} valor={a[p.chave]} />
                         </td>
                       ))
@@ -253,9 +253,9 @@ export default function TabelaAnalises({ analises }) {
         </table>
       </div>
 
-      <div className="mt-2 space-y-1 text-xs text-slate-500">
+      <div className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
         <p>
-          <strong className="text-slate-400">sem medição</strong> quer dizer que o
+          <strong className="text-slate-400 dark:text-slate-500">sem medição</strong> quer dizer que o
           laboratório não analisou esse parâmetro. Um valor <strong>0</strong> é
           resultado medido, não ausência.
         </p>
@@ -267,7 +267,7 @@ export default function TabelaAnalises({ analises }) {
             para alumínio, subir é ruim; para pH, existe um ponto ideal no meio.
           </p>
         )}
-        <p className="text-slate-400">
+        <p className="text-slate-400 dark:text-slate-500">
           Amostra do laboratório em {safraAtual}:{' '}
           {visiveis.map((a) => `${a.profundidade} cm → ${a.numero_amostra_lab || TRACO}`).join(' · ')}.
           O laboratório renumera a cada coleta; a identidade da gleba é o cadastro.

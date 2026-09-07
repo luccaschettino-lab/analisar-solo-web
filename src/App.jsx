@@ -1,13 +1,18 @@
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { ThemeProvider } from './context/ThemeContext.jsx'
 import { router } from './router.jsx'
 
-// AuthProvider por fora do RouterProvider: as rotas são renderizadas dentro
-// dele, então os guards e as páginas enxergam o contexto normalmente.
+// ThemeProvider por fora de tudo: login e cadastro também são tema, não só as
+// telas autenticadas. AuthProvider por fora do RouterProvider porque as rotas
+// são renderizadas dentro dele, e os guards e páginas enxergam o contexto
+// normalmente.
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

@@ -106,14 +106,14 @@ export default function Comparar() {
       {/* Mapa em cima e tabela embaixo no celular; lado a lado a partir de lg,
           que é onde as seis colunas cabem sem espremer. */}
       <div className="grid min-h-0 flex-1 grid-rows-[45%_55%] lg:grid-cols-2 lg:grid-rows-1">
-        <div className="relative min-h-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
+        <div className="relative min-h-0 border-b border-slate-200 lg:border-b-0 lg:border-r dark:border-white/10">
           <Mapa aoCriarMapa={aoCriarMapa} />
 
           {comparacao && <LegendaDivergente comparacao={comparacao} criterio={criterio} />}
 
           {!prontoParaComparar && (
             <div className="pointer-events-none absolute inset-x-0 top-3 z-[1100] flex justify-center px-3">
-              <p className="pointer-events-auto rounded-md border border-slate-200 bg-white/95 px-3 py-1.5 text-center text-xs text-slate-600 shadow backdrop-blur">
+              <p className="pointer-events-auto rounded-md border border-slate-200 bg-white/95 px-3 py-1.5 text-center text-xs text-slate-600 shadow backdrop-blur dark:border-white/10 dark:bg-noite-900/95 dark:text-slate-300">
                 {mensagemDeEspera()}
               </p>
             </div>
@@ -121,7 +121,7 @@ export default function Comparar() {
 
         </div>
 
-        <div className="min-h-0 overflow-hidden bg-white">
+        <div className="min-h-0 overflow-hidden bg-white dark:bg-noite-900">
           {/* A tabela só entra com a hierarquia carregada: com `glebas` vazio
               por carregamento ou por falha, ela afirmaria que a fazenda não
               tem gleba nenhuma. */}
@@ -132,7 +132,7 @@ export default function Comparar() {
               aoSelecionar={aoSelecionar}
             />
           ) : (
-            <p className="px-3 py-4 text-xs text-slate-500">{mensagemDeEspera()}</p>
+            <p className="px-3 py-4 text-xs text-slate-500 dark:text-slate-400">{mensagemDeEspera()}</p>
           )}
         </div>
       </div>

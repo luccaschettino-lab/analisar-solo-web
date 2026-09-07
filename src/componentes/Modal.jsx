@@ -42,9 +42,9 @@ export default function Modal({ titulo, aoFechar, children, largura = 'max-w-md'
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className={`w-full ${largura} rounded-xl border border-slate-200 bg-white p-5 shadow-lg`}
+        className={`w-full ${largura} rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-noite-900`}
       >
-        <h2 className="mb-4 text-base font-semibold text-slate-900">{titulo}</h2>
+        <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">{titulo}</h2>
         {children}
       </div>
     </div>

@@ -3,9 +3,9 @@ import { rotuloComUnidade, parametro } from '../../lib/parametros.js'
 import { ORIGEM, origemDasFaixas, faixasEfetivas, faixasIniciais } from '../../lib/criterios.js'
 
 const CAMPO =
-  'rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-500'
+  'rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-500 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-600'
 const BOTAO =
-  'rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300'
+  'rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600'
 
 /**
  * Editor das faixas de um parâmetro.
@@ -77,11 +77,11 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
 
   return (
     <div
-      className={`rounded-lg border p-3 ${erros.length ? 'border-red-300 bg-red-50/40' : 'border-slate-200'}`}
+      className={`rounded-lg border p-3 ${erros.length ? 'border-red-300 bg-red-50/40 dark:border-red-400/30 dark:bg-red-500/10' : 'border-slate-200 dark:border-white/10'}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-sm font-medium text-slate-800">{rotuloComUnidade(chave)}</h4>
-        <span className="text-[11px] text-slate-500">
+        <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200">{rotuloComUnidade(chave)}</h4>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">
           {origem === ORIGEM.CRITERIO && 'personalizado'}
           {origem === ORIGEM.CONFIG && 'padrão do sistema'}
           {origem === ORIGEM.SEM_CLASSIFICACAO && 'sem classificação'}
@@ -89,7 +89,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
       </div>
 
       {p?.nota && origem !== ORIGEM.CRITERIO && (
-        <p className="mt-1 text-[11px] leading-tight text-slate-500">{p.nota}</p>
+        <p className="mt-1 text-[11px] leading-tight text-slate-500 dark:text-slate-400">{p.nota}</p>
       )}
 
       {!somenteLeitura && (
@@ -118,7 +118,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
             const editavel = origem === ORIGEM.CRITERIO && !somenteLeitura
             return (
               <li key={i} className="flex flex-wrap items-center gap-1.5">
-                <span className="w-14 shrink-0 text-[11px] text-slate-500">
+                <span className="w-14 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
                   {ultima ? 'acima de' : 'até'}
                 </span>
 
@@ -151,7 +151,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
 
                 <span
                   aria-hidden="true"
-                  className="h-4 w-4 shrink-0 rounded-sm border border-slate-300"
+                  className="h-4 w-4 shrink-0 rounded-sm border border-slate-300 dark:border-white/15"
                   style={{ backgroundColor: NIVEIS[faixa.nivel]?.cor ?? '#fff' }}
                 />
 
@@ -169,7 +169,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
                     type="button"
                     onClick={() => remover(i)}
                     aria-label={`Remover faixa ${i + 1}`}
-                    className="px-1 text-slate-400 hover:text-red-600"
+                    className="px-1 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
                   >
                     ✕
                   </button>
@@ -187,7 +187,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
       )}
 
       {origem === ORIGEM.CRITERIO && !somenteLeitura && (
-        <label className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+        <label className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
           Variação mínima para contar como mudança
           <input
             inputMode="decimal"
@@ -199,19 +199,19 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
             }}
             className={`${CAMPO} w-24`}
           />
-          <span className="text-slate-400">
+          <span className="text-slate-400 dark:text-slate-500">
             vazio = 5% da amplitude das faixas
           </span>
         </label>
       )}
 
       {erros.map((e) => (
-        <p key={e} role="alert" className="mt-1.5 text-[11px] font-medium text-red-700">
+        <p key={e} role="alert" className="mt-1.5 text-[11px] font-medium text-red-700 dark:text-red-300">
           {e}
         </p>
       ))}
       {avisos.map((a) => (
-        <p key={a} className="mt-1.5 text-[11px] text-amber-800">
+        <p key={a} className="mt-1.5 text-[11px] text-amber-800 dark:text-amber-200">
           {a}
         </p>
       ))}

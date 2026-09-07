@@ -22,18 +22,18 @@ function Cabecalho({ coluna, rotulo, sublinha, aDireita = false, ordenacao, aoOr
       aria-sort={ativa ? (ordenacao.direcao === 'asc' ? 'ascending' : 'descending') : 'none'}
       // Classes escritas por extenso: o Tailwind varre o código como texto e
       // não geraria uma classe montada em tempo de execução.
-      className={`sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-700 ${aDireita ? 'text-right' : 'text-left'}`}
+      className={`sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-700 dark:border-white/10 dark:bg-noite-900 dark:text-slate-300 ${aDireita ? 'text-right' : 'text-left'}`}
     >
       <button
         type="button"
         onClick={() => aoOrdenar(coluna)}
-        className={`flex w-full items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-200/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 ${aDireita ? 'justify-end' : ''}`}
+        className={`flex w-full items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-200/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 dark:hover:bg-white/10 ${aDireita ? 'justify-end' : ''}`}
       >
         <span className="flex flex-col items-start">
           <span>{rotulo}</span>
-          {sublinha && <span className="font-normal text-[11px] text-slate-500">{sublinha}</span>}
+          {sublinha && <span className="font-normal text-[11px] text-slate-500 dark:text-slate-400">{sublinha}</span>}
         </span>
-        <span aria-hidden="true" className="text-[9px] text-slate-500">{seta}</span>
+        <span aria-hidden="true" className="text-[9px] text-slate-500 dark:text-slate-400">{seta}</span>
       </button>
     </th>
   )
@@ -50,16 +50,16 @@ function CelulaValor({ lado, unidade }) {
   if (lado.formatado === null) {
     return (
       <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs">
-        <span className="text-slate-500">sem dado</span>
-        <span className="block text-[11px] text-slate-400">{textoDaAusencia(lado.estado)}</span>
+        <span className="text-slate-500 dark:text-slate-400">sem dado</span>
+        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{textoDaAusencia(lado.estado)}</span>
       </td>
     )
   }
 
   return (
-    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs tabular-nums text-slate-800">
+    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs tabular-nums text-slate-800 dark:text-slate-200">
       {lado.formatado}
-      {unidade && <span className="text-slate-400"> {unidade}</span>}
+      {unidade && <span className="text-slate-400 dark:text-slate-500"> {unidade}</span>}
     </td>
   )
 }
@@ -67,14 +67,14 @@ function CelulaValor({ lado, unidade }) {
 /** Diferença e percentual só existem quando os dois anos existem. */
 function CelulaSemComparacao() {
   return (
-    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs text-slate-400">sem comparação</td>
+    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs text-slate-400 dark:text-slate-500">sem comparação</td>
   )
 }
 
 function CelulaClassificacao({ linha }) {
   if (linha.rotuloNivelB) {
     return (
-      <td className="whitespace-nowrap px-2 py-1.5 text-xs text-slate-800">
+      <td className="whitespace-nowrap px-2 py-1.5 text-xs text-slate-800 dark:text-slate-200">
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
@@ -90,7 +90,7 @@ function CelulaClassificacao({ linha }) {
   // Duas ausências diferentes: o parâmetro não classifica, ou não há valor no
   // Ano B para classificar.
   const texto = linha.b.estado === LADO.MEDIDO ? 'sem classificação' : 'sem dado'
-  return <td className="whitespace-nowrap px-2 py-1.5 text-xs text-slate-400">{texto}</td>
+  return <td className="whitespace-nowrap px-2 py-1.5 text-xs text-slate-400 dark:text-slate-500">{texto}</td>
 }
 
 /**
@@ -130,9 +130,9 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-3 py-2">
-        <p className="text-xs text-slate-600">
-          <span className="font-medium text-slate-800">{linhas.length} glebas</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-3 py-2 dark:border-white/10">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-medium text-slate-800 dark:text-slate-200">{linhas.length} glebas</span>
           {contagem.sem_um_ano > 0 && (
             <span> · {contagem.sem_um_ano} sem dado em um dos anos</span>
           )}
@@ -143,7 +143,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
           type="button"
           onClick={() => setOrdenacao(ORDEM_PADRAO)}
           disabled={naOrdemPadrao}
-          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600"
         >
           Maior variação
         </button>
@@ -175,20 +175,20 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
                 <tr
                   key={linha.glebaId}
                   onClick={() => aoSelecionar({ tipo: 'gleba', id: linha.glebaId })}
-                  className={`cursor-pointer border-b border-slate-100 ${ativa ? 'bg-amber-100' : 'hover:bg-slate-50'}`}
+                  className={`cursor-pointer border-b border-slate-100 dark:border-white/5 ${ativa ? 'bg-amber-100 dark:bg-amber-400/15' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
                 >
-                  <td className="px-2 py-1.5 text-xs text-slate-800">
+                  <td className="px-2 py-1.5 text-xs text-slate-800 dark:text-slate-200">
                     <span className="flex items-center gap-1.5">
                       {/* A mesma cor que a gleba tem no mapa: sem isso, ler a
                           tabela e ler o mapa seriam dois trabalhos separados. */}
                       <span
                         aria-hidden="true"
-                        className="h-2.5 w-2.5 shrink-0 rounded-sm border border-slate-300"
+                        className="h-2.5 w-2.5 shrink-0 rounded-sm border border-slate-300 dark:border-white/20"
                         style={{ backgroundColor: linha.cor }}
                       />
                       <span className="font-medium">{linha.gleba.codigo}</span>
                       {linha.gleba.nome && (
-                        <span className="truncate text-slate-500">· {linha.gleba.nome}</span>
+                        <span className="truncate text-slate-500 dark:text-slate-400">· {linha.gleba.nome}</span>
                       )}
                     </span>
                   </td>
@@ -199,7 +199,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
                   {comparavel ? (
                     <td
                       className={`whitespace-nowrap px-2 py-1.5 text-right text-xs tabular-nums ${
-                        linha.estado === VARIACAO.ESTAVEL ? 'text-slate-500' : 'font-medium text-slate-900'
+                        linha.estado === VARIACAO.ESTAVEL ? 'text-slate-500 dark:text-slate-400' : 'font-medium text-slate-900 dark:text-slate-100'
                       }`}
                     >
                       {textoDelta(linha, chaveParametro)}
@@ -211,13 +211,13 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
                   {!comparavel ? (
                     <CelulaSemComparacao />
                   ) : percentual ? (
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs tabular-nums text-slate-700">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs tabular-nums text-slate-700 dark:text-slate-300">
                       {percentual}
                     </td>
                   ) : (
                     // Ano A igual a zero: a porcentagem não existe. Dizer o
                     // motivo evita a leitura de que a conta falhou.
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-[11px] text-slate-400">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-[11px] text-slate-400 dark:text-slate-500">
                       partiu de zero
                     </td>
                   )}
@@ -230,7 +230,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
         </table>
 
         {linhas.length === 0 && (
-          <p className="px-3 py-4 text-xs text-slate-500">
+          <p className="px-3 py-4 text-xs text-slate-500 dark:text-slate-400">
             Esta fazenda ainda não tem glebas cadastradas.
           </p>
         )}

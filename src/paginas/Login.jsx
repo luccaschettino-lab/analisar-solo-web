@@ -30,8 +30,8 @@ export default function Login() {
   return (
     <form onSubmit={aoEnviar} className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-lg font-semibold text-slate-900">Entrar</h1>
-        <p className="text-sm text-slate-500">Acesse suas análises de solo.</p>
+        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Entrar</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Acesse suas análises de solo.</p>
       </header>
 
       <Aviso>{erro}</Aviso>
@@ -61,9 +61,9 @@ export default function Login() {
         {enviando ? 'Entrando…' : 'Entrar'}
       </BotaoPrincipal>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         Não tem conta?{' '}
-        <Link to="/cadastro" className="font-medium text-solo-700 hover:underline">
+        <Link to="/cadastro" className="font-medium text-solo-700 hover:underline dark:text-solo-400">
           Cadastre-se
         </Link>
       </p>

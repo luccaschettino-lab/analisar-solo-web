@@ -78,7 +78,7 @@ export default function FormFazenda({ fazenda, aoSalvar, aoFechar }) {
             type="button"
             onClick={aoFechar}
             disabled={salvando}
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
           >
             Cancelar
           </button>

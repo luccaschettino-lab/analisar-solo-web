@@ -50,13 +50,13 @@ export default function Dados() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b border-slate-200 bg-white px-6 pt-4">
-        <h1 className="text-base font-semibold text-slate-900">Dados de análise</h1>
-        <p className="mt-0.5 text-sm text-slate-500">
+      <header className="border-b border-slate-200 bg-white px-6 pt-4 dark:border-white/10 dark:bg-noite-900">
+        <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Dados de análise</h1>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Lance os laudos do laboratório para acompanhar a evolução de cada gleba.
         </p>
         {/* Sem abas: a barra lateral já leva às duas formas de entrada. */}
-        <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
           {abaAtiva === 'pdf' ? 'Importar laudo PDF' : 'Entrada manual'}
         </p>
       </header>

@@ -54,13 +54,12 @@ export function useMapa(containerRef) {
     // para ficar acima dele na pilha.
     L.control.zoom({ position: 'topright' }).addTo(m)
 
-    // Expandido em tela larga, onde não atrapalha; recolhido no celular, onde
-    // as duas opções abertas comem o canto do mapa. O Leaflet já recolhe ao
-    // detectar toque, mas o corte por largura também pega notebook em janela
-    // estreita.
-    const telaEstreita = window.matchMedia('(max-width: 767px)').matches
+    // Sempre recolhido: com sete camadas na lista, aberto por padrão cobria
+    // um pedaço grande do canto do mapa antes de qualquer clique. Recolhido
+    // mostra só o ícone, e expande ao passar o mouse ou tocar — comportamento
+    // nativo do Leaflet, sem JS extra.
     L.control
-      .layers(camadas, {}, { position: 'topright', collapsed: telaEstreita })
+      .layers(camadas, {}, { position: 'topright', collapsed: true })
       .addTo(m)
     // Escala metrica: referencia rapida para conferir se o poligono desenhado
     // tem o tamanho que o produtor espera. Sem imperial, que aqui so atrapalha.

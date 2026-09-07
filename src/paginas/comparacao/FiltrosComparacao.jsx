@@ -2,12 +2,12 @@ import { GRUPOS, PROFUNDIDADES } from '../../config/parametros.js'
 import { parametro, parametrosDoGrupo } from '../../lib/parametros.js'
 
 const SELECT =
-  'mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400'
+  'mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-600'
 
 function Campo({ id, rotulo, children }) {
   return (
     <div className="min-w-0">
-      <label htmlFor={id} className="block text-xs font-medium text-slate-600">
+      <label htmlFor={id} className="block text-xs font-medium text-slate-600 dark:text-slate-400">
         {rotulo}
       </label>
       {children}
@@ -84,9 +84,9 @@ export default function FiltrosComparacao({
   ))
 
   return (
-    <section className="border-b border-slate-200 bg-white px-3 py-3 sm:px-4">
+    <section className="border-b border-slate-200 bg-white px-3 py-3 sm:px-4 dark:border-white/10 dark:bg-noite-900">
       {erros.length > 0 && (
-        <ul role="alert" className="mb-2 space-y-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700">
+        <ul role="alert" className="mb-2 space-y-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
           {erros.map((e) => (
             <li key={e}>{e}</li>
           ))}
@@ -169,13 +169,13 @@ export default function FiltrosComparacao({
           type="button"
           onClick={aoInverter}
           disabled={!podeInverter}
-          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600"
         >
           ⇄ Inverter os anos
         </button>
 
         {erroAnos && (
-          <p role="alert" className="text-xs font-medium text-red-700">
+          <p role="alert" className="text-xs font-medium text-red-700 dark:text-red-300">
             {erroAnos}
           </p>
         )}
@@ -183,7 +183,7 @@ export default function FiltrosComparacao({
         {/* Aviso que muda a leitura do mapa inteiro: sem faixa, o limiar de
             estabilidade é zero e qualquer diferença vira cor. */}
         {escolhido && !escolhido.faixas && (
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-amber-800 dark:text-amber-200">
             {escolhido.rotulo} não tem faixa de classificação. A variação é calculada normalmente,
             mas sem limiar de estabilidade — qualquer diferença aparece colorida — e a coluna de
             classificação fica vazia.

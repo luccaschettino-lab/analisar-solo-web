@@ -3,6 +3,7 @@ import { Line } from 'react-chartjs-2'
 import { corDaProfundidade, opcoesDoGrafico } from '../../config/graficos.js'
 import { formatarValor, parametro, rotuloComUnidade } from '../../lib/parametros.js'
 import { valoresAlinhados } from '../../lib/historico.js'
+import { useTema } from '../../context/ThemeContext.jsx'
 
 /**
  * Evolução de um parâmetro ao longo das safras.
@@ -12,6 +13,8 @@ import { valoresAlinhados } from '../../lib/historico.js'
  * a linha ali, que é a leitura correta: não sabemos o que houve naquele ano.
  */
 export default function GraficoParametro({ chave, anos, series }) {
+  const { tema } = useTema()
+  const escuro = tema === 'escuro'
   const p = parametro(chave)
 
   const dados = useMemo(
@@ -35,8 +38,9 @@ export default function GraficoParametro({ chave, anos, series }) {
       opcoesDoGrafico({
         rotuloEixoY: p?.unidade || null,
         formatarValor: (valor) => formatarValor(chave, valor),
+        escuro,
       }),
-    [chave, p],
+    [chave, p, escuro],
   )
 
   // Uma série só dispensa legenda: o título já diz o que é.
@@ -48,10 +52,10 @@ export default function GraficoParametro({ chave, anos, series }) {
   )
 
   return (
-    <figure className="rounded-lg border border-slate-200 bg-white p-4">
+    <figure className="rounded-lg border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
       <figcaption className="mb-1">
-        <h3 className="text-sm font-semibold text-slate-800">{rotuloComUnidade(chave)}</h3>
-        {p?.nota && <p className="mt-0.5 text-xs text-slate-400">{p.nota}</p>}
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{rotuloComUnidade(chave)}</h3>
+        {p?.nota && <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{p.nota}</p>}
       </figcaption>
 
       <div className="h-52">
@@ -59,7 +63,7 @@ export default function GraficoParametro({ chave, anos, series }) {
       </div>
 
       {totalDePontos === 1 && (
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Uma medição só — a evolução aparece a partir da segunda safra.
         </p>
       )}

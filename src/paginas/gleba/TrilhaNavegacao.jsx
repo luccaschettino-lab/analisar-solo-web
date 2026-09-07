@@ -9,7 +9,7 @@ function area(ha) {
 
 function Separador() {
   return (
-    <span aria-hidden="true" className="px-2 text-slate-300">
+    <span aria-hidden="true" className="px-2 text-slate-300 dark:text-slate-600">
       ›
     </span>
   )
@@ -28,32 +28,32 @@ export default function TrilhaNavegacao({ fazenda, talhao, gleba }) {
           // Grava a fazenda antes de navegar: sem isso o mapa abriria na
           // última que o usuário visitou, que pode não ser esta.
           onClick={() => lembrarFazenda(fazenda.id)}
-          className="font-medium text-solo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600"
+          className="font-medium text-solo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 dark:text-solo-400"
         >
           {fazenda.nome}
         </Link>
-        {local && <span className="ml-1.5 text-xs text-slate-400">{local}</span>}
+        {local && <span className="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{local}</span>}
 
         <Separador />
 
-        <span className="inline-flex items-center gap-1.5 text-slate-700">
+        <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
           <span
             aria-hidden="true"
             className="h-2.5 w-2.5 rounded-sm"
             style={{ backgroundColor: talhao.cor }}
           />
           Talhão {talhao.codigo}
-          {talhao.nome && <span className="text-slate-400">· {talhao.nome}</span>}
+          {talhao.nome && <span className="text-slate-400 dark:text-slate-500">· {talhao.nome}</span>}
         </span>
-        {areaTalhao && <span className="ml-1.5 text-xs text-slate-400">{areaTalhao}</span>}
+        {areaTalhao && <span className="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{areaTalhao}</span>}
 
         <Separador />
 
-        <span aria-current="page" className="font-semibold text-slate-900">
+        <span aria-current="page" className="font-semibold text-slate-900 dark:text-slate-100">
           {gleba.codigo}
-          {gleba.nome && <span className="font-normal text-slate-500"> · {gleba.nome}</span>}
+          {gleba.nome && <span className="font-normal text-slate-500 dark:text-slate-400"> · {gleba.nome}</span>}
         </span>
-        {areaGleba && <span className="ml-1.5 text-xs text-slate-400">{areaGleba}</span>}
+        {areaGleba && <span className="ml-1.5 text-xs text-slate-400 dark:text-slate-500">{areaGleba}</span>}
       </div>
     </nav>
   )

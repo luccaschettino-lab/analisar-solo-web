@@ -125,8 +125,13 @@ export function useGeometrias(
         opacity: 1,
       })
       camada.on('click', (e) => {
-        // Sem isto o clique atravessa para o mapa e o modo de marcar centro
-        // ou de desenho receberia um clique que era para a geometria.
+        // Enquanto o Geoman está desenhando, o clique é o vértice que está
+        // sendo colocado, não uma seleção — e é sempre sobre um talhão,
+        // porque é dentro dele que toda gleba existe. Parar a propagação
+        // aqui fazia esse clique nunca chegar ao mapa, que é quem o Geoman
+        // escuta: o talhão engolia o clique para se selecionar, e o vértice
+        // nunca era colocado. Deixar passar é o que faz o desenho funcionar.
+        if (mapa.pm.globalDrawModeEnabled?.()) return
         L.DomEvent.stopPropagation(e)
         aoSelecionarRef.current?.({ tipo: 'talhao', id: talhao.id })
       })
@@ -169,6 +174,10 @@ export function useGeometrias(
       // parâmetro assim que houver filtro.
       camada.bindTooltip(rotulo(gleba), { sticky: true })
       camada.on('click', (e) => {
+        // Mesmo motivo do talhão: uma gleba nova pode ser desenhada perto ou
+        // sobre uma já existente, e o clique de desenho não pode ser
+        // engolido pela seleção da que já está lá.
+        if (mapa.pm.globalDrawModeEnabled?.()) return
         L.DomEvent.stopPropagation(e)
         aoSelecionarRef.current?.({ tipo: 'gleba', id: gleba.id })
       })
