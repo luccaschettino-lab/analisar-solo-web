@@ -39,6 +39,10 @@ export default function Painel() {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
   const [mostrarCor, setMostrarCor] = useState(true)
+  // Desligado por padrão: os quadradinhos numerados ajudam a achar o ponto de
+  // coleta, mas competem com o mapa de calor por atenção — quem quer os dois
+  // juntos liga aqui.
+  const [mostrarAmostras, setMostrarAmostras] = useState(false)
   const [importandoArquivo, setImportandoArquivo] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
@@ -59,6 +63,7 @@ export default function Painel() {
     coloracao,
     filtro,
     mostrarCor,
+    mostrarAmostras,
     selecionado,
     setSelecionado,
   })
@@ -251,6 +256,19 @@ export default function Painel() {
                 qualquer jeito — isto só tira a cor de dentro delas. */}
             <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
               A grade e o código continuam aparecendo mesmo sem cor.
+            </p>
+
+            <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={mostrarAmostras}
+                onChange={(e) => setMostrarAmostras(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
+              />
+              Pontos de amostra
+            </label>
+            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+              Quadradinho numerado onde cada análise foi coletada.
             </p>
           </div>
         )}

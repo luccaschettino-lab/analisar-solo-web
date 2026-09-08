@@ -23,6 +23,7 @@ export function useItemSelecionado({
   coloracao = null,
   filtro = null,
   mostrarCor = true,
+  mostrarAmostras = false,
   // Vêm do FazendaContext: a barra lateral também seleciona, e dois estados
   // separados fariam clicar na árvore não destacar a geometria.
   selecionado,
@@ -47,6 +48,7 @@ export function useItemSelecionado({
     coloracao,
     filtro,
     mostrarCor,
+    mostrarAmostras,
   })
 
   const itemSelecionado = selecionado ? (talhoes.find((t) => t.id === selecionado.id) ?? null) : null

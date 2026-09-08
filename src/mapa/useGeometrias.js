@@ -56,6 +56,7 @@ export function useGeometrias(
     filtro = null,
     conteudoTooltip = null,
     mostrarCor = true,
+    mostrarAmostras = false,
   },
 ) {
   const grupoTalhoes = useRef(null)
@@ -289,7 +290,7 @@ export function useGeometrias(
     const raster = criarCamadaCalor(talhoesComDado)
     if (raster) {
       camadaCalor.current = raster.addTo(mapa)
-      marcadoresAmostra.current = criarMarcadoresDeAmostra(talhoesComDado).addTo(mapa)
+      if (mostrarAmostras) marcadoresAmostra.current = criarMarcadoresDeAmostra(talhoesComDado).addTo(mapa)
     }
 
     return () => {
@@ -298,7 +299,7 @@ export function useGeometrias(
       marcadoresAmostra.current?.remove()
       marcadoresAmostra.current = null
     }
-  }, [mapa, talhoes, coloracao, mostrarCor])
+  }, [mapa, talhoes, coloracao, mostrarCor, mostrarAmostras])
 
   // Dá acesso à camada Leaflet do talhão, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.

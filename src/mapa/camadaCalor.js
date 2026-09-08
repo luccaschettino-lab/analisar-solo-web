@@ -17,16 +17,18 @@ import { interpolarCor } from '../lib/escalaDivergente.js'
 export const PANE_CALOR = 'calorTalhao'
 export const Z_CALOR = 420
 
-// Grade de cálculo baixa de propósito — e o quanto ela é baixa é o que decide
-// o tamanho de cada "célula" visível no mapa final. É a aparência serrilhada
-// pedida (igual à referência que a pessoa mandou): células grandes, bordas
-// em degrau entre uma e outra, não um borrão fotográfico. Ver `dimensoes`
-// abaixo: essa grade nunca é ampliada com suavização.
-const GRADE_LADO_MAX = 55
+// Tamanho de cada célula em METROS no chão, não em número de células. Uma
+// contagem fixa (a versão anterior) dava célula enorme numa fazenda grande e
+// minúscula numa pequena — o mesmo número de células cobrindo áreas bem
+// diferentes. Fixando o tamanho real, o grão da serrilhada fica consistente
+// em qualquer talhão, e "diminuir o pixel" vira só diminuir este número.
+const TAMANHO_CELULA_M = 6
+const CELULAS_MIN = 24
+const CELULAS_MAX = 320
 // Resolução final do raster. Não acompanha o zoom do mapa — como qualquer
 // ImageOverlay georreferenciado, o Leaflet reamostra ao aproximar. Nesse
 // tamanho o raster fica nítido na maioria dos zooms de uso normal.
-const SAIDA_LADO_MAX = 900
+const SAIDA_LADO_MAX = 1100
 
 function* aneisDe(geometry) {
   if (!geometry) return
@@ -106,14 +108,18 @@ export function criarCamadaCalor(talhoesComDado, opacidade = 0.92) {
   const correcaoLng = Math.cos((latMed * Math.PI) / 180) || 1
   const aspecto = (bboxW * correcaoLng) / bboxH
 
-  function dimensoes(ladoMax) {
-    return aspecto >= 1
-      ? { w: ladoMax, h: Math.max(24, Math.round(ladoMax / aspecto)) }
-      : { w: Math.max(24, Math.round(ladoMax * aspecto)), h: ladoMax }
+  // Célula em metros reais: cada eixo calcula sua própria contagem a partir
+  // da largura/altura real do talhão, não de uma proporção compartilhada.
+  const larguraM = bboxW * correcaoLng * 111320
+  const alturaM = bboxH * 110540
+  const grade = {
+    w: Math.min(CELULAS_MAX, Math.max(CELULAS_MIN, Math.round(larguraM / TAMANHO_CELULA_M))),
+    h: Math.min(CELULAS_MAX, Math.max(CELULAS_MIN, Math.round(alturaM / TAMANHO_CELULA_M))),
   }
-
-  const grade = dimensoes(GRADE_LADO_MAX)
-  const saida = dimensoes(SAIDA_LADO_MAX)
+  const saida =
+    aspecto >= 1
+      ? { w: SAIDA_LADO_MAX, h: Math.max(24, Math.round(SAIDA_LADO_MAX / aspecto)) }
+      : { w: Math.max(24, Math.round(SAIDA_LADO_MAX * aspecto)), h: SAIDA_LADO_MAX }
   const corDoValor = construirGradiente()
 
   // ---- IDW numa grade baixa-resolução -------------------------------------
