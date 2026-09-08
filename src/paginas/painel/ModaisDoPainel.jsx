@@ -3,7 +3,7 @@ import FormTalhao from './FormTalhao.jsx'
 import FormGleba from './FormGleba.jsx'
 import EscolherTipoGleba from './EscolherTipoGleba.jsx'
 import GlebasEmLote from './GlebasEmLote.jsx'
-import ImportarKml from './ImportarKml.jsx'
+import ImportarArquivo from './ImportarArquivo.jsx'
 import MesclarTalhoes from './MesclarTalhoes.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
 import Modal from '../../componentes/Modal.jsx'
@@ -34,8 +34,8 @@ export default function ModaisDoPainel({
   confirmandoFazenda,
   aoFecharConfirmacaoFazenda,
   aoConfirmarExclusaoFazenda,
-  importandoKml,
-  aoFecharImportarKml,
+  importandoArquivo,
+  aoFecharImportarArquivo,
   mesclandoTalhoes,
   aoFecharMesclarTalhoes,
 }) {
@@ -77,11 +77,11 @@ export default function ModaisDoPainel({
         />
       )}
 
-      {importandoKml && fazendaSelecionada && (
-        <ImportarKml
+      {importandoArquivo && fazendaSelecionada && (
+        <ImportarArquivo
           fazendaId={fazendaSelecionada.id}
           talhoes={talhoes}
-          aoFechar={aoFecharImportarKml}
+          aoFechar={aoFecharImportarArquivo}
           aoImportado={({ talhoes: novosTalhoes, glebas: novasGlebas }) => {
             if (novosTalhoes.length) aplicarTalhoes(novosTalhoes)
             if (novasGlebas.length) aplicarGlebas(novasGlebas)
@@ -103,20 +103,6 @@ export default function ModaisDoPainel({
             if (glebasMovidas.length) aplicarGlebas(glebasMovidas)
             for (const id of removidos) removerTalhao(id)
             mostrarAviso(`Talhão ${talhao.codigo} criado a partir da mesclagem de ${removidos.length + 1} talhões.`)
-          }}
-        />
-      )}
-
-      {criacao.pendente?.tipo === 'talhao' && fazendaSelecionada && (
-        <FormTalhao
-          fazendaId={fazendaSelecionada.id}
-          geometria={criacao.pendente.geometria}
-          aoFechar={criacao.fecharPendente}
-          aoSalvar={(talhao) => {
-            aplicarTalhao(talhao)
-            criacao.fecharPendente()
-            item.selecionar({ tipo: 'talhao', id: talhao.id })
-            mostrarAviso(`Talhão ${talhao.codigo} criado.`)
           }}
         />
       )}
@@ -162,7 +148,6 @@ export default function ModaisDoPainel({
 
       {item.editandoDados === 'talhao' && item.itemSelecionado && fazendaSelecionada && (
         <FormTalhao
-          fazendaId={fazendaSelecionada.id}
           talhao={item.itemSelecionado}
           aoFechar={item.fecharEdicaoDados}
           aoSalvar={(talhao) => {

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { candidatosDoKml, prepararLinhasDeImportacao } from '../../lib/kml.js'
+import { candidatosDoArquivo, EXTENSOES_ACEITAS } from '../../lib/importarArquivo.js'
+import { prepararLinhasDeImportacao } from '../../lib/kml.js'
 import { avaliarContencao, CONTENCAO } from '../../lib/geo.js'
 import { criarTalhao } from '../../dados/talhoes.js'
 import { criarGleba } from '../../dados/glebas.js'
@@ -14,43 +15,47 @@ function formatarArea(ha) {
 }
 
 /**
- * Assistente de importação de talhões/glebas a partir de um KML (QGIS,
- * Google Earth). Fica num painel largo, não num Modal pequeno — a lista de
- * polígonos para revisar não cabe num diálogo centralizado.
+ * Assistente de importação de talhões/glebas a partir de um arquivo
+ * geoespacial (KML, KMZ, GeoJSON ou shapefile zipado) — a única forma de
+ * criar um talhão agora. Desenhar um talhão do zero no mapa saiu de propósito:
+ * com o volume de talhões de uma fazenda de verdade, digitar vértice por
+ * vértice não compete com abrir o arquivo que o QGIS ou o app de campo já
+ * exportou.
+ *
+ * Fica num painel largo, não num Modal pequeno — a lista de polígonos para
+ * revisar não cabe num diálogo centralizado.
  *
  * Duas etapas: escolher o arquivo, e revisar/ajustar cada polígono antes de
- * gravar. Nada é salvo até o "Importar" — diferente do desenho manual, aqui
- * o volume é alto o bastante para um erro em massa ser caro.
+ * gravar. Nada é salvo até o "Importar" — o volume é alto o bastante para um
+ * erro em massa ser caro.
  */
-export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado }) {
+export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImportado }) {
   const [linhas, setLinhas] = useState(null) // null = ainda na etapa de escolher o arquivo
   const [nomeArquivo, setNomeArquivo] = useState('')
   const [erroArquivo, setErroArquivo] = useState('')
+  const [lendoArquivo, setLendoArquivo] = useState(false)
   const [importando, setImportando] = useState(false)
   const [progresso, setProgresso] = useState(null)
   const [erroImportacao, setErroImportacao] = useState('')
   const entradaArquivo = useRef(null)
 
-  function aoEscolherArquivo(evento) {
+  async function aoEscolherArquivo(evento) {
     const arquivo = evento.target.files?.[0]
     evento.target.value = ''
     if (!arquivo) return
 
     setErroArquivo('')
     setNomeArquivo(arquivo.name)
-
-    const leitor = new FileReader()
-    leitor.onload = () => {
-      try {
-        const candidatos = candidatosDoKml(String(leitor.result))
-        setLinhas(prepararLinhasDeImportacao(candidatos))
-      } catch (e) {
-        setErroArquivo(e.message)
-        setLinhas(null)
-      }
+    setLendoArquivo(true)
+    try {
+      const candidatos = await candidatosDoArquivo(arquivo)
+      setLinhas(prepararLinhasDeImportacao(candidatos))
+    } catch (e) {
+      setErroArquivo(e.message)
+      setLinhas(null)
+    } finally {
+      setLendoArquivo(false)
     }
-    leitor.onerror = () => setErroArquivo('Não foi possível ler o arquivo.')
-    leitor.readAsText(arquivo)
   }
 
   function atualizarLinha(id, patch) {
@@ -58,8 +63,8 @@ export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado 
   }
 
   // Quem pode ser "pai" de uma gleba: os talhões já existentes na fazenda,
-  // mais as linhas deste próprio KML marcadas como talhão — uma gleba pode
-  // nascer junto com o talhão dela, na mesma importação.
+  // mais as linhas deste próprio arquivo marcadas como talhão — uma gleba
+  // pode nascer junto com o talhão dela, na mesma importação.
   const paisDisponiveis = useMemo(() => {
     const existentes = talhoes.map((t) => ({
       id: t.id, codigo: t.codigo, geometria: t.geometria, novo: false,
@@ -128,7 +133,7 @@ export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado 
     setImportando(true)
     setProgresso({ feito: 0, total: incluidas.length })
 
-    const idReal = new Map() // id da linha (kml-N) -> id real gravado no banco
+    const idReal = new Map() // id da linha -> id real gravado no banco
     const talhoesCriados = []
     const glebasCriadas = []
 
@@ -183,8 +188,8 @@ export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado 
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Importar arquivo</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Talhões e glebas a partir de um arquivo exportado do QGIS ou Google Earth.
-            Por enquanto, só .kml.
+            Talhões e glebas a partir de um arquivo do QGIS, Google Earth ou app de campo —
+            .kml, .kmz, .geojson ou shapefile (.zip).
           </p>
         </div>
         <button
@@ -201,23 +206,24 @@ export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado 
         {!linhas ? (
           <div>
             <label
-              htmlFor="kml-arquivo"
+              htmlFor="importar-arquivo"
               className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-10 text-center hover:border-solo-500 dark:border-white/15 dark:hover:border-solo-500"
             >
               <span aria-hidden="true" className="text-2xl">🗺</span>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Clique para escolher um arquivo .kml
+                {lendoArquivo ? 'Lendo arquivo…' : 'Clique para escolher um arquivo'}
               </span>
               <span className="text-xs text-slate-400 dark:text-slate-500">
-                Cada polígono do arquivo vira uma linha para revisar antes de gravar.
+                .kml, .kmz, .geojson ou shapefile (.zip). Cada polígono vira uma linha para revisar antes de gravar.
               </span>
             </label>
             <input
               ref={entradaArquivo}
-              id="kml-arquivo"
+              id="importar-arquivo"
               type="file"
-              accept=".kml"
+              accept={EXTENSOES_ACEITAS}
               onChange={aoEscolherArquivo}
+              disabled={lendoArquivo}
               className="hidden"
             />
             {erroArquivo && (
@@ -261,7 +267,7 @@ export default function ImportarKml({ fazendaId, talhoes, aoFechar, aoImportado 
 
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <p className="truncate text-xs text-slate-400 dark:text-slate-500" title={l.nomeOriginal}>
-                          {l.nomeOriginal || '(sem nome no KML)'} · {formatarArea(l.areaHa)}
+                          {l.nomeOriginal || '(sem nome no arquivo)'} · {formatarArea(l.areaHa)}
                         </p>
 
                         <div className="flex flex-wrap gap-1.5">

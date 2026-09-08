@@ -42,7 +42,7 @@ export default function Painel() {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
   const [mostrarCor, setMostrarCor] = useState(true)
-  const [importandoKml, setImportandoKml] = useState(false)
+  const [importandoArquivo, setImportandoArquivo] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
@@ -77,7 +77,6 @@ export default function Painel() {
     mapa,
     editor,
     talhoes,
-    aoLimparSelecao: item.limparSelecao,
     aoAvisar: mostrarAviso,
   })
 
@@ -126,14 +125,14 @@ export default function Painel() {
   }, [mapa])
 
   /**
-   * A barra lateral pede o desenho pelo contexto; aqui o pedido é consumido e
-   * limpo. A barra não tem acesso ao Leaflet, e dar acesso a ela seria pior
-   * que carregar a intenção por estado.
+   * A barra lateral pede o desenho da gleba pelo contexto; aqui o pedido é
+   * consumido e limpo. A barra não tem acesso ao Leaflet, e dar acesso a ela
+   * seria pior que carregar a intenção por estado. Só gleba usa isto agora —
+   * talhão nasce de arquivo importado, não se desenha mais do zero.
    */
   useEffect(() => {
     if (!pedidoDeDesenho || !mapa) return
-    if (pedidoDeDesenho.tipo === 'talhao') criacao.iniciarTalhao()
-    else criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
+    criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
     setPedidoDeDesenho(null)
   }, [pedidoDeDesenho, mapa, criacao, setPedidoDeDesenho])
 
@@ -185,8 +184,8 @@ export default function Painel() {
         if (!mapa) return
         mapaDaFazenda.irParaSede()
         break
-      case 'importar-kml':
-        setImportandoKml(true)
+      case 'importar-arquivo':
+        setImportandoArquivo(true)
         break
       case 'mesclar-talhoes':
         setMesclandoTalhoes(true)
@@ -358,8 +357,8 @@ export default function Painel() {
           confirmandoFazenda={confirmandoFazenda}
           aoFecharConfirmacaoFazenda={() => setConfirmandoFazenda(null)}
           aoConfirmarExclusaoFazenda={confirmarExclusaoFazenda}
-          importandoKml={importandoKml}
-          aoFecharImportarKml={() => setImportandoKml(false)}
+          importandoArquivo={importandoArquivo}
+          aoFecharImportarArquivo={() => setImportandoArquivo(false)}
           mesclandoTalhoes={mesclandoTalhoes}
           aoFecharMesclarTalhoes={() => setMesclandoTalhoes(false)}
         />

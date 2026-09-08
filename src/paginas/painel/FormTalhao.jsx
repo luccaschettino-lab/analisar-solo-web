@@ -1,22 +1,20 @@
 import { useState } from 'react'
 import Modal from '../../componentes/Modal.jsx'
 import { Campo, BotaoPrincipal, Aviso } from '../../componentes/formulario.jsx'
-import { criarTalhao, atualizarTalhao } from '../../dados/talhoes.js'
+import { atualizarTalhao } from '../../dados/talhoes.js'
 import { areaEmHectares } from '../../lib/geo.js'
 import { CORES_TALHAO } from '../../config/mapa.js'
 
-export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoFechar }) {
-  const edicao = Boolean(talhao)
-  const geo = geometria ?? talhao?.geometria
-
-  const [codigo, setCodigo] = useState(talhao?.codigo ?? '')
-  const [nome, setNome] = useState(talhao?.nome ?? '')
-  const [cor, setCor] = useState(talhao?.cor ?? CORES_TALHAO[0])
+// Só edição — o talhão nasce de um arquivo importado (ver ImportarArquivo.jsx),
+// nunca daqui. Este formulário mexe em código, nome e cor de um que já existe.
+export default function FormTalhao({ talhao, aoSalvar, aoFechar }) {
+  const [codigo, setCodigo] = useState(talhao.codigo)
+  const [nome, setNome] = useState(talhao.nome ?? '')
+  const [cor, setCor] = useState(talhao.cor ?? CORES_TALHAO[0])
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
 
-  // Calculada aqui e gravada junto da geometria — as duas sempre andam juntas.
-  const areaHa = areaEmHectares(geo)
+  const areaHa = areaEmHectares(talhao.geometria)
 
   async function enviar(evento) {
     evento.preventDefault()
@@ -27,9 +25,7 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
     setErro('')
     setSalvando(true)
     try {
-      const salvo = edicao
-        ? await atualizarTalhao(talhao.id, { codigo, nome, cor, geometria: geo, areaHa })
-        : await criarTalhao({ fazendaId, codigo, nome, cor, geometria: geo, areaHa })
+      const salvo = await atualizarTalhao(talhao.id, { codigo, nome, cor, geometria: talhao.geometria, areaHa })
       aoSalvar(salvo)
     } catch (e) {
       setErro(e.message)
@@ -38,7 +34,7 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
   }
 
   return (
-    <Modal titulo={edicao ? `Editar talhão ${talhao.codigo}` : 'Novo talhão'} aoFechar={aoFechar}>
+    <Modal titulo={`Editar talhão ${talhao.codigo}`} aoFechar={aoFechar}>
       <form onSubmit={enviar} className="space-y-4">
         <Aviso>{erro}</Aviso>
 
@@ -91,7 +87,7 @@ export default function FormTalhao({ fazendaId, talhao, geometria, aoSalvar, aoF
         </div>
 
         <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-400">
-          Área desenhada:{' '}
+          Área:{' '}
           <strong className="text-slate-900 dark:text-slate-100">
             {areaHa != null
               ? `${areaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`

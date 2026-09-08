@@ -2,16 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDesenho } from '../../mapa/useDesenho.js'
 
 /**
- * Máquina de criação de geometria: escolher o tipo, desenhar, e segurar o
- * resultado até o formulário ser preenchido.
+ * Máquina de criação de gleba por desenho: escolher a forma, desenhar, e
+ * segurar o resultado até o formulário ser preenchido.
+ *
+ * Talhão saiu daqui — nasce só de arquivo importado agora (ver
+ * `ImportarArquivo.jsx`). Só sobrou o fluxo de gleba, que continua manual:
+ * ponto, sub-área desenhada ou lote de coordenadas coladas.
  *
  * Nada é gravado aqui — o hook entrega a geometria pendente e quem salva é o
  * formulário. Assim um desenho abandonado no meio não deixa lixo no banco.
  */
-export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, aoAvisar }) {
-  // null | { tipo:'talhao' } | { tipo:'gleba', talhaoId, forma }
+export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoAvisar }) {
+  // null | { tipo:'gleba', talhaoId, forma }
   const [desenhando, setDesenhando] = useState(null)
-  // Geometria desenhada esperando o formulário: { tipo, talhaoId?, geometria }
+  // Geometria desenhada esperando o formulário: { tipo, talhaoId, geometria }
   const [pendente, setPendente] = useState(null)
   const [escolhendoGleba, setEscolhendoGleba] = useState(null) // talhaoId
   const [loteAberto, setLoteAberto] = useState(null) // talhaoId
@@ -35,13 +39,6 @@ export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, 
     desenharPonto,
     cancelar: cancelarDesenho,
   } = useDesenho(mapa, aoConcluirDesenho)
-
-  const iniciarTalhao = useCallback(() => {
-    if (!editor) return
-    aoLimparSelecao?.()
-    setDesenhando({ tipo: 'talhao' })
-    desenharPoligono()
-  }, [editor, aoLimparSelecao, desenharPoligono])
 
   const iniciarGleba = useCallback(
     (talhaoId) => {
@@ -96,7 +93,6 @@ export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, 
     talhaoDaEscolha: acharTalhao(escolhendoGleba),
     talhaoPendente: pendente?.tipo === 'gleba' ? acharTalhao(pendente.talhaoId) : null,
     talhaoDoLote: acharTalhao(loteAberto),
-    iniciarTalhao,
     iniciarGleba,
     escolherForma,
     abortar,
