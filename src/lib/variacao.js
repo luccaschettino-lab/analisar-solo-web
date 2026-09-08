@@ -13,10 +13,14 @@ import { escalaDivergente, corDaVariacao } from './escalaDivergente.js'
  * as regras que não podem errar, e verificá-las exige rodá-las fora do
  * navegador. O teste é `testes/variacao.mjs`.
  *
- * **Nada aqui interpola, estima ou completa valor.** Uma gleba medida só num
+ * **Nada aqui interpola, estima ou completa valor.** Um talhão medido só num
  * dos anos não tem variação — não tem variação zero, não tem variação pequena,
  * não tem variação nenhuma. Toda a estrutura abaixo existe para que esse caso
  * atravesse a tela inteira sem virar número.
+ *
+ * Um talhão pode ter várias amostras (pontos de coleta) na mesma safra e
+ * profundidade — gleba saiu de cena. Cada lado da comparação usa a média dos
+ * pontos medidos, o mesmo critério de `resolverTalhao` em `coloracao.js`.
  *
  * O que **não** mora aqui, e por quê:
  *   - a rampa de cor, em `escalaDivergente.js` — trocar o vermelho não deveria
@@ -97,30 +101,41 @@ export function origemDoLimiar(chave, criterio = null) {
 
 // ---- leitura de um lado ---------------------------------------------------
 
-function lerLado(analise, chave) {
-  if (!analise) return { estado: LADO.SEM_ANALISE, valor: null, formatado: null }
+/**
+ * Lê um lado (um ano-safra) a partir de todas as amostras do talhão naquela
+ * safra e profundidade — pode ser zero, uma ou várias. O valor do lado é a
+ * média dos pontos medidos; sem nenhum ponto medido, `SEM_MEDICAO`; sem
+ * amostra nenhuma no filtro, `SEM_ANALISE`.
+ */
+function lerLado(analisesDoLado, chave) {
+  if (!analisesDoLado || analisesDoLado.length === 0) {
+    return { estado: LADO.SEM_ANALISE, valor: null, formatado: null }
+  }
 
-  const bruto = analise[chave]
-  if (!temMedicao(bruto)) return { estado: LADO.SEM_MEDICAO, valor: null, formatado: null }
+  const medidos = analisesDoLado
+    .map((a) => a[chave])
+    .filter((bruto) => temMedicao(bruto))
+    .map(Number)
+    .filter(Number.isFinite)
 
-  const numero = Number(bruto)
-  if (!Number.isFinite(numero)) return { estado: LADO.SEM_MEDICAO, valor: null, formatado: null }
+  if (medidos.length === 0) return { estado: LADO.SEM_MEDICAO, valor: null, formatado: null }
 
-  return { estado: LADO.MEDIDO, valor: numero, formatado: formatarValor(chave, numero) }
+  const media = medidos.reduce((soma, v) => soma + v, 0) / medidos.length
+  return { estado: LADO.MEDIDO, valor: media, formatado: formatarValor(chave, media) }
 }
 
-// ---- comparação de uma gleba ---------------------------------------------
+// ---- comparação de um talhão ----------------------------------------------
 
 /**
- * Compara os dois lados de uma gleba e devolve a linha da tabela.
+ * Compara os dois lados de um talhão e devolve a linha da tabela.
  *
  * `delta` é sempre B − A, com sinal. `percentual` é (B − A) / |A|, e vem
  * `null` quando A é zero — dividir por zero daria infinito, e "subiu ∞%" não
  * informa nada. `tipoDiferenca` diz qual dos dois casos ocorreu.
  */
-export function compararGleba(gleba, analiseA, analiseB, chave, criterio = null) {
-  const a = lerLado(analiseA, chave)
-  const b = lerLado(analiseB, chave)
+export function compararTalhao(talhao, analisesA, analisesB, chave, criterio = null) {
+  const a = lerLado(analisesA, chave)
+  const b = lerLado(analisesB, chave)
   const limiar = limiarDe(chave, criterio)
   const faixas = faixasEfetivas(chave, criterio)
 
@@ -129,8 +144,8 @@ export function compararGleba(gleba, analiseA, analiseB, chave, criterio = null)
   const faixaB = b.estado === LADO.MEDIDO ? faixaDe(chave, b.valor, faixas) : null
 
   const base = {
-    glebaId: gleba.id,
-    gleba,
+    talhaoId: talhao.id,
+    talhao,
     a,
     b,
     limiar,
@@ -177,15 +192,15 @@ export function filtroComparacaoCompleto({ anoA, anoB, profundidade, chaveParame
 }
 
 /**
- * Uma linha por gleba da fazenda, mais a escala.
+ * Uma linha por talhão da fazenda, mais a escala.
  *
- * Toda gleba entra, inclusive a que não tem análise em ano nenhum. Sumir com
- * ela deixaria o mapa mostrando menos terra do que existe, e o produtor sem
+ * Todo talhão entra, inclusive o que não tem análise em ano nenhum. Sumir com
+ * ele deixaria o mapa mostrando menos terra do que existe, e o produtor sem
  * saber que aquele pedaço nunca foi amostrado.
  *
  * Devolve `null` com filtro incompleto — o sinal para a tela não afirmar nada.
  */
-export function compararAnos(analises, glebas, filtro, criterio = null) {
+export function compararAnos(analises, talhoes, filtro, criterio = null) {
   if (!filtroComparacaoCompleto(filtro)) return null
 
   const indiceA = indexarAnalises(analises, {
@@ -197,11 +212,11 @@ export function compararAnos(analises, glebas, filtro, criterio = null) {
     profundidade: filtro.profundidade,
   })
 
-  const cruas = glebas.map((gleba) =>
-    compararGleba(
-      gleba,
-      indiceA.get(gleba.id) ?? null,
-      indiceB.get(gleba.id) ?? null,
+  const cruas = talhoes.map((talhao) =>
+    compararTalhao(
+      talhao,
+      indiceA.get(talhao.id) ?? null,
+      indiceB.get(talhao.id) ?? null,
       filtro.chaveParametro,
       criterio,
     ),
@@ -221,18 +236,18 @@ export function compararAnos(analises, glebas, filtro, criterio = null) {
 }
 
 /**
- * Devolve `(glebaId) => info` para `useGeometrias`, ou `null` sem comparação.
+ * Devolve `(talhaoId) => info` para `useGeometrias`, ou `null` sem comparação.
  *
  * Mesmo contrato da coloração da Fase 4 — `cor` e `hachurado` — para o mapa
  * não precisar saber se está pintando classificação ou variação.
  */
 export function criarColoracaoVariacao(comparacao) {
   if (!comparacao) return null
-  const porGleba = new Map(comparacao.linhas.map((linha) => [linha.glebaId, linha]))
+  const porTalhao = new Map(comparacao.linhas.map((linha) => [linha.talhaoId, linha]))
 
-  return (glebaId) => {
-    const linha = porGleba.get(glebaId)
-    // Gleba fora da comparação não deveria acontecer — as linhas nascem da
+  return (talhaoId) => {
+    const linha = porTalhao.get(talhaoId)
+    // Talhão fora da comparação não deveria acontecer — as linhas nascem da
     // mesma lista que o mapa desenha —, mas cinza neutro é o fallback honesto.
     if (!linha) return { cor: CINZA_NEUTRO, hachurado: false, linha: null }
     return { cor: linha.cor, hachurado: linha.estado === VARIACAO.SEM_UM_ANO, linha }
@@ -241,7 +256,7 @@ export function criarColoracaoVariacao(comparacao) {
 
 // ---- contagem para o resumo da tela --------------------------------------
 
-/** Quantas glebas em cada estado. A tela mostra para dar tamanho ao que falta. */
+/** Quantos talhões em cada estado. A tela mostra para dar tamanho ao que falta. */
 export function contarEstados(linhas) {
   const contagem = { queda: 0, estavel: 0, alta: 0, sem_um_ano: 0, sem_os_dois: 0 }
   for (const linha of linhas) contagem[linha.estado] += 1

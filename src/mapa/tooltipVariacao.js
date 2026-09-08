@@ -15,8 +15,8 @@ import { textoDelta, textoPercentual, textoDaAusencia } from '../lib/textosVaria
  * própria linha, para o tooltip continuar legível fora do contexto da legenda.
  */
 
-function identificacao(gleba) {
-  return gleba.nome ? `${gleba.codigo} · ${gleba.nome}` : gleba.codigo
+function identificacao(talhao) {
+  return talhao.nome ? `${talhao.codigo} · ${talhao.nome}` : talhao.codigo
 }
 
 /** Uma linha "ano: valor" ou "ano: sem dado (motivo)". */
@@ -33,10 +33,10 @@ function linhaDoAno(ano, lado, unidade) {
 }
 
 /**
- * Devolve `(gleba, info) => html`, no formato que `useGeometrias` espera.
+ * Devolve `(talhao, info) => html`, no formato que `useGeometrias` espera.
  *
  * É uma fábrica porque o texto precisa dos rótulos dos dois anos, que vivem na
- * comparação e não na linha de cada gleba — repeti-los em toda linha seria
+ * comparação e não na linha de cada talhão — repeti-los em toda linha seria
  * carregar a mesma string dezenas de vezes.
  */
 export function criarTooltipVariacao(comparacao) {
@@ -46,8 +46,8 @@ export function criarTooltipVariacao(comparacao) {
   const unidade = parametro(chaveParametro)?.unidade ?? ''
   const nome = escapar(rotuloComUnidade(chaveParametro))
 
-  return (gleba, info) => {
-    const titulo = `<span class="font-semibold">${escapar(identificacao(gleba))}</span>`
+  return (talhao, info) => {
+    const titulo = `<span class="font-semibold">${escapar(identificacao(talhao))}</span>`
     const linha = info?.linha
     if (!linha) return titulo
 

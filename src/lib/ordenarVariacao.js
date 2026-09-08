@@ -9,7 +9,7 @@ import { NIVEIS } from '../config/parametros.js'
  */
 
 export const COLUNAS = {
-  GLEBA: 'gleba',
+  TALHAO: 'talhao',
   VALOR_A: 'valorA',
   VALOR_B: 'valorB',
   DELTA: 'delta',
@@ -30,8 +30,8 @@ const ORDEM_NIVEL = Object.fromEntries(Object.keys(NIVEIS).map((nivel, i) => [ni
  */
 function chaveDeOrdenacao(linha, coluna) {
   switch (coluna) {
-    case COLUNAS.GLEBA:
-      return linha.gleba.codigo ?? ''
+    case COLUNAS.TALHAO:
+      return linha.talhao.codigo ?? ''
     case COLUNAS.VALOR_A:
       return linha.a.valor
     case COLUNAS.VALOR_B:
@@ -54,9 +54,9 @@ function chaveDeOrdenacao(linha, coluna) {
  *
  * **Linha sem valor na coluna afunda nas duas direções.** Ausência não é o
  * menor valor nem o maior: ordenar "sem dado" junto com os números faria a
- * pergunta "quem menos variou?" ser respondida por uma gleba que não variou
- * coisa nenhuma — ela não foi medida. O empate cai no código da gleba, para a
- * ordem ser estável entre renders.
+ * pergunta "quem menos variou?" ser respondida por um talhão que não variou
+ * coisa nenhuma — ele não foi medido. O empate cai no código do talhão, para
+ * a ordem ser estável entre renders.
  */
 export function ordenarLinhas(linhas, coluna, direcao = 'desc') {
   const sinal = direcao === 'asc' ? 1 : -1
@@ -79,7 +79,7 @@ export function ordenarLinhas(linhas, coluna, direcao = 'desc') {
 }
 
 function compararCodigos(x, y) {
-  return String(x.gleba.codigo ?? '').localeCompare(String(y.gleba.codigo ?? ''), 'pt-BR', {
+  return String(x.talhao.codigo ?? '').localeCompare(String(y.talhao.codigo ?? ''), 'pt-BR', {
     numeric: true,
   })
 }

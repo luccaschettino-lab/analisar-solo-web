@@ -264,7 +264,11 @@ export function useGeometrias(
     const pontos = []
     for (const talhao of talhoes) {
       const info = coloracao(talhao.id)
-      if (!info || info.hachurado) continue
+      // `info.pontos` só existe na coloração por classificação (Fase 4). A
+      // coloração de variação (tela de comparação) usa a mesma `coloracao`
+      // genérica mas não tem pontos por amostra — nesse caso o mapa de calor
+      // simplesmente não desenha nada, e o preenchimento do talhão já basta.
+      if (!info || info.hachurado || !info.pontos) continue
       for (const ponto of info.pontos) {
         const posicao = posicaoDoNivel(ponto.nivel)
         if (posicao == null || ponto.lat == null || ponto.lng == null) continue

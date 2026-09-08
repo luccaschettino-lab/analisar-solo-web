@@ -179,11 +179,11 @@ ok('todos os niveis do config existem em NIVEIS',
 console.log('\n=== integracao: o criterio muda a COR do mapa ===')
 // pH 6,2. No config cai em "medio" (ate 7,0); no criterio cai em "bom"
 // (ate 6,5). Se a cor nao mudar, o conjunto nao esta chegando ao mapa.
-const analisesPh = [{ gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.2 }]
+const analisesPh = [{ talhao_id: 't1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.2 }]
 const filtroPh = { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'ph_h2o' }
 
-const semCriterio = criarColoracao(analisesPh, filtroPh)('g1')
-const comCriterio = criarColoracao(analisesPh, filtroPh, CRITERIO)('g1')
+const semCriterio = criarColoracao(analisesPh, filtroPh)('t1')
+const comCriterio = criarColoracao(analisesPh, filtroPh, CRITERIO)('t1')
 
 ok('sem criterio, pH 6,2 classifica pelo config', semCriterio.nivel === 'medio', semCriterio.rotuloNivel)
 ok('com criterio, o MESMO valor classifica diferente', comCriterio.nivel === 'bom', comCriterio.rotuloNivel)
@@ -191,10 +191,10 @@ ok('e a cor acompanha', semCriterio.cor !== comCriterio.cor, `${semCriterio.cor}
 ok('as duas sao COM_COR', semCriterio.estado === ESTADO.COM_COR && comCriterio.estado === ESTADO.COM_COR)
 
 console.log('\n=== integracao: "sem classificacao" apaga a cor de quem tinha ===')
-const analisesCa = [{ gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ca: 3.0 }]
+const analisesCa = [{ talhao_id: 't1', ano_safra: '25-26', profundidade: '0-20', ca: 3.0 }]
 const filtroCa = { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'ca' }
-const caSem = criarColoracao(analisesCa, filtroCa)('g1')
-const caCom = criarColoracao(analisesCa, filtroCa, CRITERIO)('g1')
+const caSem = criarColoracao(analisesCa, filtroCa)('t1')
+const caCom = criarColoracao(analisesCa, filtroCa, CRITERIO)('t1')
 ok('sem criterio o Ca tem cor', caSem.estado === ESTADO.COM_COR, caSem.rotuloNivel)
 ok('com criterio vira SEM_FAIXA', caCom.estado === ESTADO.SEM_FAIXA, caCom.estado)
 ok('mas o VALOR continua exibido', caCom.valorFormatado === caSem.valorFormatado, caCom.valorFormatado)
@@ -215,21 +215,21 @@ ok('editar as faixas muda o limiar derivado',
    `${limiarDe('ph_h2o')} -> ${limiarDe('ph_h2o', CRITERIO)}`)
 
 // A consequencia visivel: a MESMA variacao de 0,1 muda de estado.
-const glebas1 = [{ id: 'g1', codigo: 'A-01', nome: null }]
+const talhoes1 = [{ id: 't1', codigo: 'A-01', nome: null }]
 const analisesVar = [
-  { gleba_id: 'g1', ano_safra: '24-25', profundidade: '0-20', ph_h2o: 6.0 },
-  { gleba_id: 'g1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.1 },
+  { talhao_id: 't1', ano_safra: '24-25', profundidade: '0-20', ph_h2o: 6.0 },
+  { talhao_id: 't1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.1 },
 ]
 const filtroVar = { anoA: '24-25', anoB: '25-26', profundidade: '0-20', chaveParametro: 'ph_h2o' }
-const varSem = compararAnos(analisesVar, glebas1, filtroVar).linhas[0]
-const varCom = compararAnos(analisesVar, glebas1, filtroVar, CRITERIO).linhas[0]
+const varSem = compararAnos(analisesVar, talhoes1, filtroVar).linhas[0]
+const varCom = compararAnos(analisesVar, talhoes1, filtroVar, CRITERIO).linhas[0]
 ok('0,1 e estavel pelo config (limiar 0,125)', varSem.estado === VARIACAO.ESTAVEL)
 ok('e vira alta significativa pelo criterio (limiar 0,075)', varCom.estado === VARIACAO.ALTA)
-ok('a cor da gleba muda junto', varSem.cor !== varCom.cor, `${varSem.cor} -> ${varCom.cor}`)
+ok('a cor do talhao muda junto', varSem.cor !== varCom.cor, `${varSem.cor} -> ${varCom.cor}`)
 
 console.log('\n=== nada disso vaza para quem nao usa criterio ===')
 ok('criarColoracao sem 3o argumento e igual a com null',
-   criarColoracao(analisesPh, filtroPh)('g1').cor === criarColoracao(analisesPh, filtroPh, null)('g1').cor)
+   criarColoracao(analisesPh, filtroPh)('t1').cor === criarColoracao(analisesPh, filtroPh, null)('t1').cor)
 ok('limiarDe sem 2o argumento e igual a com null', limiarDe('ca') === limiarDe('ca', null))
 
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)

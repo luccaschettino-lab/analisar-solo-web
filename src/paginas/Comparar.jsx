@@ -25,7 +25,7 @@ import TabelaVariacao from './comparacao/TabelaVariacao.jsx'
 export default function Comparar() {
   const {
     fazendas, carregandoFazendas, erroFazendas, idSelecionada, fazendaSelecionada, selecionarFazenda,
-    talhoes, glebas, carregando: carregandoHierarquia, erro: erroHierarquia,
+    talhoes, carregando: carregandoHierarquia, erro: erroHierarquia,
     analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
     parametrosDoCriterio, criterio,
     selecionado, setSelecionado,
@@ -35,8 +35,8 @@ export default function Comparar() {
   const { filtro, mudar, inverter, erro: erroAnos, completo } = useFiltroComparacao(anos)
 
   const comparacao = useMemo(
-    () => compararAnos(analisesDaFazenda, glebas, filtro, parametrosDoCriterio),
-    [analisesDaFazenda, glebas, filtro, parametrosDoCriterio],
+    () => compararAnos(analisesDaFazenda, talhoes, filtro, parametrosDoCriterio),
+    [analisesDaFazenda, talhoes, filtro, parametrosDoCriterio],
   )
   const coloracao = useMemo(() => criarColoracaoVariacao(comparacao), [comparacao])
   const conteudoTooltip = useMemo(() => criarTooltipVariacao(comparacao), [comparacao])
@@ -44,19 +44,19 @@ export default function Comparar() {
   const aoSelecionar = useCallback((alvo) => setSelecionado(alvo), [setSelecionado])
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
 
-  useGeometrias(mapa, { talhoes, glebas, selecionado, aoSelecionar, coloracao, conteudoTooltip })
+  useGeometrias(mapa, { talhoes, selecionado, aoSelecionar, coloracao, conteudoTooltip })
 
   // Só o enquadramento de abertura: esta tela lê, não escreve. O modo de
   // marcar centro fica em `useMapaDaFazenda`, com a tela que tem o botão.
   useEnquadramentoDaFazenda({ mapa, fazendaSelecionada, talhoes, carregandoHierarquia })
 
-  // Clicar numa linha da tabela leva o mapa até a gleba. Sem isso, a seleção
+  // Clicar numa linha da tabela leva o mapa até o talhão. Sem isso, a seleção
   // acenderia uma geometria fora da tela.
   useEffect(() => {
-    if (!mapa || selecionado?.tipo !== 'gleba') return
-    const gleba = glebas.find((g) => g.id === selecionado.id)
-    if (gleba?.geometria) focarGeometria(mapa, gleba.geometria)
-  }, [mapa, selecionado, glebas])
+    if (!mapa || selecionado?.tipo !== 'talhao') return
+    const talhao = talhoes.find((t) => t.id === selecionado.id)
+    if (talhao?.geometria) focarGeometria(mapa, talhao.geometria)
+  }, [mapa, selecionado, talhoes])
 
   const semFazenda = !carregandoFazendas && !fazendaSelecionada
   const semAnalises = Boolean(fazendaSelecionada) && !carregandoAnalises && anos.length === 0
@@ -75,7 +75,7 @@ export default function Comparar() {
   function mensagemDeEspera() {
     if (erroDeCarga) return 'Não foi possível carregar os dados desta fazenda. Veja o aviso acima.'
     if (semFazenda) return 'Selecione uma fazenda para comparar.'
-    if (carregandoHierarquia) return 'Carregando talhões e glebas…'
+    if (carregandoHierarquia) return 'Carregando talhões…'
     if (carregandoAnalises) return 'Carregando análises…'
     if (semAnalises) return 'Esta fazenda ainda não tem análises lançadas.'
     if (anos.length === 1) {
@@ -122,9 +122,9 @@ export default function Comparar() {
         </div>
 
         <div className="min-h-0 overflow-hidden bg-white dark:bg-noite-900">
-          {/* A tabela só entra com a hierarquia carregada: com `glebas` vazio
+          {/* A tabela só entra com a hierarquia carregada: com `talhoes` vazio
               por carregamento ou por falha, ela afirmaria que a fazenda não
-              tem gleba nenhuma. */}
+              tem talhão nenhum. */}
           {prontoParaComparar && comparacao ? (
             <TabelaVariacao
               comparacao={comparacao}

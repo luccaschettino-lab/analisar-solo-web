@@ -102,7 +102,7 @@ function CelulaClassificacao({ linha }) {
  * maiores quedas das maiores altas), a ordem padrão não é alcançável clicando
  * num cabeçalho, e por isso tem um botão próprio para voltar.
  *
- * Clicar numa linha seleciona a gleba no mapa. É a mesma ação da barra
+ * Clicar numa linha seleciona o talhão no mapa. É a mesma ação da barra
  * lateral, e mantém tabela e mapa falando do mesmo pedaço de terra.
  */
 export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }) {
@@ -132,7 +132,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-3 py-2 dark:border-white/10">
         <p className="text-xs text-slate-600 dark:text-slate-400">
-          <span className="font-medium text-slate-800 dark:text-slate-200">{linhas.length} glebas</span>
+          <span className="font-medium text-slate-800 dark:text-slate-200">{linhas.length} talhões</span>
           {contagem.sem_um_ano > 0 && (
             <span> · {contagem.sem_um_ano} sem dado em um dos anos</span>
           )}
@@ -156,7 +156,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
           </caption>
           <thead>
             <tr>
-              <Cabecalho coluna={COLUNAS.GLEBA} rotulo="Gleba" ordenacao={ordenacao} aoOrdenar={aoOrdenar} />
+              <Cabecalho coluna={COLUNAS.TALHAO} rotulo="Talhão" ordenacao={ordenacao} aoOrdenar={aoOrdenar} />
               <Cabecalho coluna={COLUNAS.VALOR_A} rotulo={anoA} sublinha="Ano A" aDireita ordenacao={ordenacao} aoOrdenar={aoOrdenar} />
               <Cabecalho coluna={COLUNAS.VALOR_B} rotulo={anoB} sublinha="Ano B" aDireita ordenacao={ordenacao} aoOrdenar={aoOrdenar} />
               <Cabecalho coluna={COLUNAS.DELTA} rotulo="Diferença" sublinha={`B − A${unidade ? ` (${unidade})` : ''}`} aDireita ordenacao={ordenacao} aoOrdenar={aoOrdenar} />
@@ -167,28 +167,28 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
 
           <tbody>
             {ordenadas.map((linha) => {
-              const ativa = selecionado?.tipo === 'gleba' && selecionado.id === linha.glebaId
+              const ativa = selecionado?.tipo === 'talhao' && selecionado.id === linha.talhaoId
               const comparavel = linha.delta !== null
               const percentual = textoPercentual(linha)
 
               return (
                 <tr
-                  key={linha.glebaId}
-                  onClick={() => aoSelecionar({ tipo: 'gleba', id: linha.glebaId })}
+                  key={linha.talhaoId}
+                  onClick={() => aoSelecionar({ tipo: 'talhao', id: linha.talhaoId })}
                   className={`cursor-pointer border-b border-slate-100 dark:border-white/5 ${ativa ? 'bg-amber-100 dark:bg-amber-400/15' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
                 >
                   <td className="px-2 py-1.5 text-xs text-slate-800 dark:text-slate-200">
                     <span className="flex items-center gap-1.5">
-                      {/* A mesma cor que a gleba tem no mapa: sem isso, ler a
+                      {/* A mesma cor que o talhão tem no mapa: sem isso, ler a
                           tabela e ler o mapa seriam dois trabalhos separados. */}
                       <span
                         aria-hidden="true"
                         className="h-2.5 w-2.5 shrink-0 rounded-sm border border-slate-300 dark:border-white/20"
                         style={{ backgroundColor: linha.cor }}
                       />
-                      <span className="font-medium">{linha.gleba.codigo}</span>
-                      {linha.gleba.nome && (
-                        <span className="truncate text-slate-500 dark:text-slate-400">· {linha.gleba.nome}</span>
+                      <span className="font-medium">{linha.talhao.codigo}</span>
+                      {linha.talhao.nome && (
+                        <span className="truncate text-slate-500 dark:text-slate-400">· {linha.talhao.nome}</span>
                       )}
                     </span>
                   </td>
@@ -231,7 +231,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
 
         {linhas.length === 0 && (
           <p className="px-3 py-4 text-xs text-slate-500 dark:text-slate-400">
-            Esta fazenda ainda não tem glebas cadastradas.
+            Esta fazenda ainda não tem talhões cadastrados.
           </p>
         )}
       </div>
