@@ -350,17 +350,8 @@ export default function BarraLateral({ aoNavegar }) {
           <NavLink to="/dados" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
             <span aria-hidden="true">📋</span> Dados
           </NavLink>
-
-          <NavLink to="/monitoramento" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">🛰</span> Monitoramento
-          </NavLink>
-
-          {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
-              e autor entra em leitura, e precisa — a cor do mapa dele sai
-              daqui. */}
-          <NavLink to="/criterios" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">🎚</span> Critérios
-          </NavLink>
+          {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —
+              não de "Critérios", onde estavam por engano. */}
           <ul className="ml-4 border-l border-slate-200 pl-1 dark:border-white/10">
             <li>
               <button onClick={() => irPara('/dados')} className={`${ITEM} ${INATIVO}`}>
@@ -373,6 +364,17 @@ export default function BarraLateral({ aoNavegar }) {
               </button>
             </li>
           </ul>
+
+          <NavLink to="/monitoramento" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
+            <span aria-hidden="true">🛰</span> Monitoramento
+          </NavLink>
+
+          {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
+              e autor entra em leitura, e precisa — a cor do mapa dele sai
+              daqui. */}
+          <NavLink to="/criterios" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
+            <span aria-hidden="true">🎚</span> Critérios
+          </NavLink>
         </div>
       </div>
     </nav>
