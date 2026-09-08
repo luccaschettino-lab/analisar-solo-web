@@ -351,6 +351,10 @@ export default function BarraLateral({ aoNavegar }) {
             <span aria-hidden="true">📋</span> Dados
           </NavLink>
 
+          <NavLink to="/monitoramento" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
+            <span aria-hidden="true">🛰</span> Monitoramento
+          </NavLink>
+
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
