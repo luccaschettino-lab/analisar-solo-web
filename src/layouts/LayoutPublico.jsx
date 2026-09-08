@@ -27,16 +27,18 @@ export default function LayoutPublico() {
           className="absolute inset-0 h-full w-full object-cover"
         />
         {/* Escurece a foto o bastante pra logo e o texto claro lerem em cima
-            dela, mais forte embaixo à esquerda, onde o conteúdo fica. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-noite-950/90 via-noite-950/40 to-noite-950/10" />
-        <div className="relative flex h-full flex-col justify-end p-6 sm:p-10 md:justify-center">
+            dela — forte embaixo, onde o conteúdo fica ancorado nas duas
+            larguras (centralizar no meio do painel em telas grandes caía bem
+            no ponto mais fraco do degradê, e o texto quase sumia). */}
+        <div className="absolute inset-0 bg-gradient-to-t from-noite-950/95 via-noite-950/55 to-noite-950/10" />
+        <div className="relative flex h-full flex-col justify-end p-6 sm:p-10 md:p-14">
           {/* Plaquinha clara atrás da logo: a arte é verde/marrom sobre fundo
-              transparente, feita pra superfície clara — direto sobre a
-              ilustração escura ela sumiria. */}
-          <div className="inline-block w-fit rounded-xl bg-white/95 px-4 py-3 shadow-painel">
-            <img src={logoCompleto} alt="Boss-Agro" className="h-9 w-auto sm:h-11 md:h-12" />
+              transparente, feita pra superfície clara — direto sobre a foto
+              ela sumiria. */}
+          <div className="inline-block w-fit rounded-xl bg-white/95 px-5 py-4 shadow-painel">
+            <img src={logoCompleto} alt="Boss-Agro" className="h-14 w-auto sm:h-16 md:h-20" />
           </div>
-          <p className="mt-3 max-w-sm text-sm text-slate-300 sm:text-base">
+          <p className="mt-4 max-w-sm text-base font-medium text-white drop-shadow-md sm:text-lg">
             Mapa, análise e histórico do solo — talhão por talhão, safra após safra.
           </p>
         </div>
@@ -46,7 +48,7 @@ export default function LayoutPublico() {
           160px deixava um vão enorme antes do cartão. A partir de md o
           painel de marca já ocupa a altura toda, então centralizar de novo
           faz sentido. */}
-      <div className="flex flex-1 items-start justify-center p-4 pt-8 sm:p-8 md:items-center md:pt-8">
+      <div className="flex flex-1 items-start justify-center p-4 pt-10 sm:p-8 md:items-center md:pt-8">
         <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-noite-900">
           <Outlet />
         </div>
