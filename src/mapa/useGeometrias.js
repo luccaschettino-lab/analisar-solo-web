@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import { paraFeature, ehPonto } from '../lib/geo.js'
+import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipGleba } from './tooltipGleba.js'
 import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
@@ -57,6 +58,41 @@ export function useGeometrias(
   // que deixa cada talhão reconhecível na visão geral da fazenda, agora que a
   // gleba cobre o talhão inteiro em vez de aparecer só como ponto.
   const corPorTalhao = useMemo(() => new Map(talhoes.map((t) => [t.id, t.cor])), [talhoes])
+
+  /**
+   * Dentro do mesmo talhão, cada gleba recebe uma variação de luminosidade
+   * da cor herdada — mais clara ou mais escura, nunca outro matiz. Um talhão
+   * com quatro glebas amarelas continua "amarelo": a primeira sai mais clara,
+   * a última mais escura, e as do meio numa progressão entre as duas. Sem
+   * isso, glebas vizinhas do mesmo talhão eram indistinguíveis sem passar o
+   * mouse uma a uma.
+   */
+  const corPorGleba = useMemo(() => {
+    const glebasPorTalhao = new Map()
+    for (const gleba of glebas) {
+      if (!glebasPorTalhao.has(gleba.talhao_id)) glebasPorTalhao.set(gleba.talhao_id, [])
+      glebasPorTalhao.get(gleba.talhao_id).push(gleba)
+    }
+
+    const cores = new Map()
+    for (const [talhaoId, lista] of glebasPorTalhao) {
+      const corBase = corPorTalhao.get(talhaoId) ?? COR_GLEBA
+      // Ordem estável pelo código (numérica quando dá) para a progressão
+      // clara→escura não mudar de gleba a cada revisão do mapa.
+      const ordenada = [...lista].sort((a, b) => {
+        const na = Number(a.codigo)
+        const nb = Number(b.codigo)
+        if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb
+        return String(a.codigo).localeCompare(String(b.codigo))
+      })
+      const n = ordenada.length
+      ordenada.forEach((gleba, i) => {
+        const delta = n > 1 ? -0.16 + (0.32 * i) / (n - 1) : 0
+        cores.set(gleba.id, variarLuminosidade(corBase, delta))
+      })
+    }
+    return cores
+  }, [glebas, corPorTalhao])
 
   // Mantém o callback fresco sem recriar as camadas a cada render do pai.
   const aoSelecionarRef = useRef(aoSelecionar)
@@ -167,7 +203,7 @@ export function useGeometrias(
       const f = paraFeature(gleba.geometria)
       if (!f?.geometry) continue
 
-      const corHerdada = corPorTalhao.get(gleba.talhao_id) ?? COR_GLEBA
+      const corHerdada = corPorGleba.get(gleba.id) ?? COR_GLEBA
 
       const camada = L.geoJSON(f, {
         style: { ...ESTILO_GLEBA, fillColor: corHerdada },
@@ -215,7 +251,7 @@ export function useGeometrias(
       })
       camadaRotulo.addTo(grupo)
     }
-  }, [mapa, glebas, revisao, corPorTalhao])
+  }, [mapa, glebas, revisao, corPorGleba])
 
   /**
    * Destaque e coloração no mesmo efeito.
@@ -253,8 +289,9 @@ export function useGeometrias(
       if (!semDado) {
         // `dashArray: null` explícito: setStyle mescla com o estilo anterior,
         // então um tracejado deixado por um filtro anterior sobreviveria. Sem
-        // filtro, a cor vem do talhão-pai — ver `corPorTalhao` acima.
-        const corSemFiltro = corPorTalhao.get(registro.gleba.talhao_id) ?? COR_GLEBA
+        // filtro, a cor vem do talhão-pai com a variação por gleba — ver
+        // `corPorGleba` acima.
+        const corSemFiltro = corPorGleba.get(registro.gleba.id) ?? COR_GLEBA
         estilo = { ...base, fillColor: info ? info.cor : corSemFiltro, dashArray: null }
       } else if (registro.ponto) {
         // Ponto vazado e tracejado — a hachura não se lê num círculo de 14 px.
@@ -277,7 +314,7 @@ export function useGeometrias(
 
       if (ativo) registro.camada.bringToFront()
     }
-  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro, conteudoTooltip])
+  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro, conteudoTooltip, corPorGleba])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.
