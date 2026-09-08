@@ -184,6 +184,13 @@ export default function Painel() {
               >
                 Marcar sede
               </button>
+              <button
+                onClick={abrirExclusaoFazenda}
+                disabled={carregandoExclusaoFazenda}
+                className="vidro rounded-md border border-red-200 px-2 py-1.5 text-xs font-medium text-red-700 shadow-painel hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-400/30 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                {carregandoExclusaoFazenda ? 'Verificando…' : 'Excluir fazenda'}
+              </button>
             </>
           )}
           {/* Fora do bloco de editor: ir ate a sede e leitura, nao edicao.
