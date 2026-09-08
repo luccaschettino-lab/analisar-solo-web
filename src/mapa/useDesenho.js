@@ -48,8 +48,23 @@ export function useDesenho(mapa, aoConcluir) {
     }
 
     mapa.on('pm:create', aoCriar)
+
+    // Ctrl+Z (Cmd+Z no Mac) desfaz o último vértice colocado ao desenhar um
+    // talhão. Só existe pro polígono — ponto é clique único, não tem vértice
+    // anterior para tirar. O Geoman escuta Escape e Enter sozinho, mas não
+    // isso; o listener fica em document, não no mapa, porque o foco costuma
+    // estar no canvas do Leaflet, não num elemento que reage a keydown.
+    function aoTeclar(e) {
+      const desfazer = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z'
+      if (!desfazer || !mapa.pm.Draw.Polygon.enabled()) return
+      e.preventDefault()
+      mapa.pm.Draw.Polygon._removeLastVertex()
+    }
+    document.addEventListener('keydown', aoTeclar)
+
     return () => {
       mapa.off('pm:create', aoCriar)
+      document.removeEventListener('keydown', aoTeclar)
       // Sair da tela no meio de um desenho não pode deixar o mapa preso no
       // modo de desenho nem com o duplo clique desligado.
       if (mapa.pm.globalDrawModeEnabled?.()) mapa.pm.disableDraw()

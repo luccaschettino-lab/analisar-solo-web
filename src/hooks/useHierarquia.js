@@ -53,15 +53,15 @@ export function useHierarquia(fazendaId) {
     carregar()
   }, [carregar])
 
-  const aplicarTalhao = useCallback((talhao) => {
+  const aplicarTalhoes = useCallback((novos) => {
     setTalhoes((atual) => {
-      const existe = atual.some((t) => t.id === talhao.id)
-      const proxima = existe
-        ? atual.map((t) => (t.id === talhao.id ? { ...t, ...talhao } : t))
-        : [...atual, talhao]
-      return proxima.sort(compararCodigo)
+      const porId = new Map(atual.map((t) => [t.id, t]))
+      for (const t of novos) porId.set(t.id, { ...porId.get(t.id), ...t })
+      return [...porId.values()].sort(compararCodigo)
     })
   }, [])
+
+  const aplicarTalhao = useCallback((talhao) => aplicarTalhoes([talhao]), [aplicarTalhoes])
 
   const removerTalhao = useCallback((id) => {
     setTalhoes((atual) => atual.filter((t) => t.id !== id))
@@ -91,6 +91,7 @@ export function useHierarquia(fazendaId) {
     erro,
     recarregar: carregar,
     aplicarTalhao,
+    aplicarTalhoes,
     removerTalhao,
     aplicarGleba,
     aplicarGlebas,

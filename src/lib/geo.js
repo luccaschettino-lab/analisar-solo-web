@@ -159,3 +159,35 @@ export function latLngDoPonto(geoJson) {
   if (!Array.isArray(c) || c.length < 2) return null
   return [c[1], c[0]]
 }
+
+/**
+ * Combina geometrias de área (Polygon ou MultiPolygon) numa MultiPolygon só
+ * — usado ao mesclar talhões.
+ *
+ * Não é um "dissolve" geométrico: não redesenha a fronteira comum entre
+ * polígonos vizinhos, só empilha os anéis de todos numa feature e num
+ * registro só. Foi a escolha certa aqui — os talhões que motivaram isso
+ * (o mesmo Lote do produtor, dividido em pedaços vizinhos com códigos
+ * "10", "10-2", "10-3") não se sobrepõem nem encostam perfeitamente, então
+ * um dissolve de verdade exigiria uma lib de topologia e ainda arriscaria
+ * quebrar em polígonos com milhares de vértices vindos de KML.
+ */
+export function combinarGeometrias(geometrias) {
+  const poligonos = []
+  for (const g of geometrias) {
+    const geometry = paraFeature(g)?.geometry
+    if (!geometry) continue
+    if (geometry.type === 'Polygon') poligonos.push(geometry.coordinates)
+    else if (geometry.type === 'MultiPolygon') poligonos.push(...geometry.coordinates)
+  }
+  if (poligonos.length === 0) return null
+
+  return {
+    type: 'Feature',
+    properties: {},
+    geometry:
+      poligonos.length === 1
+        ? { type: 'Polygon', coordinates: poligonos[0] }
+        : { type: 'MultiPolygon', coordinates: poligonos },
+  }
+}

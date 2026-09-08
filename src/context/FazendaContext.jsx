@@ -81,6 +81,15 @@ export function FazendaProvider({ children }) {
    */
   const [pedidoDeDesenho, setPedidoDeDesenho] = useState(null)
 
+  /**
+   * Diálogo de fazenda aberto ('nova', 'editar' ou null). Mora aqui, e não no
+   * Painel, porque quem abre "Nova fazenda" agora é a barra lateral — perto do
+   * seletor de fazenda, onde faz sentido — e ela não tem acesso ao estado do
+   * mapa. O diálogo em si (`FormFazenda`, dentro de `ModaisDoPainel`) continua
+   * renderizando no Painel; a barra só liga o pedido.
+   */
+  const [formFazenda, setFormFazenda] = useState(null)
+
   const valor = useMemo(
     () => ({
       fazendas,
@@ -115,13 +124,15 @@ export function FazendaProvider({ children }) {
       setSelecionado,
       pedidoDeDesenho,
       setPedidoDeDesenho,
+      formFazenda,
+      setFormFazenda,
     }),
     [
       fazendas, carregandoFazendas, erroFazendas, aplicarFazenda, removerFazenda,
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
       criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
-      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho,
+      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda,
     ],
   )
 

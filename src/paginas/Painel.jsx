@@ -27,19 +27,21 @@ export default function Painel() {
   const ctx = useFazendaAtual()
   const {
     fazendaSelecionada, idSelecionada, selecionarFazenda, editor,
-    talhoes, glebas, aplicarTalhao, aplicarGleba, aplicarGlebas,
+    talhoes, glebas, aplicarTalhao, aplicarTalhoes, aplicarGleba, aplicarGlebas,
     removerTalhao, removerGleba, carregando: carregandoHierarquia,
     aplicarFazenda, removerFazenda,
     anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises, criterio,
     selecionado, setSelecionado, pedidoDeDesenho, setPedidoDeDesenho,
+    formFazenda, setFormFazenda,
   } = ctx
 
   const [mapa, setMapa] = useState(null)
-  const [formFazenda, setFormFazenda] = useState(null)
   const [confirmandoFazenda, setConfirmandoFazenda] = useState(null)
   const [carregandoExclusaoFazenda, setCarregandoExclusaoFazenda] = useState(false)
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const [buscaAberta, setBuscaAberta] = useState(false)
+  const [importandoKml, setImportandoKml] = useState(false)
+  const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
   // de se mover — consultar a cada pixel de arrasto seria abuso do serviço.
@@ -165,14 +167,9 @@ export default function Painel() {
 
         <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
 
-        {/* Ações da fazenda, no canto oposto ao dos controles do mapa. */}
+        {/* Ações da fazenda, no canto oposto ao dos controles do mapa.
+            "Nova fazenda" mora na barra lateral agora, perto do seletor. */}
         <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
-          <button
-            onClick={() => setFormFazenda('nova')}
-            className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-          >
-            Nova fazenda
-          </button>
           {fazendaSelecionada && editor && (
             <>
               <button
@@ -210,7 +207,23 @@ export default function Painel() {
               aria-expanded={filtrosAbertos}
               className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
             >
-              Colorir o mapa
+              🔽 Filtro
+            </button>
+          )}
+          {fazendaSelecionada && editor && (
+            <button
+              onClick={() => setImportandoKml(true)}
+              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+            >
+              Importar
+            </button>
+          )}
+          {fazendaSelecionada && editor && talhoes.length >= 2 && (
+            <button
+              onClick={() => setMesclandoTalhoes(true)}
+              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+            >
+              Mesclar talhões
             </button>
           )}
           {/* Buscar não depende de fazenda selecionada: é justamente o que se usa
@@ -292,12 +305,15 @@ export default function Painel() {
 
         <ModaisDoPainel
           fazendaSelecionada={fazendaSelecionada}
+          talhoes={talhoes}
           glebas={glebas}
           mapa={mapa}
           criacao={criacao}
           item={item}
           aplicarFazenda={aplicarFazenda}
           aplicarTalhao={aplicarTalhao}
+          aplicarTalhoes={aplicarTalhoes}
+          removerTalhao={removerTalhao}
           aplicarGleba={aplicarGleba}
           aplicarGlebas={aplicarGlebas}
           mostrarAviso={mostrarAviso}
@@ -307,6 +323,10 @@ export default function Painel() {
           confirmandoFazenda={confirmandoFazenda}
           aoFecharConfirmacaoFazenda={() => setConfirmandoFazenda(null)}
           aoConfirmarExclusaoFazenda={confirmarExclusaoFazenda}
+          importandoKml={importandoKml}
+          aoFecharImportarKml={() => setImportandoKml(false)}
+          mesclandoTalhoes={mesclandoTalhoes}
+          aoFecharMesclarTalhoes={() => setMesclandoTalhoes(false)}
         />
       </div>
 

@@ -24,16 +24,21 @@ export function formatarArea(areaHa) {
 }
 
 /**
- * HTML do rótulo. Código e nome vêm do cadastro, digitados pelo usuário, e o
- * tooltip do Leaflet aceita HTML — por isso passam por `escapar`.
+ * HTML do rótulo. Código vem do cadastro, digitado pelo usuário, e o
+ * tooltip do Leaflet aceita HTML — por isso passa por `escapar`.
+ *
+ * Só o código, sem o nome: com muitos talhões pequenos e vizinhos (comum
+ * depois de uma importação de KML, onde cada polígono já chega com nome
+ * próprio), "Talhão 12-2 (Antigo 19)" empilhado lado a lado de outros rótulos
+ * do mesmo tamanho vira uma parede de texto ilegível. O nome continua
+ * disponível — é só clicar no talhão — só não briga mais por espaço no mapa.
  *
  * Talhão sem área desenhada (geometria ausente ou degenerada) sai só com a
  * identificação, sem "0,00 ha". Área zero e área desconhecida são coisas
  * diferentes, e a segunda não deve ser exibida como número.
  */
 export function conteudoRotuloTalhao(talhao) {
-  const descricao = talhao.nome ? ` (${talhao.nome})` : ''
-  const titulo = escapar(`Talhão ${talhao.codigo}${descricao}`)
+  const titulo = escapar(`Talhão ${talhao.codigo}`)
 
   const area = formatarArea(talhao.area_ha)
   if (!area) return titulo

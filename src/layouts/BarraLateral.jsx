@@ -33,6 +33,7 @@ export default function BarraLateral({ aoNavegar }) {
     fazendaSelecionada, selecionarFazenda, editor,
     talhoes, glebas, carregando: carregandoHierarquia,
     selecionado, setSelecionado, setPedidoDeDesenho,
+    setFormFazenda,
   } = useFazendaAtual()
 
   const navegar = useNavigate()
@@ -83,6 +84,15 @@ export default function BarraLateral({ aoNavegar }) {
     aoNavegar?.()
   }
 
+  // O diálogo (FormFazenda) só renderiza dentro do Painel, que é a rota do
+  // mapa — abrir de outra tela sem navegar deixaria o pedido registrado e
+  // nada na tela pra mostrar.
+  function novaFazenda() {
+    setFormFazenda('nova')
+    if (local.pathname !== '/') navegar('/')
+    aoNavegar?.()
+  }
+
   return (
     <nav aria-label="Navegação" className="flex h-full flex-col overflow-y-auto">
       <div className="border-b border-slate-200 px-3 py-3 dark:border-white/10">
@@ -112,6 +122,12 @@ export default function BarraLateral({ aoNavegar }) {
             {ROTULO_PAPEL[fazendaSelecionada.papel] ?? fazendaSelecionada.papel}
           </p>
         )}
+        <button
+          onClick={novaFazenda}
+          className={`mt-1.5 rounded px-1 py-0.5 text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10 ${FOCO}`}
+        >
+          + Nova fazenda
+        </button>
       </div>
 
       <div className="min-h-0 flex-1 px-2 py-2">

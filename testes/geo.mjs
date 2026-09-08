@@ -1,6 +1,7 @@
 import {
   CONTENCAO, TOLERANCIA_FORA,
   avaliarContencao, glebaDentroDoTalhao, pontoFeature, areaEmHectares,
+  combinarGeometrias,
 } from '../src/lib/geo.js'
 
 let falhas = 0
@@ -87,6 +88,29 @@ ok('divisa tolerada -> true', glebaDentroDoTalhao(naDivisa, TALHAO) === true)
 console.log('\n=== area (nao mexemos nisso, mas nao pode quebrar) ===')
 ok('poligono tem area', areaEmHectares(TALHAO) > 0, `${areaEmHectares(TALHAO)} ha`)
 ok('ponto nao tem area', areaEmHectares(pontoFeature(-20.79, -42.89)) === null)
+
+console.log('\n=== combinarGeometrias: mesclar talhões ===')
+const vizinho1 = quadrado(-42.90, -20.80, -42.89, -20.79)
+const vizinho2 = quadrado(-42.89, -20.80, -42.88, -20.79)
+const combinada = combinarGeometrias([vizinho1, vizinho2])
+ok('vira MultiPolygon com dois polígonos', combinada.geometry.type === 'MultiPolygon')
+ok('um polígono por entrada', combinada.geometry.coordinates.length === 2)
+ok('área é a soma das duas (não se sobrepõem)',
+   Math.abs(areaEmHectares(combinada) - (areaEmHectares(vizinho1) + areaEmHectares(vizinho2))) < 0.01,
+   `${areaEmHectares(combinada)} vs ${areaEmHectares(vizinho1) + areaEmHectares(vizinho2)}`)
+
+ok('uma entrada só continua Polygon, não vira MultiPolygon à toa',
+   combinarGeometrias([vizinho1]).geometry.type === 'Polygon')
+
+const jaMulti = { type: 'Feature', properties: {}, geometry: { type: 'MultiPolygon', coordinates: [vizinho1.geometry.coordinates, vizinho2.geometry.coordinates] } }
+const vizinho3 = quadrado(-42.88, -20.80, -42.87, -20.79)
+const combinadaComMulti = combinarGeometrias([jaMulti, vizinho3])
+ok('achata um MultiPolygon de entrada em vez de aninhar',
+   combinadaComMulti.geometry.coordinates.length === 3,
+   String(combinadaComMulti.geometry.coordinates.length))
+
+ok('lista vazia devolve null', combinarGeometrias([]) === null)
+ok('só geometria nula/sem área devolve null', combinarGeometrias([null, undefined]) === null)
 
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)
 process.exit(falhas === 0 ? 0 : 1)

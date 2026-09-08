@@ -3,6 +3,8 @@ import FormTalhao from './FormTalhao.jsx'
 import FormGleba from './FormGleba.jsx'
 import EscolherTipoGleba from './EscolherTipoGleba.jsx'
 import GlebasEmLote from './GlebasEmLote.jsx'
+import ImportarKml from './ImportarKml.jsx'
+import MesclarTalhoes from './MesclarTalhoes.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
 import Modal from '../../componentes/Modal.jsx'
 import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
@@ -14,12 +16,15 @@ import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
  */
 export default function ModaisDoPainel({
   fazendaSelecionada,
+  talhoes,
   glebas,
   mapa,
   criacao,
   item,
   aplicarFazenda,
   aplicarTalhao,
+  aplicarTalhoes,
+  removerTalhao,
   aplicarGleba,
   aplicarGlebas,
   mostrarAviso,
@@ -29,6 +34,10 @@ export default function ModaisDoPainel({
   confirmandoFazenda,
   aoFecharConfirmacaoFazenda,
   aoConfirmarExclusaoFazenda,
+  importandoKml,
+  aoFecharImportarKml,
+  mesclandoTalhoes,
+  aoFecharMesclarTalhoes,
 }) {
   return (
     <>
@@ -64,6 +73,36 @@ export default function ModaisDoPainel({
             mostrarAviso(
               `${criadas.length} ${criadas.length === 1 ? 'gleba criada' : 'glebas criadas'} no talhão ${criacao.talhaoDoLote.codigo}.`,
             )
+          }}
+        />
+      )}
+
+      {importandoKml && fazendaSelecionada && (
+        <ImportarKml
+          fazendaId={fazendaSelecionada.id}
+          talhoes={talhoes}
+          aoFechar={aoFecharImportarKml}
+          aoImportado={({ talhoes: novosTalhoes, glebas: novasGlebas }) => {
+            if (novosTalhoes.length) aplicarTalhoes(novosTalhoes)
+            if (novasGlebas.length) aplicarGlebas(novasGlebas)
+            mostrarAviso(
+              `${novosTalhoes.length} ${novosTalhoes.length === 1 ? 'talhão' : 'talhões'} e ` +
+              `${novasGlebas.length} ${novasGlebas.length === 1 ? 'gleba' : 'glebas'} importados.`,
+            )
+          }}
+        />
+      )}
+
+      {mesclandoTalhoes && (
+        <MesclarTalhoes
+          talhoes={talhoes}
+          glebas={glebas}
+          aoFechar={aoFecharMesclarTalhoes}
+          aoMesclado={({ talhao, glebasMovidas, removidos }) => {
+            aplicarTalhao(talhao)
+            if (glebasMovidas.length) aplicarGlebas(glebasMovidas)
+            for (const id of removidos) removerTalhao(id)
+            mostrarAviso(`Talhão ${talhao.codigo} criado a partir da mesclagem de ${removidos.length + 1} talhões.`)
           }}
         />
       )}
