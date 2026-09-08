@@ -6,8 +6,11 @@ import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 
+// Mesma classe dos campos de dentro de `FiltrosMapa` — o seletor de talhão
+// mora bem em cima do de ano-safra, e os dois precisam ler como parte do
+// mesmo grupo de campos, não como dois estilos diferentes emendados.
 const SELECT =
-  'mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-600'
+  'mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 disabled:text-slate-400 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5 dark:disabled:text-slate-500'
 
 /**
  * Um talhão por vez, em close — a tela existe para isso. O mapa geral mostra
@@ -77,36 +80,8 @@ export default function Filtros() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-noite-900">
-        <h1 className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">Filtros</h1>
-
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <label htmlFor="filtros-talhao" className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
-            Talhão
-          </label>
-          <select
-            id="filtros-talhao"
-            value={talhaoId}
-            onChange={(e) => setTalhaoId(e.target.value)}
-            disabled={!fazendaSelecionada || carregandoHierarquia}
-            className={`${SELECT} mt-0 max-w-xs py-1.5`}
-          >
-            <option value="">
-              {!fazendaSelecionada
-                ? 'selecione uma fazenda na barra lateral'
-                : carregandoHierarquia
-                  ? 'carregando…'
-                  : talhoes.length === 0
-                    ? 'nenhum talhão'
-                    : 'selecione…'}
-            </option>
-            {talhoes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nome ? `${t.codigo} · ${t.nome}` : t.codigo}
-              </option>
-            ))}
-          </select>
-        </div>
+      <header className="border-b border-slate-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-noite-900">
+        <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Filtros</h1>
       </header>
 
       {!fazendaSelecionada ? (
@@ -116,6 +91,35 @@ export default function Filtros() {
       ) : (
         <div className="grid min-h-0 flex-1 lg:grid-cols-[19rem_1fr]">
           <div className="overflow-y-auto border-b border-slate-200 lg:border-b-0 lg:border-r dark:border-white/10">
+            {/* Em cima do resto do filtro, de propósito: qual talhão vem
+                antes de qual safra — sem talhão escolhido, ano-safra e
+                profundidade não têm o que colorir. */}
+            <section className="px-4 py-3">
+              <label htmlFor="filtros-talhao" className="block text-xs font-medium text-slate-600 dark:text-slate-300">
+                Talhão
+              </label>
+              <select
+                id="filtros-talhao"
+                value={talhaoId}
+                onChange={(e) => setTalhaoId(e.target.value)}
+                disabled={!fazendaSelecionada || carregandoHierarquia}
+                className={SELECT}
+              >
+                <option value="">
+                  {carregandoHierarquia
+                    ? 'carregando…'
+                    : talhoes.length === 0
+                      ? 'nenhum talhão'
+                      : 'selecione…'}
+                </option>
+                {talhoes.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome ? `${t.codigo} · ${t.nome}` : t.codigo}
+                  </option>
+                ))}
+              </select>
+            </section>
+
             <FiltrosMapa
               filtro={filtro}
               aoMudar={definirFiltro}

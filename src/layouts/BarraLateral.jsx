@@ -17,10 +17,10 @@ function Seta({ aberto }) {
 }
 
 /**
- * Ícone sozinho, sem rótulo ao lado — Mapa, Filtros e Comparar anos viraram
- * isso a pedido, pra caber os três numa linha só em vez de três. O nome não
- * some de verdade: `title` mostra no hover, e `aria-label` mantém a tela
- * legível para quem usa leitor de tela.
+ * Ícone sozinho, sem rótulo ao lado — todas as abas da barra viraram isso a
+ * pedido, empilhadas na vertical em vez de uma linha de texto por aba. O
+ * nome não some de verdade: `title` mostra no hover, e `aria-label` mantém a
+ * tela legível para quem usa leitor de tela.
  */
 function IconeNav({ to, icone, rotulo, onClick }) {
   return (
@@ -30,7 +30,7 @@ function IconeNav({ to, icone, rotulo, onClick }) {
       aria-label={rotulo}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex h-9 flex-1 items-center justify-center rounded text-base transition ${FOCO} ${isActive ? ATIVO : INATIVO}`
+        `flex h-9 w-full items-center justify-center rounded text-base transition ${FOCO} ${isActive ? ATIVO : INATIVO}`
       }
     >
       <span aria-hidden="true">{icone}</span>
@@ -188,108 +188,105 @@ export default function BarraLateral({ aoNavegar }) {
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 px-2 py-2">
-        {/* Mapa, Filtros e Comparar anos — as três telas de "olhar o que já
-            existe" — viram ícone sozinho numa linha, a pedido, pra caber
-            as três sem empurrar Dados/Monitoramento/Critérios pra baixo. */}
-        <div className="flex items-stretch gap-1">
-          {fazendaSelecionada && (
-            <button
-              onClick={() => setArvoreAberta((a) => !a)}
-              aria-expanded={arvoreAberta}
-              aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
-              className={`w-5 shrink-0 ${FOCO}`}
-            >
-              <Seta aberto={arvoreAberta} />
-            </button>
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        {/* Todas as abas viram ícone sozinho, empilhadas na vertical — o
+            nome continua acessível por `title` (hover) e `aria-label`
+            (leitor de tela), só não ocupa mais uma linha de texto cada. */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-stretch gap-1">
+            {fazendaSelecionada && (
+              <button
+                onClick={() => setArvoreAberta((a) => !a)}
+                aria-expanded={arvoreAberta}
+                aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
+                className={`w-5 shrink-0 ${FOCO}`}
+              >
+                <Seta aberto={arvoreAberta} />
+              </button>
+            )}
+            <IconeNav to="/" icone="🗺" rotulo="Mapa" onClick={aoNavegar} />
+          </div>
+
+          {fazendaSelecionada && arvoreAberta && (
+            <div>
+              {carregandoHierarquia ? (
+                <p className="px-2 py-2 text-xs text-slate-400 dark:text-slate-500">carregando talhões…</p>
+              ) : talhoes.length === 0 ? (
+                <p className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">
+                  Nenhum talhão. {editor && 'Importe um arquivo pra começar.'}
+                </p>
+              ) : (
+                <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
+                  {talhoes.map((talhao) => {
+                    const ativo = selecionado?.tipo === 'talhao' && selecionado.id === talhao.id
+                    return (
+                      <li key={talhao.id}>
+                        <button
+                          onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
+                          className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
+                        >
+                          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
+                          <span className="truncate">
+                            {talhao.codigo}
+                            {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+
+              {editor && (
+                // Talhão só nasce de arquivo importado agora — "Importar" é a
+                // ação principal aqui, não mais um item ao lado de "+ Talhão".
+                <div className="mt-1 flex flex-wrap gap-x-1">
+                  <button
+                    onClick={() => pedirAcao('importar-arquivo')}
+                    className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                  >
+                    Importar
+                  </button>
+                  {talhoes.length >= 2 && (
+                    <button
+                      onClick={() => pedirAcao('mesclar-talhoes')}
+                      className={`${ITEM} w-auto text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5`}
+                    >
+                      Mesclar talhões
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
-          <IconeNav to="/" icone="🗺" rotulo="Mapa" onClick={aoNavegar} />
+
           <IconeNav to="/filtros" icone="🔽" rotulo="Filtros" onClick={aoNavegar} />
           <IconeNav to="/comparar" icone="📈" rotulo="Comparar anos" onClick={aoNavegar} />
-        </div>
 
-        {fazendaSelecionada && arvoreAberta && (
-          <div className="mt-1">
-            {carregandoHierarquia ? (
-              <p className="px-2 py-2 text-xs text-slate-400 dark:text-slate-500">carregando talhões…</p>
-            ) : talhoes.length === 0 ? (
-              <p className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">
-                Nenhum talhão. {editor && 'Importe um arquivo pra começar.'}
-              </p>
-            ) : (
-              <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
-                {talhoes.map((talhao) => {
-                  const ativo = selecionado?.tipo === 'talhao' && selecionado.id === talhao.id
-                  return (
-                    <li key={talhao.id}>
-                      <button
-                        onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
-                        className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
-                      >
-                        <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
-                        <span className="truncate">
-                          {talhao.codigo}
-                          {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+          <div className="my-1 border-t border-slate-200 dark:border-white/10" />
 
-            {editor && (
-              // Talhão só nasce de arquivo importado agora — "Importar" é a
-              // ação principal aqui, não mais um item ao lado de "+ Talhão".
-              <div className="mt-1 flex flex-wrap gap-x-1">
-                <button
-                  onClick={() => pedirAcao('importar-arquivo')}
-                  className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
-                >
-                  Importar
-                </button>
-                {talhoes.length >= 2 && (
-                  <button
-                    onClick={() => pedirAcao('mesclar-talhoes')}
-                    className={`${ITEM} w-auto text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5`}
-                  >
-                    Mesclar talhões
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="mt-3 border-t border-slate-200 pt-2 dark:border-white/10">
-          <NavLink to="/dados" className={({ isActive }) => `${ITEM} font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">📋</span> Dados
-          </NavLink>
+          <IconeNav to="/dados" icone="📋" rotulo="Dados" onClick={aoNavegar} />
           {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —
               não de "Critérios", onde estavam por engano. */}
-          <ul className="ml-4 border-l border-slate-200 pl-1 dark:border-white/10">
+          <ul className="ml-6 space-y-0.5 border-l border-slate-200 pl-1 dark:border-white/10">
             <li>
-              <button onClick={() => irPara('/dados')} className={`${ITEM} ${INATIVO}`}>
+              <button onClick={() => irPara('/dados')} className={`${ITEM} text-xs ${INATIVO}`}>
                 Entrada manual
               </button>
             </li>
             <li>
-              <button onClick={() => irPara('/dados?aba=pdf')} className={`${ITEM} ${INATIVO}`}>
+              <button onClick={() => irPara('/dados?aba=pdf')} className={`${ITEM} text-xs ${INATIVO}`}>
                 Importar laudo PDF
               </button>
             </li>
           </ul>
 
-          <NavLink to="/monitoramento" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">🛰</span> Monitoramento
-          </NavLink>
+          <IconeNav to="/monitoramento" icone="🛰" rotulo="Monitoramento" onClick={aoNavegar} />
 
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
-          <NavLink to="/criterios" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">🎚</span> Critérios
-          </NavLink>
+          <IconeNav to="/criterios" icone="🎚" rotulo="Critérios" onClick={aoNavegar} />
         </div>
       </div>
     </nav>
