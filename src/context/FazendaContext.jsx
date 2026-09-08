@@ -90,6 +90,17 @@ export function FazendaProvider({ children }) {
    */
   const [formFazenda, setFormFazenda] = useState(null)
 
+  /**
+   * Pedido de ação da fazenda feito pela barra ("Marcar sede", "Ir para a
+   * sede", "Importar", "Mesclar talhões", "Excluir fazenda").
+   *
+   * Mesmo motivo do `pedidoDeDesenho`: essas ações abrem um diálogo do Painel
+   * ou mexem no mapa, e a barra lateral não tem acesso a nenhum dos dois. Um
+   * valor só (em vez de um booleano por ação) porque nunca há dois pedidos ao
+   * mesmo tempo — é sempre um clique, uma intenção.
+   */
+  const [pedidoDeAcao, setPedidoDeAcao] = useState(null)
+
   const valor = useMemo(
     () => ({
       fazendas,
@@ -126,13 +137,15 @@ export function FazendaProvider({ children }) {
       setPedidoDeDesenho,
       formFazenda,
       setFormFazenda,
+      pedidoDeAcao,
+      setPedidoDeAcao,
     }),
     [
       fazendas, carregandoFazendas, erroFazendas, aplicarFazenda, removerFazenda,
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
       criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
-      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda,
+      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda, pedidoDeAcao,
     ],
   )
 

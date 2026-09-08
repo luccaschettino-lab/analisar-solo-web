@@ -32,7 +32,7 @@ export default function Painel() {
     aplicarFazenda, removerFazenda,
     anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises, criterio,
     selecionado, setSelecionado, pedidoDeDesenho, setPedidoDeDesenho,
-    formFazenda, setFormFazenda,
+    formFazenda, setFormFazenda, pedidoDeAcao, setPedidoDeAcao,
   } = ctx
 
   const [mapa, setMapa] = useState(null)
@@ -160,6 +160,44 @@ export default function Painel() {
     setConfirmandoFazenda(null)
   }
 
+  /**
+   * Mesma ideia do `pedidoDeDesenho`: a barra lateral pede ("Marcar sede",
+   * "Ir para a sede", "Importar", "Mesclar talhões", "Excluir fazenda") e
+   * aqui o pedido vira a ação de fato — diálogo aberto ou, nos dois primeiros,
+   * uma chamada ao mapa.
+   *
+   * Marcar/ir para a sede dependem do mapa já ter montado: se `pedidoDeAcao`
+   * chegar antes disso (troca de rota mais lenta que o clique), o efeito só
+   * limpa o pedido quando `mapa` também estiver pronto — por isso o `return`
+   * sem `setPedidoDeAcao(null)` nesses dois casos.
+   */
+  useEffect(() => {
+    if (!pedidoDeAcao) return
+    switch (pedidoDeAcao) {
+      case 'marcar-sede':
+        if (!mapa) return
+        mapaDaFazenda.iniciarMarcacao()
+        break
+      case 'ir-para-sede':
+        if (!mapa) return
+        mapaDaFazenda.irParaSede()
+        break
+      case 'importar-kml':
+        setImportandoKml(true)
+        break
+      case 'mesclar-talhoes':
+        setMesclandoTalhoes(true)
+        break
+      case 'excluir-fazenda':
+        abrirExclusaoFazenda()
+        break
+      default:
+        break
+    }
+    setPedidoDeAcao(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidoDeAcao, mapa])
+
   return (
     <div className="relative flex h-full">
       <div className="relative min-h-0 min-w-0 flex-1">
@@ -167,43 +205,12 @@ export default function Painel() {
 
         <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
 
-        {/* Ações da fazenda, no canto oposto ao dos controles do mapa.
-            "Nova fazenda" mora na barra lateral agora, perto do seletor. */}
+        {/* Só o que é de fato "ver o mapa agora": localizar um lugar e ligar a
+            coloração por parâmetro. O resto (editar fazenda, marcar sede,
+            importar, mesclar talhões, excluir) mora na barra lateral, perto
+            do seletor de fazenda — são ações sobre o cadastro, não sobre o
+            que está sendo olhado no mapa neste instante. Ver `pedidoDeAcao`. */}
         <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
-          {fazendaSelecionada && editor && (
-            <>
-              <button
-                onClick={() => setFormFazenda('editar')}
-                className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-              >
-                Editar
-              </button>
-              <button
-                onClick={mapaDaFazenda.iniciarMarcacao}
-                className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-              >
-                Marcar sede
-              </button>
-              <button
-                onClick={abrirExclusaoFazenda}
-                disabled={carregandoExclusaoFazenda}
-                className="vidro rounded-md border border-red-200 px-2 py-1.5 text-xs font-medium text-red-700 shadow-painel hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-400/30 dark:text-red-400 dark:hover:bg-red-500/10"
-              >
-                {carregandoExclusaoFazenda ? 'Verificando…' : 'Excluir fazenda'}
-              </button>
-            </>
-          )}
-          {/* Fora do bloco de editor: ir ate a sede e leitura, nao edicao.
-              Um consultor com papel de leitor tambem precisa se localizar. */}
-          {fazendaSelecionada && mapaDaFazenda.temSede && (
-            <button
-              onClick={mapaDaFazenda.irParaSede}
-              title="Centralizar o mapa na sede da fazenda"
-              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-            >
-              <span aria-hidden="true">⌂</span> Ir para a sede
-            </button>
-          )}
           {fazendaSelecionada && (
             <button
               // Um de cada vez: os dois abrem no mesmo canto.
@@ -215,22 +222,6 @@ export default function Painel() {
               className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
             >
               🔽 Filtro
-            </button>
-          )}
-          {fazendaSelecionada && editor && (
-            <button
-              onClick={() => setImportandoKml(true)}
-              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-            >
-              Importar
-            </button>
-          )}
-          {fazendaSelecionada && editor && talhoes.length >= 2 && (
-            <button
-              onClick={() => setMesclandoTalhoes(true)}
-              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-            >
-              Mesclar talhões
             </button>
           )}
           {/* Buscar não depende de fazenda selecionada: é justamente o que se usa

@@ -33,8 +33,10 @@ export default function BarraLateral({ aoNavegar }) {
     fazendaSelecionada, selecionarFazenda, editor,
     talhoes, glebas, carregando: carregandoHierarquia,
     selecionado, setSelecionado, setPedidoDeDesenho,
-    setFormFazenda,
+    setFormFazenda, setPedidoDeAcao,
   } = useFazendaAtual()
+
+  const temSede = fazendaSelecionada?.sede_lat != null && fazendaSelecionada?.sede_lng != null
 
   const navegar = useNavigate()
   const local = useLocation()
@@ -84,6 +86,17 @@ export default function BarraLateral({ aoNavegar }) {
     aoNavegar?.()
   }
 
+  /**
+   * Ações que precisam do mapa ou de um diálogo do Painel: marcar/ir para a
+   * sede, importar KML, mesclar talhões, excluir fazenda. A barra só registra
+   * a intenção — quem executa é o Painel, na rota do mapa.
+   */
+  function pedirAcao(acao) {
+    setPedidoDeAcao(acao)
+    if (local.pathname !== '/') navegar('/')
+    aoNavegar?.()
+  }
+
   // O diálogo (FormFazenda) só renderiza dentro do Painel, que é a rota do
   // mapa — abrir de outra tela sem navegar deixaria o pedido registrado e
   // nada na tela pra mostrar.
@@ -122,6 +135,53 @@ export default function BarraLateral({ aoNavegar }) {
             {ROTULO_PAPEL[fazendaSelecionada.papel] ?? fazendaSelecionada.papel}
           </p>
         )}
+
+        {/* Ações da fazenda selecionada. Vieram do mapa: flutuavam sobre a
+            imagem de satélite e brigavam com os rótulos de talhão. Aqui, perto
+            do seletor, fazem mais sentido — são sobre a fazenda, não sobre o
+            que está sendo olhado no mapa agora. */}
+        {fazendaSelecionada && (editor || temSede) && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {editor && (
+              <button
+                onClick={() => { setFormFazenda('editar'); if (local.pathname !== '/') navegar('/'); aoNavegar?.() }}
+                className={`rounded px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 ${FOCO}`}
+              >
+                Editar
+              </button>
+            )}
+            {editor && (
+              <button
+                onClick={() => pedirAcao('marcar-sede')}
+                className={`rounded px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 ${FOCO}`}
+              >
+                Marcar sede
+              </button>
+            )}
+            {/* Ir até a sede é leitura, não edição — um consultor também
+                precisa se localizar. */}
+            {temSede && (
+              <button
+                onClick={() => pedirAcao('ir-para-sede')}
+                title="Centralizar o mapa na sede da fazenda"
+                className={`rounded px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 ${FOCO}`}
+              >
+                <span aria-hidden="true">⌂</span> Ir para a sede
+              </button>
+            )}
+            {editor && (
+              // Separado por espaço, não por linha: é destrutivo, mas ainda é
+              // uma ação da fazenda, não merece uma seção à parte.
+              <button
+                onClick={() => pedirAcao('excluir-fazenda')}
+                className={`ml-auto rounded px-1.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 ${FOCO}`}
+              >
+                Excluir
+              </button>
+            )}
+          </div>
+        )}
+
         <button
           onClick={novaFazenda}
           className={`mt-1.5 rounded px-1 py-0.5 text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10 ${FOCO}`}
@@ -254,12 +314,28 @@ export default function BarraLateral({ aoNavegar }) {
             )}
 
             {editor && (
-              <button
-                onClick={() => pedirDesenho({ tipo: 'talhao' })}
-                className={`${ITEM} mt-1 text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
-              >
-                + Talhão
-              </button>
+              <div className="mt-1 flex flex-wrap gap-x-1">
+                <button
+                  onClick={() => pedirDesenho({ tipo: 'talhao' })}
+                  className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                >
+                  + Talhão
+                </button>
+                <button
+                  onClick={() => pedirAcao('importar-kml')}
+                  className={`${ITEM} w-auto text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5`}
+                >
+                  Importar
+                </button>
+                {talhoes.length >= 2 && (
+                  <button
+                    onClick={() => pedirAcao('mesclar-talhoes')}
+                    className={`${ITEM} w-auto text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5`}
+                  >
+                    Mesclar talhões
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
