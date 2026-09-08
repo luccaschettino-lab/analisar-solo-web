@@ -183,6 +183,18 @@ export default function BarraLateral({ aoNavegar }) {
           </button>
         </div>
 
+        {/* Um talhão de cada vez, de perto — saiu do botão "Filtro" que
+            flutuava sobre o mapa geral e cobria o que se estava tentando
+            olhar. Por isso mora logo abaixo de "Mapa", não dentro da árvore:
+            é outra tela, não outra ação sobre a fazenda. */}
+        <NavLink
+          to="/filtros"
+          className={({ isActive }) => `${ITEM} mt-0.5 pl-8 md:pl-5 ${isActive ? ATIVO : INATIVO}`}
+          onClick={aoNavegar}
+        >
+          <span aria-hidden="true">🔽</span> Filtros
+        </NavLink>
+
         {fazendaSelecionada && arvoreAberta && (
           <div className="mt-1">
             {carregandoHierarquia ? (

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import PainelDetalhe from './painel/PainelDetalhe.jsx'
-import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
 import BuscaLocal from './painel/BuscaLocal.jsx'
@@ -27,7 +26,7 @@ export default function Painel() {
     talhoes, aplicarTalhao, aplicarTalhoes,
     removerTalhao, carregando: carregandoHierarquia,
     aplicarFazenda, removerFazenda,
-    anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises, criterio,
+    filtro, coloracao, criterio,
     selecionado, setSelecionado,
     formFazenda, setFormFazenda, pedidoDeAcao, setPedidoDeAcao,
   } = ctx
@@ -35,7 +34,6 @@ export default function Painel() {
   const [mapa, setMapa] = useState(null)
   const [confirmandoFazenda, setConfirmandoFazenda] = useState(null)
   const [carregandoExclusaoFazenda, setCarregandoExclusaoFazenda] = useState(false)
-  const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
   const [mostrarCor, setMostrarCor] = useState(true)
@@ -175,32 +173,19 @@ export default function Painel() {
 
         <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
 
-        {/* Só o que é de fato "ver o mapa agora": localizar um lugar e ligar a
-            coloração por parâmetro. O resto (editar fazenda, marcar sede,
-            importar, mesclar talhões, excluir) mora na barra lateral, perto
-            do seletor de fazenda — são ações sobre o cadastro, não sobre o
-            que está sendo olhado no mapa neste instante. Ver `pedidoDeAcao`. */}
+        {/* Só o que é de fato "ver o mapa agora": localizar um lugar. O
+            resto (editar fazenda, marcar sede, importar, mesclar talhões,
+            excluir) mora na barra lateral, perto do seletor de fazenda — são
+            ações sobre o cadastro, não sobre o que está sendo olhado no mapa
+            neste instante. Ver `pedidoDeAcao`. O filtro que colore o mapa
+            saiu daqui — mora na tela "Filtros", um talhão de cada vez, sem
+            flutuar em cima do que se está tentando ver. */}
         <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
-          {fazendaSelecionada && (
-            <button
-              // Um de cada vez: todos abrem no mesmo canto.
-              onClick={() => {
-                setFiltrosAbertos((a) => !a)
-                setBuscaAberta(false)
-                setVisualizacaoAberta(false)
-              }}
-              aria-expanded={filtrosAbertos}
-              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
-            >
-              🔽 Filtro
-            </button>
-          )}
           {/* Buscar não depende de fazenda selecionada: é justamente o que se usa
               para achar a propriedade antes de existir qualquer cadastro. */}
           <button
             onClick={() => {
               setBuscaAberta((a) => !a)
-              setFiltrosAbertos(false)
               setVisualizacaoAberta(false)
             }}
             aria-expanded={buscaAberta}
@@ -212,7 +197,6 @@ export default function Painel() {
             <button
               onClick={() => {
                 setVisualizacaoAberta((a) => !a)
-                setFiltrosAbertos(false)
                 setBuscaAberta(false)
               }}
               aria-expanded={visualizacaoAberta}
@@ -226,18 +210,6 @@ export default function Painel() {
         {buscaAberta && (
           <div className="absolute left-3 top-14 z-[1100]">
             <BuscaLocal aoIrPara={alfinete.irPara} />
-          </div>
-        )}
-
-        {filtrosAbertos && fazendaSelecionada && (
-          <div className="vidro-forte absolute left-3 top-14 z-[1100] w-64 rounded-lg border border-slate-200 shadow-painel dark:border-white/15">
-            <FiltrosMapa
-              filtro={filtro}
-              aoMudar={definirFiltro}
-              anos={anos}
-              carregando={carregandoAnalises}
-              erro={erroAnalises}
-            />
           </div>
         )}
 

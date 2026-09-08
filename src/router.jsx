@@ -5,6 +5,7 @@ import LayoutApp from './layouts/LayoutApp.jsx'
 import Login from './paginas/Login.jsx'
 import Cadastro from './paginas/Cadastro.jsx'
 import Painel from './paginas/Painel.jsx'
+import Filtros from './paginas/Filtros.jsx'
 import Dados from './paginas/Dados.jsx'
 import Comparar from './paginas/Comparar.jsx'
 import Monitoramento from './paginas/Monitoramento.jsx'
@@ -34,6 +35,7 @@ export const router = createHashRouter([
         element: <LayoutApp />,
         children: [
           { path: '/', element: <Painel /> },
+          { path: '/filtros', element: <Filtros /> },
           { path: '/dados', element: <Dados /> },
           { path: '/comparar', element: <Comparar /> },
           { path: '/monitoramento', element: <Monitoramento /> },
