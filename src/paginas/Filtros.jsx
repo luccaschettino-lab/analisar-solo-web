@@ -77,24 +77,11 @@ export default function Filtros() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b border-slate-200 bg-white px-6 py-4 dark:border-white/10 dark:bg-noite-900">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-solo-50 text-lg dark:bg-solo-500/15"
-          >
-            🔽
-          </span>
-          <div>
-            <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Filtros</h1>
-            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Escolha o talhão e o filtro — o mapa mostra só ele, de perto.
-            </p>
-          </div>
-        </div>
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-noite-900">
+        <h1 className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">Filtros</h1>
 
-        <div className="mt-3 max-w-xs">
-          <label htmlFor="filtros-talhao" className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <label htmlFor="filtros-talhao" className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
             Talhão
           </label>
           <select
@@ -102,7 +89,7 @@ export default function Filtros() {
             value={talhaoId}
             onChange={(e) => setTalhaoId(e.target.value)}
             disabled={!fazendaSelecionada || carregandoHierarquia}
-            className={SELECT}
+            className={`${SELECT} mt-0 max-w-xs py-1.5`}
           >
             <option value="">
               {!fazendaSelecionada

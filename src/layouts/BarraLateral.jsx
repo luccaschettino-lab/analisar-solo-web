@@ -17,6 +17,28 @@ function Seta({ aberto }) {
 }
 
 /**
+ * Ícone sozinho, sem rótulo ao lado — Mapa, Filtros e Comparar anos viraram
+ * isso a pedido, pra caber os três numa linha só em vez de três. O nome não
+ * some de verdade: `title` mostra no hover, e `aria-label` mantém a tela
+ * legível para quem usa leitor de tela.
+ */
+function IconeNav({ to, icone, rotulo, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      title={rotulo}
+      aria-label={rotulo}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `flex h-9 flex-1 items-center justify-center rounded text-base transition ${FOCO} ${isActive ? ATIVO : INATIVO}`
+      }
+    >
+      <span aria-hidden="true">{icone}</span>
+    </NavLink>
+  )
+}
+
+/**
  * Navegação em cascata: Fazenda › Talhão › seção.
  *
  * Substitui o menu do topo, as abas das telas e o painel do mapa. A ideia é
@@ -40,7 +62,7 @@ export default function BarraLateral({ aoNavegar }) {
   const navegar = useNavigate()
   const local = useLocation()
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
-  // aberta empurrava Comparar/Dados/Critérios para fora da primeira tela.
+  // aberta empurrava Dados/Monitoramento/Critérios para fora da primeira tela.
   const [arvoreAberta, setArvoreAberta] = useState(false)
 
   // Selecionar um talhão no mapa revela a árvore aqui, não deixa a seleção
@@ -167,33 +189,24 @@ export default function BarraLateral({ aoNavegar }) {
       </div>
 
       <div className="min-h-0 flex-1 px-2 py-2">
-        <div className="flex items-stretch">
+        {/* Mapa, Filtros e Comparar anos — as três telas de "olhar o que já
+            existe" — viram ícone sozinho numa linha, a pedido, pra caber
+            as três sem empurrar Dados/Monitoramento/Critérios pra baixo. */}
+        <div className="flex items-stretch gap-1">
           {fazendaSelecionada && (
             <button
               onClick={() => setArvoreAberta((a) => !a)}
               aria-expanded={arvoreAberta}
-              aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} talhões e glebas`}
-              className={`w-8 shrink-0 md:w-5 ${FOCO}`}
+              aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
+              className={`w-5 shrink-0 ${FOCO}`}
             >
               <Seta aberto={arvoreAberta} />
             </button>
           )}
-          <button onClick={() => irPara('/')} className={`${ITEM} font-medium ${local.pathname === '/' ? ATIVO : INATIVO}`}>
-            <span aria-hidden="true">🗺</span> Mapa
-          </button>
+          <IconeNav to="/" icone="🗺" rotulo="Mapa" onClick={aoNavegar} />
+          <IconeNav to="/filtros" icone="🔽" rotulo="Filtros" onClick={aoNavegar} />
+          <IconeNav to="/comparar" icone="📈" rotulo="Comparar anos" onClick={aoNavegar} />
         </div>
-
-        {/* Um talhão de cada vez, de perto — saiu do botão "Filtro" que
-            flutuava sobre o mapa geral e cobria o que se estava tentando
-            olhar. Por isso mora logo abaixo de "Mapa", não dentro da árvore:
-            é outra tela, não outra ação sobre a fazenda. */}
-        <NavLink
-          to="/filtros"
-          className={({ isActive }) => `${ITEM} mt-0.5 pl-8 md:pl-5 ${isActive ? ATIVO : INATIVO}`}
-          onClick={aoNavegar}
-        >
-          <span aria-hidden="true">🔽</span> Filtros
-        </NavLink>
 
         {fazendaSelecionada && arvoreAberta && (
           <div className="mt-1">
@@ -249,13 +262,7 @@ export default function BarraLateral({ aoNavegar }) {
         )}
 
         <div className="mt-3 border-t border-slate-200 pt-2 dark:border-white/10">
-          {/* Comparação entre anos. Sem guard de papel: quem enxerga a fazenda
-              enxerga o histórico dela — a RLS já decide isso na leitura. */}
-          <NavLink to="/comparar" className={({ isActive }) => `${ITEM} font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
-            <span aria-hidden="true">📈</span> Comparar anos
-          </NavLink>
-
-          <NavLink to="/dados" className={({ isActive }) => `${ITEM} mt-1 font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
+          <NavLink to="/dados" className={({ isActive }) => `${ITEM} font-medium ${isActive ? ATIVO : INATIVO}`} onClick={aoNavegar}>
             <span aria-hidden="true">📋</span> Dados
           </NavLink>
           {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —

@@ -37,17 +37,8 @@ export default function AssinaturaCriterio({ criterio, chaveParametro, carregand
     )
   }
 
-  // Sem conjunto, ou com um que não fala deste parâmetro: o aviso da Fase 4
-  // continua valendo, porque quem está pintando é a tabela não validada.
-  return (
-    <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-tight text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-      Classificação preliminar do sistema, não validada por agrônomo.
-      {criterio && (
-        <span className="mt-0.5 block">
-          O conjunto "{criterio.nome}" está aplicado nesta fazenda, mas não define faixas para este
-          parâmetro.
-        </span>
-      )}
-    </p>
-  )
+  // Sem conjunto, ou com um que não fala deste parâmetro: a legenda fica sem
+  // assinatura — a pedido, para não ocupar espaço com o aviso em toda
+  // fazenda que ainda não tem um conjunto de critérios próprio.
+  return null
 }

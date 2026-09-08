@@ -15,7 +15,7 @@ function Amostra({ cor, estilo }) {
   return (
     <span
       aria-hidden="true"
-      className="mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-slate-300 dark:border-white/20"
+      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm border border-slate-300 dark:border-white/20"
       style={estilo ?? { backgroundColor: cor }}
     />
   )
@@ -41,7 +41,7 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
       // Acima dos controles do Leaflet (1000), abaixo dos diálogos (2000).
       // bottom-8 livra a barra de atribuição; `elevada` sobe mais quando a
       // barra de detalhe do celular está ocupando o rodapé.
-      className={`vidro-forte absolute right-2 z-[1100] w-auto rounded-lg border border-slate-200 shadow-painel dark:border-white/15 md:right-3 md:w-56 md:p-3 ${
+      className={`vidro-forte absolute right-2 z-[1100] w-auto rounded-lg border border-slate-200 shadow-painel dark:border-white/15 md:right-3 md:w-48 md:p-2 ${
         elevada ? 'bottom-44 md:bottom-8' : 'bottom-8'
       }`}
     >
@@ -55,18 +55,17 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
       </button>
 
       <div className={`${aberta ? 'w-56 max-w-[80vw] p-3 pt-0' : 'hidden'} md:block md:w-auto md:max-w-none md:p-0`}>
-      <h2 className="text-xs font-semibold text-slate-900 dark:text-slate-100">{rotuloComUnidade(chaveParametro)}</h2>
-      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+      <h2 className="text-[11px] font-semibold text-slate-900 dark:text-slate-100">{rotuloComUnidade(chaveParametro)}</h2>
+      <p className="text-[11px] text-slate-500 dark:text-slate-400">
         {anoSafra} · {profundidade} cm
       </p>
 
-      <ul className="mt-2 space-y-1">
+      <ul className="mt-1 space-y-0.5">
         {faixas.map((f) => (
-          <li key={`${f.nivel}-${f.texto}`} className="flex items-start gap-2">
+          <li key={`${f.nivel}-${f.texto}`} className="flex items-center gap-1.5">
             <Amostra cor={f.cor} />
-            <span className="text-xs leading-tight text-slate-700 dark:text-slate-300">
-              <span className="font-medium text-slate-900 dark:text-slate-100">{f.rotulo}</span>
-              <span className="block text-slate-500 dark:text-slate-400">{f.texto}</span>
+            <span className="truncate text-[11px] leading-tight text-slate-700 dark:text-slate-300">
+              {f.rotulo} <span className="text-slate-400 dark:text-slate-500">· {f.texto}</span>
             </span>
           </li>
         ))}
@@ -74,28 +73,24 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
         {/* Duas amostras, porque a gleba pode ser área ou ponto e cada uma
             comunica ausência de um jeito. Mostrar só a hachura deixaria quem
             olha um ponto vazado sem chave de leitura. */}
-        <li className="flex items-start gap-2 border-t border-slate-200 pt-1.5 dark:border-white/10">
-          <span className="mt-0.5 flex shrink-0 items-center gap-1">
+        <li className="flex items-center gap-1.5 border-t border-slate-200 pt-1 dark:border-white/10">
+          <span className="flex shrink-0 items-center gap-1">
             <span
               aria-hidden="true"
-              className="h-3 w-3 rounded-sm border border-slate-300 dark:border-white/20"
+              className="h-2.5 w-2.5 rounded-sm border border-slate-300 dark:border-white/20"
               style={HACHURA_CSS}
             />
             <span
               aria-hidden="true"
-              className="h-3 w-3 rounded-full border-2 border-dashed border-slate-500 bg-white/30 dark:border-slate-400 dark:bg-white/10"
+              className="h-2.5 w-2.5 rounded-full border-2 border-dashed border-slate-500 bg-white/30 dark:border-slate-400 dark:bg-white/10"
             />
           </span>
-          <span className="text-xs leading-tight text-slate-700 dark:text-slate-300">
-            <span className="font-medium text-slate-900 dark:text-slate-100">Sem dado</span>
-            <span className="block text-slate-500 dark:text-slate-400">não amostrada ou não medida</span>
-          </span>
+          <span className="text-[11px] leading-tight text-slate-700 dark:text-slate-300">Sem dado</span>
         </li>
       </ul>
 
-      {/* Quem assina estas cores. Com um conjunto de critérios que fale deste
-          parâmetro, o nome do autor; sem ele, o aviso de que a classificação
-          é a preliminar do sistema. */}
+      {/* Quem assina estas cores — só aparece com um conjunto de critérios
+          que fale deste parâmetro. Sem ele, a legenda fica sem rodapé. */}
       <AssinaturaCriterio criterio={criterio} chaveParametro={chaveParametro} />
       </div>
     </aside>
