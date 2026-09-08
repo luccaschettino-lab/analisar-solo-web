@@ -10,7 +10,7 @@ import EditorCriterio from './criterios/EditorCriterio.jsx'
 const BOTAO =
   'rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:bg-noite-900 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600'
 const BOTAO_PRIMARIO =
-  'rounded-md bg-solo-700 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300'
+  'rounded-md bg-solo-700 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-solo-800 hover:shadow disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none'
 const CAMPO =
   'w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30'
 
@@ -153,17 +153,25 @@ export default function Criterios() {
   return (
     <div className="h-full overflow-y-auto bg-slate-50 dark:bg-noite-950">
       <div className="mx-auto max-w-4xl px-3 py-4 sm:px-4">
-        <header>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Critérios de interpretação</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            O que é <strong>muito baixo</strong>, <strong>bom</strong> ou <strong>muito bom</strong> em
-            cada parâmetro. Interpretação de solo depende de cultura, textura e método de extração —
-            por isso são conjuntos nomeados, e não uma tabela só.
-          </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Parâmetro que você não personalizar continua usando a tabela preliminar do sistema, e a
-            legenda do mapa diz isso.
-          </p>
+        <header className="flex items-start gap-3">
+          <span
+            aria-hidden="true"
+            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-solo-50 text-lg dark:bg-solo-500/15"
+          >
+            🎚
+          </span>
+          <div>
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Critérios de interpretação</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              O que é <strong>muito baixo</strong>, <strong>bom</strong> ou <strong>muito bom</strong> em
+              cada parâmetro. Interpretação de solo depende de cultura, textura e método de extração —
+              por isso são conjuntos nomeados, e não uma tabela só.
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Parâmetro que você não personalizar continua usando a tabela preliminar do sistema, e a
+              legenda do mapa diz isso.
+            </p>
+          </div>
         </header>
 
         {erro && (
