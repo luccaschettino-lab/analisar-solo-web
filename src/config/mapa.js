@@ -92,6 +92,12 @@ export const SNAP_DISTANCIA = 8
 // na tela quatro rotulos cabem; trinta viram mancha sobre o mapa.
 export const ZOOM_MINIMO_ROTULO = 13
 
+// Rotulo fixo da gleba pede mais zoom que o do talhao: um talhao de
+// amostragem tem dezenas de glebas, e mostra-las todas na visao da fazenda
+// inteira vira parede de texto. So aparecem depois que o produtor ja deu
+// zoom num talhao especifico.
+export const ZOOM_MINIMO_ROTULO_GLEBA = 16
+
 // Folga ao redor da geometria no fitBounds, para o desenho nao encostar
 // nas bordas nem ficar sob o painel lateral.
 export const PADDING_FIT = [40, 40]

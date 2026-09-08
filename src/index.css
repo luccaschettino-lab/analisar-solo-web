@@ -123,6 +123,42 @@ body {
 }
 
 /*
+ * Rótulo fixo da gleba: mesma ideia do talhão — texto com contorno, sem
+ * balão —, só que menor e num peso mais leve. O talhão é a moldura que o
+ * produtor já reconhece de longe; a gleba é o detalhe que só importa perto,
+ * por isso o texto discreto e o zoom mínimo mais alto (`mapa-sem-rotulos-gleba`,
+ * aplicado pelo mapa conforme `ZOOM_MINIMO_ROTULO_GLEBA`).
+ */
+.leaflet-tooltip.rotulo-gleba {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.8em;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.9),
+    1px 1px 0 rgba(0, 0, 0, 0.7),
+    -1px 1px 0 rgba(0, 0, 0, 0.7),
+    1px -1px 0 rgba(0, 0, 0, 0.7),
+    -1px -1px 0 rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.leaflet-tooltip.rotulo-gleba::before {
+  display: none;
+}
+
+.mapa-sem-rotulos-gleba .leaflet-tooltip.rotulo-gleba {
+  display: none;
+}
+
+/*
  * Pin da sede: SVG inline dentro de um divIcon.
  *
  * Sem arquivo de ícone pelo mesmo motivo das glebas-ponto, registrado em

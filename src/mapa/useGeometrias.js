@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import { paraFeature, ehPonto } from '../lib/geo.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipGleba } from './tooltipGleba.js'
-import { conteudoRotuloTalhao } from './rotuloTalhao.js'
+import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
 import {
   ZOOM_MINIMO_ROTULO,
+  ZOOM_MINIMO_ROTULO_GLEBA,
   ESTILO_TALHAO,
   ESTILO_TALHAO_DESTACADO,
   ESTILO_GLEBA,
@@ -52,6 +53,11 @@ export function useGeometrias(
   const grupoGlebas = useRef(null)
   const porChave = useRef(new Map())
 
+  // Cor da gleba sem filtro: herda do talhão-pai, não um âmbar único — é o
+  // que deixa cada talhão reconhecível na visão geral da fazenda, agora que a
+  // gleba cobre o talhão inteiro em vez de aparecer só como ponto.
+  const corPorTalhao = useMemo(() => new Map(talhoes.map((t) => [t.id, t.cor])), [talhoes])
+
   // Mantém o callback fresco sem recriar as camadas a cada render do pai.
   const aoSelecionarRef = useRef(aoSelecionar)
   useEffect(() => {
@@ -85,14 +91,16 @@ export function useGeometrias(
     const container = mapa.getContainer()
 
     function ajustar() {
-      container.classList.toggle('mapa-sem-rotulos', mapa.getZoom() < ZOOM_MINIMO_ROTULO)
+      const zoom = mapa.getZoom()
+      container.classList.toggle('mapa-sem-rotulos', zoom < ZOOM_MINIMO_ROTULO)
+      container.classList.toggle('mapa-sem-rotulos-gleba', zoom < ZOOM_MINIMO_ROTULO_GLEBA)
     }
 
     ajustar()
     mapa.on('zoomend', ajustar)
     return () => {
       mapa.off('zoomend', ajustar)
-      container.classList.remove('mapa-sem-rotulos')
+      container.classList.remove('mapa-sem-rotulos', 'mapa-sem-rotulos-gleba')
     }
   }, [mapa])
 
@@ -159,14 +167,16 @@ export function useGeometrias(
       const f = paraFeature(gleba.geometria)
       if (!f?.geometry) continue
 
+      const corHerdada = corPorTalhao.get(gleba.talhao_id) ?? COR_GLEBA
+
       const camada = L.geoJSON(f, {
-        style: { ...ESTILO_GLEBA, fillColor: COR_GLEBA },
+        style: { ...ESTILO_GLEBA, fillColor: corHerdada },
         // Ponto vira circleMarker, não marker: é SVG, dispensa arquivo de
         // ícone (que quebra com bundler) e aceita as mesmas opções de estilo.
         pointToLayer: (_feature, latlng) =>
           L.circleMarker(latlng, {
             ...ESTILO_GLEBA,
-            fillColor: COR_GLEBA,
+            fillColor: corHerdada,
             radius: RAIO_PONTO_GLEBA,
           }),
       })
@@ -187,8 +197,25 @@ export function useGeometrias(
       // troca de filtro, e reconsultar a lista por id a cada render seria
       // varredura desnecessária.
       porChave.current.set(`gleba:${gleba.id}`, { camada, ponto: ehPonto(f), gleba })
+
+      // Camada só do rótulo: invisível e sem eventos, existe unicamente para
+      // carregar o tooltip permanente. A camada visível já tem o tooltip de
+      // hover (sticky) com o detalhe do filtro, e o Leaflet só aceita um
+      // tooltip por camada — daria pra trocar um pelo outro, não somar os dois.
+      const camadaRotulo = L.geoJSON(f, {
+        style: { opacity: 0, fillOpacity: 0, interactive: false },
+        pointToLayer: (_feature, latlng) =>
+          L.circleMarker(latlng, { opacity: 0, fillOpacity: 0, interactive: false, radius: RAIO_PONTO_GLEBA }),
+      })
+      camadaRotulo.bindTooltip(conteudoRotuloGleba(gleba), {
+        permanent: true,
+        direction: 'center',
+        className: 'rotulo-gleba',
+        opacity: 1,
+      })
+      camadaRotulo.addTo(grupo)
     }
-  }, [mapa, glebas, revisao])
+  }, [mapa, glebas, revisao, corPorTalhao])
 
   /**
    * Destaque e coloração no mesmo efeito.
@@ -225,8 +252,10 @@ export function useGeometrias(
       let estilo
       if (!semDado) {
         // `dashArray: null` explícito: setStyle mescla com o estilo anterior,
-        // então um tracejado deixado por um filtro anterior sobreviveria.
-        estilo = { ...base, fillColor: info ? info.cor : COR_GLEBA, dashArray: null }
+        // então um tracejado deixado por um filtro anterior sobreviveria. Sem
+        // filtro, a cor vem do talhão-pai — ver `corPorTalhao` acima.
+        const corSemFiltro = corPorTalhao.get(registro.gleba.talhao_id) ?? COR_GLEBA
+        estilo = { ...base, fillColor: info ? info.cor : corSemFiltro, dashArray: null }
       } else if (registro.ponto) {
         // Ponto vazado e tracejado — a hachura não se lê num círculo de 14 px.
         estilo = { ...base, ...ESTILO_PONTO_SEM_DADO, weight: ativo ? 4 : ESTILO_PONTO_SEM_DADO.weight }
