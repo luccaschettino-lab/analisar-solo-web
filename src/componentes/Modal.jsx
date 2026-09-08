@@ -30,7 +30,7 @@ export default function Modal({ titulo, aoFechar, children, largura = 'max-w-md'
   // de camadas por cima do diálogo.
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         // mouseDown e não click: um arraste que começa dentro e termina fora
         // não deve fechar o diálogo.
@@ -42,10 +42,15 @@ export default function Modal({ titulo, aoFechar, children, largura = 'max-w-md'
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className={`w-full ${largura} rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-white/10 dark:bg-noite-900`}
+        className={`vidro-forte w-full ${largura} motion-safe:animate-modal-entrada overflow-hidden rounded-xl border border-slate-200 shadow-painel dark:border-white/10`}
       >
-        <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">{titulo}</h2>
-        {children}
+        <div className="h-1 bg-gradient-to-r from-solo-600 to-solo-400" aria-hidden="true" />
+        <div className="p-5">
+          <h2 className="mb-4 text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            {titulo}
+          </h2>
+          {children}
+        </div>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { FazendaProvider } from '../context/FazendaContext.jsx'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
 import BarraLateral from './BarraLateral.jsx'
+import iconeMarca from '../assets/marca/boss-agro-icone.png'
 
 export default function LayoutApp() {
   const { usuario, sair } = useAuth()
@@ -39,7 +40,15 @@ export default function LayoutApp() {
             >
               ☰
             </button>
-            <span className="truncate text-sm font-semibold text-solo-700 dark:text-solo-500">Analisar Solo</span>
+            <span className="flex min-w-0 items-center gap-2">
+              {/* Chip claro por trás do ícone: a logo é desenhada pra fundo
+                  claro (verde/marrom), e o header vira azul-noite no tema
+                  escuro — sem isso a marca perderia contraste ali. */}
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white shadow-sm dark:bg-white/95">
+                <img src={iconeMarca} alt="" className="h-5 w-5 object-contain" />
+              </span>
+              <span className="truncate text-sm font-semibold text-solo-700 dark:text-solo-500">Boss-Agro</span>
+            </span>
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">

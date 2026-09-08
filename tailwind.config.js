@@ -35,11 +35,6 @@ export default {
       boxShadow: {
         painel: '0 12px 40px -16px rgba(0, 0, 0, 0.6)',
       },
-      fontFamily: {
-        // Só a marca "Boss-Agro" na tela de login usa isto — o resto do app
-        // fica na fonte do sistema, que é o que uma tela densa de dados pede.
-        marca: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      },
       keyframes: {
         // Marcador de amostra "vivo" na ilustração do login — o único
         // movimento da tela, e para sozinho para quem pede menos animação.
@@ -51,10 +46,17 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '0.9' },
           '100%': { transform: 'scale(2.8)', opacity: '0' },
         },
+        // Entrada única do diálogo — não repete, não chama atenção sozinha,
+        // só marca "isto acabou de aparecer".
+        'modal-entrada': {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(4px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
       },
       animation: {
         pulso: 'pulso 2.6s ease-in-out infinite',
         'pulso-anel': 'pulso-anel 2.6s ease-out infinite',
+        'modal-entrada': 'modal-entrada 0.18s ease-out',
       },
     },
   },
