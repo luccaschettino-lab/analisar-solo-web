@@ -49,7 +49,7 @@ export function posicaoDoNivel(nivel) {
 }
 
 /** As cores de `NIVEIS`, na mesma ordem, como paradas de gradiente 0..1 —
- * o formato que `leaflet.heat` espera em `options.gradient`. */
+ * o formato que `camadaCalor.js` interpola para colorir o mapa de calor. */
 export function gradienteDeNiveis() {
   const gradiente = {}
   ORDEM_NIVEIS.forEach((nivel, i) => {

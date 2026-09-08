@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import L from 'leaflet'
-import 'leaflet.heat'
 import { paraFeature, pontoRotulo } from '../lib/geo.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipTalhao } from './tooltipTalhao.js'
 import { conteudoRotuloTalhao } from './rotuloTalhao.js'
-import { posicaoDoNivel, gradienteDeNiveis } from '../lib/coloracao.js'
+import { criarCamadaCalor, criarMarcadoresDeAmostra, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
+import { posicaoDoNivel } from '../lib/coloracao.js'
 import {
   ZOOM_MINIMO_ROTULO,
   ESTILO_TALHAO,
@@ -30,10 +30,9 @@ function rotulo(talhao) {
  *
  * Gleba saiu de cena: o talhão é a unidade que se seleciona, colore e
  * analisa agora. Sem filtro, cada talhão mostra a cor do próprio cadastro.
- * Com filtro completo, a área ganha um tom de fundo fraco na cor média das
- * amostras (para não sumir onde não há ponto perto) e um mapa de calor por
- * cima — um gradiente entre os pontos de coleta reais do talhão, não uma
- * cor sólida — desenhado numa camada só para o mapa inteiro.
+ * Com filtro completo, o preenchimento do talhão some e quem mostra a cor é
+ * o mapa de calor por interpolação (`camadaCalor.js`) — uma superfície
+ * contínua entre os pontos de coleta reais, não um tom sólido por talhão.
  *
  * O destaque (seleção) é aplicado num efeito próprio, alterando o estilo das
  * camadas que já existem. Reconstruir tudo a cada seleção faria o mapa
@@ -62,6 +61,7 @@ export function useGeometrias(
   const grupoTalhoes = useRef(null)
   const grupoContornoTalhao = useRef(null)
   const camadaCalor = useRef(null)
+  const marcadoresAmostra = useRef(null)
   const porId = useRef(new Map())
 
   // Mantém o callback fresco sem recriar as camadas a cada render do pai.
@@ -72,6 +72,12 @@ export function useGeometrias(
 
   useEffect(() => {
     if (!mapa) return
+
+    if (!mapa.getPane(PANE_CALOR)) {
+      const pane = mapa.createPane(PANE_CALOR)
+      pane.style.zIndex = Z_CALOR
+      pane.style.pointerEvents = 'none'
+    }
 
     if (!mapa.getPane(PANE_CONTORNO_TALHAO)) {
       const pane = mapa.createPane(PANE_CONTORNO_TALHAO)
@@ -88,9 +94,11 @@ export function useGeometrias(
       grupoTalhoes.current?.remove()
       grupoContornoTalhao.current?.remove()
       camadaCalor.current?.remove()
+      marcadoresAmostra.current?.remove()
       grupoTalhoes.current = null
       grupoContornoTalhao.current = null
       camadaCalor.current = null
+      marcadoresAmostra.current = null
       porId.current.clear()
     }
   }, [mapa])
@@ -213,21 +221,19 @@ export function useGeometrias(
         // as listras somem e viram um borrão cinza.
         estilo = { ...base, color: registro.cor, fillColor: PREENCHIMENTO_HACHURA, fillOpacity: 1, dashArray: null }
       } else {
-        // Tem dado: o preenchimento vira só um tom de fundo fraco, na cor
-        // média — quem carrega a informação de verdade é o mapa de calor,
-        // desenhado por cima em efeito à parte. Sem o tom de fundo, a área
-        // longe de qualquer ponto de coleta ficaria com a foto de satélite
-        // crua, como se o talhão não tivesse cor nenhuma ali.
-        estilo = {
-          ...base,
-          color: registro.cor,
-          fillColor: info.cor,
-          fillOpacity: base.fillOpacity * 0.55,
-          dashArray: null,
-        }
+        // Tem dado: o preenchimento do próprio talhão praticamente some —
+        // quem carrega a cor é o mapa de calor por interpolação, desenhado
+        // por cima em efeito à parte, cobrindo o talhão inteiro (não só
+        // perto de cada ponto). Não é zero: o renderizador SVG do Leaflet só
+        // captura clique dentro de um preenchimento com opacidade acima de
+        // zero — `fillOpacity: 0` deixaria o meio do talhão inclicável,
+        // funcionando só na borda.
+        estilo = { ...base, color: registro.cor, fillColor: info.cor, fillOpacity: 0.02, dashArray: null }
       }
 
-      if (!mostrarCor) estilo.fillOpacity = 0
+      // Mesmo motivo do 0.02 acima: zero de verdade tiraria o clique do
+      // meio do talhão, não só a cor.
+      if (!mostrarCor) estilo.fillOpacity = 0.02
 
       registro.camada.setStyle(estilo)
       registro.camada.setTooltipContent(
@@ -245,54 +251,52 @@ export function useGeometrias(
   }, [mapa, selecionado, talhoes, revisao, coloracao, filtro, conteudoTooltip, mostrarCor])
 
   /**
-   * Mapa de calor: uma camada só, para o mapa inteiro, com todos os pontos de
-   * amostra de todos os talhões coloridos no filtro atual.
+   * Mapa de calor: uma superfície contínua por interpolação (IDW), cobrindo
+   * cada talhão colorido inteiro — não um borrão em volta de cada ponto.
    *
-   * À parte do efeito de destaque de propósito — reconstruir o canvas inteiro
-   * a cada troca de talhão selecionado seria trabalho para um resultado que
-   * não mudou. Refeita do zero a cada troca real de dado, porque
-   * `leaflet.heat` não tem um jeito barato de só atualizar pontos.
+   * À parte do efeito de destaque de propósito — reconstruir o raster a cada
+   * troca de talhão selecionado seria trabalho para um resultado que não
+   * mudou. Refeito do zero a cada troca real de dado.
    */
   useEffect(() => {
     if (!mapa) return
 
     camadaCalor.current?.remove()
     camadaCalor.current = null
+    marcadoresAmostra.current?.remove()
+    marcadoresAmostra.current = null
 
     if (!mostrarCor || !coloracao) return
 
-    const pontos = []
+    const talhoesComDado = []
     for (const talhao of talhoes) {
       const info = coloracao(talhao.id)
       // `info.pontos` só existe na coloração por classificação (Fase 4). A
       // coloração de variação (tela de comparação) usa a mesma `coloracao`
-      // genérica mas não tem pontos por amostra — nesse caso o mapa de calor
-      // simplesmente não desenha nada, e o preenchimento do talhão já basta.
-      if (!info || info.hachurado || !info.pontos) continue
-      for (const ponto of info.pontos) {
-        const posicao = posicaoDoNivel(ponto.nivel)
-        if (posicao == null || ponto.lat == null || ponto.lng == null) continue
-        // Mínimo de 0.05, não zero: um ponto "muito baixo" (posição 0) tem
-        // que aparecer no mapa de calor — intensidade zero é o mesmo que
-        // não desenhar nada, e "muito baixo" é justamente o que mais importa
-        // mostrar.
-        pontos.push([ponto.lat, ponto.lng, Math.max(0.05, posicao)])
-      }
+      // genérica mas não tem pontos por amostra — nesse caso não há raster
+      // nem marcador nenhum, e o preenchimento do talhão já basta.
+      if (!info || info.hachurado || !info.pontos?.length) continue
+      const geometry = paraFeature(talhao.geometria)?.geometry
+      if (!geometry) continue
+      talhoesComDado.push({
+        geometry,
+        pontos: info.pontos
+          .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
+          .filter((p) => p.lat != null && p.lng != null && p.valor != null),
+      })
     }
 
-    if (pontos.length === 0) return
-
-    camadaCalor.current = L.heatLayer(pontos, {
-      radius: 45,
-      blur: 35,
-      max: 1,
-      minOpacity: 0.35,
-      gradient: gradienteDeNiveis(),
-    }).addTo(mapa)
+    const raster = criarCamadaCalor(talhoesComDado)
+    if (raster) {
+      camadaCalor.current = raster.addTo(mapa)
+      marcadoresAmostra.current = criarMarcadoresDeAmostra(talhoesComDado).addTo(mapa)
+    }
 
     return () => {
       camadaCalor.current?.remove()
       camadaCalor.current = null
+      marcadoresAmostra.current?.remove()
+      marcadoresAmostra.current = null
     }
   }, [mapa, talhoes, coloracao, mostrarCor])
 
