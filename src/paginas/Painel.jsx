@@ -41,8 +41,7 @@ export default function Painel() {
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
-  const [mostrarTalhoes, setMostrarTalhoes] = useState(true)
-  const [mostrarGlebas, setMostrarGlebas] = useState(true)
+  const [mostrarCor, setMostrarCor] = useState(true)
   const [importandoKml, setImportandoKml] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
@@ -69,8 +68,7 @@ export default function Painel() {
     mostrarAviso,
     coloracao,
     filtro,
-    mostrarTalhoes,
-    mostrarGlebas,
+    mostrarCor,
     selecionado,
     setSelecionado,
   })
@@ -278,30 +276,20 @@ export default function Painel() {
 
         {visualizacaoAberta && fazendaSelecionada && (
           <div className="vidro-forte absolute left-3 top-14 z-[1100] w-56 rounded-lg border border-slate-200 p-3 shadow-painel dark:border-white/15">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">O que aparece no mapa</p>
-            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
-                checked={mostrarTalhoes}
-                onChange={(e) => setMostrarTalhoes(e.target.checked)}
+                checked={mostrarCor}
+                onChange={(e) => setMostrarCor(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
               />
-              Talhões
+              Cor de preenchimento
             </label>
-            <label className="mt-1.5 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-              <input
-                type="checkbox"
-                checked={mostrarGlebas}
-                onChange={(e) => setMostrarGlebas(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
-              />
-              Glebas
-            </label>
-            {!mostrarTalhoes && !mostrarGlebas && (
-              // Sem isto, desmarcar os dois parece um bug ("cadê meu mapa?") em
-              // vez da escolha deliberada que é: só a foto de satélite, puro.
-              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Mapa puro, sem desenhos.</p>
-            )}
+            {/* As linhas de divisão e o código de cada talhão/gleba continuam
+                de qualquer jeito — isto só tira a cor de dentro delas. */}
+            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+              A grade e o código continuam aparecendo mesmo sem cor.
+            </p>
           </div>
         )}
 

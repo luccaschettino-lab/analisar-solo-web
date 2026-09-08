@@ -57,8 +57,7 @@ export function useGeometrias(
     coloracao = null,
     filtro = null,
     conteudoTooltip = null,
-    mostrarTalhoes = true,
-    mostrarGlebas = true,
+    mostrarCor = true,
   },
 ) {
   const grupoTalhoes = useRef(null)
@@ -137,30 +136,6 @@ export function useGeometrias(
       porChave.current.clear()
     }
   }, [mapa])
-
-  /**
-   * Botão "ver mapa puro": some com a camada inteira, não só o estilo.
-   *
-   * Tirar do mapa em vez de deixar transparente também desliga o clique —
-   * com a gleba oculta, clicar ali deve atingir o talhão (ou nada), não uma
-   * área invisível que ainda captura o evento.
-   */
-  useEffect(() => {
-    if (!mapa || !grupoTalhoes.current || !grupoContornoTalhao.current) return
-    if (mostrarTalhoes) {
-      grupoTalhoes.current.addTo(mapa)
-      grupoContornoTalhao.current.addTo(mapa)
-    } else {
-      grupoTalhoes.current.remove()
-      grupoContornoTalhao.current.remove()
-    }
-  }, [mapa, mostrarTalhoes])
-
-  useEffect(() => {
-    if (!mapa || !grupoGlebas.current) return
-    if (mostrarGlebas) grupoGlebas.current.addTo(mapa)
-    else grupoGlebas.current.remove()
-  }, [mapa, mostrarGlebas])
 
   /**
    * Os rótulos fixos somem quando o mapa se afasta.
@@ -338,10 +313,14 @@ export function useGeometrias(
 
       if (chave.startsWith('talhao:')) {
         // Talhão mantém a cor do cadastro: ele é a moldura, não o dado.
+        // `mostrarCor` só zera o preenchimento — o contorno (linha) e o
+        // rótulo (nome) continuam de qualquer jeito, em efeitos próprios que
+        // isto nem toca. "Ver mapa puro" tira a cor, não a grade.
         registro.camada.setStyle({
           ...(ativo ? ESTILO_TALHAO_DESTACADO : ESTILO_TALHAO),
           color: registro.cor,
           fillColor: registro.cor,
+          fillOpacity: mostrarCor ? (ativo ? ESTILO_TALHAO_DESTACADO.fillOpacity : ESTILO_TALHAO.fillOpacity) : 0,
         })
         // O contorno por cima das glebas segue o mesmo destaque — é ele que
         // de fato aparece, já que a área do talhão está coberta.
@@ -373,6 +352,11 @@ export function useGeometrias(
 
       if (registro.ponto) estilo.radius = ativo ? RAIO_PONTO_GLEBA + 3 : RAIO_PONTO_GLEBA
 
+      // Mesma regra do talhão: sem cor é só o preenchimento que some. A
+      // borda (branca) e o rótulo (código) continuam — são a "grade", não
+      // o dado, e "ver mapa puro" não deveria apagar os dois de propósito.
+      if (!mostrarCor) estilo.fillOpacity = 0
+
       registro.camada.setStyle(estilo)
 
       registro.camada.setTooltipContent(
@@ -383,7 +367,7 @@ export function useGeometrias(
 
       if (ativo) registro.camada.bringToFront()
     }
-  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro, conteudoTooltip, corPorGleba])
+  }, [mapa, selecionado, talhoes, glebas, revisao, coloracao, filtro, conteudoTooltip, corPorGleba, mostrarCor])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.
