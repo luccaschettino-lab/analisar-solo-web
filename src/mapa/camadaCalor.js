@@ -17,11 +17,12 @@ import { interpolarCor } from '../lib/escalaDivergente.js'
 export const PANE_CALOR = 'calorTalhao'
 export const Z_CALOR = 420
 
-// Grade de cálculo baixa de propósito: IDW é O(pontos × células), e o
-// resultado vai ser esticado com suavização — computar em alta resolução só
-// gastaria CPU num detalhe que a interpolação do canvas apaga de qualquer
-// jeito.
-const GRADE_LADO_MAX = 150
+// Grade de cálculo baixa de propósito — e o quanto ela é baixa é o que decide
+// o tamanho de cada "célula" visível no mapa final. É a aparência serrilhada
+// pedida (igual à referência que a pessoa mandou): células grandes, bordas
+// em degrau entre uma e outra, não um borrão fotográfico. Ver `dimensoes`
+// abaixo: essa grade nunca é ampliada com suavização.
+const GRADE_LADO_MAX = 55
 // Resolução final do raster. Não acompanha o zoom do mapa — como qualquer
 // ImageOverlay georreferenciado, o Leaflet reamostra ao aproximar. Nesse
 // tamanho o raster fica nítido na maioria dos zooms de uso normal.
@@ -150,13 +151,16 @@ export function criarCamadaCalor(talhoesComDado, opacidade = 0.92) {
     }
   }
 
-  // ---- amplia com suavização, depois recorta na união dos talhões --------
+  // ---- amplia SEM suavizar (vizinho mais próximo), depois recorta --------
+  // Suavizado dava um borrão contínuo tipo foto; a referência é serrilhada —
+  // célula quadrada, borda em degrau entre uma cor e a vizinha. Desligar o
+  // smoothing é o que faz cada célula da grade aparecer como um bloco sólido
+  // em vez de se misturar com a de ao lado.
   const final = document.createElement('canvas')
   final.width = saida.w
   final.height = saida.h
   const fctx = final.getContext('2d')
-  fctx.imageSmoothingEnabled = true
-  if ('imageSmoothingQuality' in fctx) fctx.imageSmoothingQuality = 'high'
+  fctx.imageSmoothingEnabled = false
   fctx.drawImage(gradeCanvas, 0, 0, grade.w, grade.h, 0, 0, saida.w, saida.h)
 
   fctx.globalCompositeOperation = 'destination-in'
