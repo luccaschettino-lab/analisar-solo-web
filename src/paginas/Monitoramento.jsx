@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
 import SeletorGleba from './dados/SeletorGleba.jsx'
 import { useSelecaoGleba } from './dados/useSelecaoGleba.js'
+import { useBuscaCenas } from './monitoramento/useBuscaCenas.js'
+import { pontoRotulo } from '../lib/geo.js'
 
 const INDICES = [
   {
@@ -47,18 +49,85 @@ function AvisoNdwi() {
   )
 }
 
+function formatarData(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function formatarNuvem(fracao) {
+  if (fracao == null) return '—'
+  return `${Math.round(fracao * 100)}%`
+}
+
 /**
- * Vigor da lavoura por geoprocessamento, a partir de imagens do Planet.
+ * Lista as cenas do Planet que cobrem a área — não o mapa colorido em si.
  *
- * Ainda sem conexão: o Planet cobra pela imagem e exige uma chave de API, que
- * fica só no backend (Edge Function), nunca no código do site. A tela existe
- * pronta pra ligar assim que a chave estiver configurada — ver
- * `supabase/functions/` quando essa parte entrar.
+ * A conta ainda não tem permissão de asset (só de busca), então isto é o
+ * que dá pra mostrar de verdade hoje: prova que existe imagem recente da
+ * fazenda, sem prometer o índice que a conta ainda não consegue entregar.
  */
+function ListaCenas({ cenas, carregando, erro, temPonto }) {
+  if (!temPonto) {
+    return (
+      <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
+        Escolha um talhão ou gleba acima pra ver as cenas do Planet disponíveis pra essa área.
+      </p>
+    )
+  }
+
+  if (carregando) {
+    return <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Consultando o Planet…</p>
+  }
+
+  if (erro) {
+    return (
+      <p className="mt-1 max-w-md text-sm text-red-700 dark:text-red-400" role="alert">
+        {erro}
+      </p>
+    )
+  }
+
+  if (cenas.length === 0) {
+    return (
+      <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
+        Nenhuma cena do Planet cobrindo essa área nos últimos 120 dias.
+      </p>
+    )
+  }
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-md border border-slate-200 dark:border-white/10">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs font-medium text-slate-500 dark:bg-white/5 dark:text-slate-400">
+          <tr>
+            <th className="px-3 py-2">Data</th>
+            <th className="px-3 py-2">Nuvem</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+          {cenas.map((c) => (
+            <tr key={c.id}>
+              <td className="px-3 py-1.5 text-slate-700 dark:text-slate-300">{formatarData(c.adquirida)}</td>
+              <td className="px-3 py-1.5 text-slate-700 dark:text-slate-300">{formatarNuvem(c.nuvem)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export default function Monitoramento() {
   const selecao = useSelecaoGleba()
   const [indiceAtivo, setIndiceAtivo] = useState('ndvi')
   const indice = INDICES.find((i) => i.chave === indiceAtivo)
+
+  // Gleba tem prioridade sobre talhão: quem chegou até a gleba quer a área
+  // mais específica, não a média do talhão inteiro.
+  const geometriaDeReferencia = selecao.gleba?.geometria ?? selecao.talhao?.geometria ?? null
+  const [lat, lng] = useMemo(() => pontoRotulo(geometriaDeReferencia) ?? [null, null], [geometriaDeReferencia])
+
+  const { cenas, carregando, erro } = useBuscaCenas(lat, lng)
 
   return (
     <div className="flex h-full flex-col">
@@ -105,18 +174,23 @@ export default function Monitoramento() {
           </PainelDeAba>
         ))}
 
-        <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center dark:border-white/15 dark:bg-white/5">
-          <span aria-hidden="true" className="text-3xl">
-            🔌
-          </span>
-          <h3 className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Aguardando conexão com o Planet
-          </h3>
-          <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
-            {selecao.gleba
-              ? `Assim que a chave de API estiver configurada, o mapa de ${indice.rotulo} da gleba ${selecao.gleba.codigo} aparece aqui.`
-              : `Escolha uma gleba acima. Assim que a chave de API estiver configurada, o mapa de ${indice.rotulo} aparece aqui.`}
-          </p>
+        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-5 dark:border-white/15 dark:bg-white/5">
+          <div className="flex items-start gap-3">
+            <span aria-hidden="true" className="text-xl">
+              🛰
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                Cenas disponíveis, últimos 120 dias
+              </h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Sua conta do Planet ainda só tem permissão de busca, não de visualizar a imagem —
+                por isso o mapa de {indice.rotulo} não aparece ainda, só a lista de quando existe
+                cobertura de satélite da área.
+              </p>
+              <ListaCenas cenas={cenas} carregando={carregando} erro={erro} temPonto={lat != null} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
