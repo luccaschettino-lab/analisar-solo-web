@@ -198,7 +198,7 @@ export function useGeometrias(
       // fica coberta pelo mosaico das glebas.
       const contorno = L.geoJSON(f, {
         pane: PANE_CONTORNO_TALHAO,
-        style: { ...ESTILO_CONTORNO_TALHAO, color: talhao.cor },
+        style: ESTILO_CONTORNO_TALHAO,
       })
       contorno.addTo(grupoContorno)
 
@@ -319,10 +319,7 @@ export function useGeometrias(
         })
         // O contorno por cima das glebas segue o mesmo destaque — é ele que
         // de fato aparece, já que a área do talhão está coberta.
-        registro.contorno?.setStyle({
-          ...(ativo ? ESTILO_CONTORNO_TALHAO_DESTACADO : ESTILO_CONTORNO_TALHAO),
-          color: registro.cor,
-        })
+        registro.contorno?.setStyle(ativo ? ESTILO_CONTORNO_TALHAO_DESTACADO : ESTILO_CONTORNO_TALHAO)
         if (ativo) registro.contorno?.bringToFront()
         continue
       }

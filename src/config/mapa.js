@@ -127,9 +127,31 @@ export const ESTILO_TALHAO_DESTACADO = { weight: 4, opacity: 1, fillOpacity: 0.4
  * gleba, igual em toda parte, e some a diferença entre "aqui acaba um
  * talhão" e "aqui acaba só uma gleba". Esta é uma segunda camada, sem
  * preenchimento, desenhada acima de tudo, só para essa linha grossa.
+ *
+ * Cor fixa e neutra, não a cor cadastrada do talhão: com um filtro de
+ * parâmetro ativo, a cor da gleba já é a classificação do solo (verde,
+ * amarelo, laranja, vermelho) — a informação que importa na tela. Uma
+ * linha grossa na cor própria do talhão, que pode ser tão saturada quanto
+ * qualquer uma dessas, brigava com a classificação em vez de só demarcar a
+ * fronteira. Escuro e discreto risca a linha sem entrar nessa disputa.
  */
-export const ESTILO_CONTORNO_TALHAO = { weight: 3.5, opacity: 1, fill: false, interactive: false }
-export const ESTILO_CONTORNO_TALHAO_DESTACADO = { weight: 5, opacity: 1, fill: false, interactive: false }
+const COR_CONTORNO_TALHAO = '#0a1526'
+export const ESTILO_CONTORNO_TALHAO = {
+  color: COR_CONTORNO_TALHAO,
+  weight: 2.5,
+  opacity: 0.8,
+  fill: false,
+  interactive: false,
+}
+// Destaque de seleção no mesmo amarelo já usado em ESTILO_GLEBA_DESTACADA —
+// um só sinal visual de "isto está selecionado" no mapa inteiro.
+export const ESTILO_CONTORNO_TALHAO_DESTACADO = {
+  color: '#ffff00',
+  weight: 4,
+  opacity: 1,
+  fill: false,
+  interactive: false,
+}
 export const ESTILO_GLEBA = { color: '#ffffff', weight: 2, opacity: 1, fillOpacity: 0.55 }
 export const ESTILO_GLEBA_DESTACADA = { color: '#ffff00', weight: 3, opacity: 1, fillOpacity: 0.7 }
 export const COR_GLEBA = '#ffb300'
