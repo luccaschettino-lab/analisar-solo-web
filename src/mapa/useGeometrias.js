@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
-import { paraFeature, ehPonto } from '../lib/geo.js'
+import { paraFeature, ehPonto, pontoRotulo } from '../lib/geo.js'
 import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipGleba } from './tooltipGleba.js'
@@ -10,12 +10,21 @@ import {
   ZOOM_MINIMO_ROTULO_GLEBA,
   ESTILO_TALHAO,
   ESTILO_TALHAO_DESTACADO,
+  ESTILO_CONTORNO_TALHAO,
+  ESTILO_CONTORNO_TALHAO_DESTACADO,
   ESTILO_GLEBA,
   ESTILO_GLEBA_DESTACADA,
   COR_GLEBA,
   RAIO_PONTO_GLEBA,
   ESTILO_PONTO_SEM_DADO,
 } from '../config/mapa.js'
+
+// Pane próprio para o contorno do talhão: acima do overlayPane (400), onde
+// vivem os polígonos de talhão e gleba, mas abaixo do markerPane (600) e do
+// tooltipPane (650). Sem isso, a ordem em que cada camada é adicionada ao
+// mapa decidiria a sobreposição — frágil a cada re-render.
+const PANE_CONTORNO_TALHAO = 'contornoTalhao'
+const Z_CONTORNO_TALHAO = 450
 
 function rotulo(item) {
   return item.nome ? `${item.codigo} — ${item.nome}` : item.codigo
@@ -52,6 +61,7 @@ export function useGeometrias(
 ) {
   const grupoTalhoes = useRef(null)
   const grupoGlebas = useRef(null)
+  const grupoContornoTalhao = useRef(null)
   const porChave = useRef(new Map())
 
   // Cor da gleba sem filtro: herda do talhão-pai, não um âmbar único — é o
@@ -103,14 +113,25 @@ export function useGeometrias(
   useEffect(() => {
     if (!mapa) return
 
+    if (!mapa.getPane(PANE_CONTORNO_TALHAO)) {
+      const pane = mapa.createPane(PANE_CONTORNO_TALHAO)
+      pane.style.zIndex = Z_CONTORNO_TALHAO
+      // O contorno é só linha: um clique nele tem que atingir o que está por
+      // baixo (gleba ou talhão), não a própria linha.
+      pane.style.pointerEvents = 'none'
+    }
+
     grupoTalhoes.current = L.layerGroup().addTo(mapa)
     grupoGlebas.current = L.layerGroup().addTo(mapa)
+    grupoContornoTalhao.current = L.layerGroup().addTo(mapa)
 
     return () => {
       grupoTalhoes.current?.remove()
       grupoGlebas.current?.remove()
+      grupoContornoTalhao.current?.remove()
       grupoTalhoes.current = null
       grupoGlebas.current = null
+      grupoContornoTalhao.current = null
       porChave.current.clear()
     }
   }, [mapa])
@@ -143,9 +164,11 @@ export function useGeometrias(
   // Talhões
   useEffect(() => {
     const grupo = grupoTalhoes.current
-    if (!mapa || !grupo) return
+    const grupoContorno = grupoContornoTalhao.current
+    if (!mapa || !grupo || !grupoContorno) return
 
     grupo.clearLayers()
+    grupoContorno.clearLayers()
     for (const [chave] of porChave.current) {
       if (chave.startsWith('talhao:')) porChave.current.delete(chave)
     }
@@ -156,17 +179,6 @@ export function useGeometrias(
 
       const camada = L.geoJSON(f, {
         style: { ...ESTILO_TALHAO, color: talhao.cor, fillColor: talhao.cor },
-      })
-      // Rótulo fixo, centrado na geometria — não balão de hover. O produtor
-      // reconhece a fazenda dele pela disposição dos talhões, e ter que
-      // procurar cada nome com o cursor desfaz esse reconhecimento.
-      camada.bindTooltip(conteudoRotuloTalhao(talhao), {
-        permanent: true,
-        direction: 'center',
-        className: 'rotulo-talhao',
-        // O Leaflet aplica 0.9 por padrão, e isso lava o branco do texto. A
-        // legibilidade aqui vem do contorno no CSS, não da opacidade.
-        opacity: 1,
       })
       camada.on('click', (e) => {
         // Enquanto o Geoman está desenhando, o clique é o vértice que está
@@ -179,9 +191,36 @@ export function useGeometrias(
         L.DomEvent.stopPropagation(e)
         aoSelecionarRef.current?.({ tipo: 'talhao', id: talhao.id })
       })
-
       camada.addTo(grupo)
-      porChave.current.set(`talhao:${talhao.id}`, { camada, cor: talhao.cor })
+
+      // Contorno grosso, sem preenchimento, na pane acima das glebas — é o
+      // que de fato se vê como "aqui acaba o talhão", já que a área em si
+      // fica coberta pelo mosaico das glebas.
+      const contorno = L.geoJSON(f, {
+        pane: PANE_CONTORNO_TALHAO,
+        style: { ...ESTILO_CONTORNO_TALHAO, color: talhao.cor },
+      })
+      contorno.addTo(grupoContorno)
+
+      // Rótulo fixo, ancorado no centro de verdade da geometria (não a caixa
+      // delimitadora — ver `pontoRotulo`). Não balão de hover: o produtor
+      // reconhece a fazenda dele pela disposição dos talhões, e ter que
+      // procurar cada nome com o cursor desfaz esse reconhecimento.
+      const ponto = pontoRotulo(f)
+      if (ponto) {
+        L.circleMarker(ponto, { pane: PANE_CONTORNO_TALHAO, opacity: 0, fillOpacity: 0, interactive: false, radius: 1 })
+          .bindTooltip(conteudoRotuloTalhao(talhao), {
+            permanent: true,
+            direction: 'center',
+            className: 'rotulo-talhao',
+            // O Leaflet aplica 0.9 por padrão, e isso lava o branco do texto. A
+            // legibilidade aqui vem do contorno no CSS, não da opacidade.
+            opacity: 1,
+          })
+          .addTo(grupoContorno)
+      }
+
+      porChave.current.set(`talhao:${talhao.id}`, { camada, contorno, cor: talhao.cor })
     }
 
     // `revisao` força o redesenho a partir dos dados salvos. É como uma edição
@@ -234,22 +273,22 @@ export function useGeometrias(
       // varredura desnecessária.
       porChave.current.set(`gleba:${gleba.id}`, { camada, ponto: ehPonto(f), gleba })
 
-      // Camada só do rótulo: invisível e sem eventos, existe unicamente para
-      // carregar o tooltip permanente. A camada visível já tem o tooltip de
-      // hover (sticky) com o detalhe do filtro, e o Leaflet só aceita um
-      // tooltip por camada — daria pra trocar um pelo outro, não somar os dois.
-      const camadaRotulo = L.geoJSON(f, {
-        style: { opacity: 0, fillOpacity: 0, interactive: false },
-        pointToLayer: (_feature, latlng) =>
-          L.circleMarker(latlng, { opacity: 0, fillOpacity: 0, interactive: false, radius: RAIO_PONTO_GLEBA }),
-      })
-      camadaRotulo.bindTooltip(conteudoRotuloGleba(gleba), {
-        permanent: true,
-        direction: 'center',
-        className: 'rotulo-gleba',
-        opacity: 1,
-      })
-      camadaRotulo.addTo(grupo)
+      // Marcador só do rótulo: invisível e sem eventos, existe unicamente
+      // para ancorar o tooltip permanente num ponto certo — ver `pontoRotulo`.
+      // A camada visível já tem o tooltip de hover (sticky) com o detalhe do
+      // filtro, e o Leaflet só aceita um tooltip por camada — daria pra
+      // trocar um pelo outro, não somar os dois.
+      const ponto = pontoRotulo(f)
+      if (ponto) {
+        L.circleMarker(ponto, { opacity: 0, fillOpacity: 0, interactive: false, radius: 1 })
+          .bindTooltip(conteudoRotuloGleba(gleba), {
+            permanent: true,
+            direction: 'center',
+            className: 'rotulo-gleba',
+            opacity: 1,
+          })
+          .addTo(grupo)
+      }
     }
   }, [mapa, glebas, revisao, corPorGleba])
 
@@ -278,6 +317,13 @@ export function useGeometrias(
           color: registro.cor,
           fillColor: registro.cor,
         })
+        // O contorno por cima das glebas segue o mesmo destaque — é ele que
+        // de fato aparece, já que a área do talhão está coberta.
+        registro.contorno?.setStyle({
+          ...(ativo ? ESTILO_CONTORNO_TALHAO_DESTACADO : ESTILO_CONTORNO_TALHAO),
+          color: registro.cor,
+        })
+        if (ativo) registro.contorno?.bringToFront()
         continue
       }
 

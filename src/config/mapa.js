@@ -118,6 +118,18 @@ export const CORES_TALHAO = [
 // Estilos das geometrias. Talhao translucido por baixo, gleba solida por cima.
 export const ESTILO_TALHAO = { weight: 2, opacity: 0.9, fillOpacity: 0.25 }
 export const ESTILO_TALHAO_DESTACADO = { weight: 4, opacity: 1, fillOpacity: 0.4 }
+
+/**
+ * Contorno do talhão redesenhado por cima das glebas.
+ *
+ * A gleba cobre o talhão inteiro (tesselação de Voronoi), então a borda do
+ * `ESTILO_TALHAO` fica soterrada — só sobra a borda branca e fina de cada
+ * gleba, igual em toda parte, e some a diferença entre "aqui acaba um
+ * talhão" e "aqui acaba só uma gleba". Esta é uma segunda camada, sem
+ * preenchimento, desenhada acima de tudo, só para essa linha grossa.
+ */
+export const ESTILO_CONTORNO_TALHAO = { weight: 3.5, opacity: 1, fill: false, interactive: false }
+export const ESTILO_CONTORNO_TALHAO_DESTACADO = { weight: 5, opacity: 1, fill: false, interactive: false }
 export const ESTILO_GLEBA = { color: '#ffffff', weight: 2, opacity: 1, fillOpacity: 0.55 }
 export const ESTILO_GLEBA_DESTACADA = { color: '#ffff00', weight: 3, opacity: 1, fillOpacity: 0.7 }
 export const COR_GLEBA = '#ffb300'
