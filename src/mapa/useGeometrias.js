@@ -57,6 +57,8 @@ export function useGeometrias(
     coloracao = null,
     filtro = null,
     conteudoTooltip = null,
+    mostrarTalhoes = true,
+    mostrarGlebas = true,
   },
 ) {
   const grupoTalhoes = useRef(null)
@@ -135,6 +137,30 @@ export function useGeometrias(
       porChave.current.clear()
     }
   }, [mapa])
+
+  /**
+   * Botão "ver mapa puro": some com a camada inteira, não só o estilo.
+   *
+   * Tirar do mapa em vez de deixar transparente também desliga o clique —
+   * com a gleba oculta, clicar ali deve atingir o talhão (ou nada), não uma
+   * área invisível que ainda captura o evento.
+   */
+  useEffect(() => {
+    if (!mapa || !grupoTalhoes.current || !grupoContornoTalhao.current) return
+    if (mostrarTalhoes) {
+      grupoTalhoes.current.addTo(mapa)
+      grupoContornoTalhao.current.addTo(mapa)
+    } else {
+      grupoTalhoes.current.remove()
+      grupoContornoTalhao.current.remove()
+    }
+  }, [mapa, mostrarTalhoes])
+
+  useEffect(() => {
+    if (!mapa || !grupoGlebas.current) return
+    if (mostrarGlebas) grupoGlebas.current.addTo(mapa)
+    else grupoGlebas.current.remove()
+  }, [mapa, mostrarGlebas])
 
   /**
    * Os rótulos fixos somem quando o mapa se afasta.

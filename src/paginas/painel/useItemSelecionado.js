@@ -26,6 +26,8 @@ export function useItemSelecionado({
   mostrarAviso,
   coloracao = null,
   filtro = null,
+  mostrarTalhoes = true,
+  mostrarGlebas = true,
   // Vêm do FazendaContext: a barra lateral também seleciona, e dois estados
   // separados fariam clicar na árvore não destacar a geometria.
   selecionado,
@@ -50,6 +52,8 @@ export function useItemSelecionado({
     revisao,
     coloracao,
     filtro,
+    mostrarTalhoes,
+    mostrarGlebas,
   })
 
   const chaveSelecionada = selecionado ? `${selecionado.tipo}:${selecionado.id}` : null

@@ -40,6 +40,9 @@ export default function Painel() {
   const [carregandoExclusaoFazenda, setCarregandoExclusaoFazenda] = useState(false)
   const [filtrosAbertos, setFiltrosAbertos] = useState(false)
   const [buscaAberta, setBuscaAberta] = useState(false)
+  const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
+  const [mostrarTalhoes, setMostrarTalhoes] = useState(true)
+  const [mostrarGlebas, setMostrarGlebas] = useState(true)
   const [importandoKml, setImportandoKml] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
@@ -66,6 +69,8 @@ export default function Painel() {
     mostrarAviso,
     coloracao,
     filtro,
+    mostrarTalhoes,
+    mostrarGlebas,
     selecionado,
     setSelecionado,
   })
@@ -213,10 +218,11 @@ export default function Painel() {
         <div className="absolute left-3 top-3 z-[1100] flex flex-wrap gap-2">
           {fazendaSelecionada && (
             <button
-              // Um de cada vez: os dois abrem no mesmo canto.
+              // Um de cada vez: todos abrem no mesmo canto.
               onClick={() => {
                 setFiltrosAbertos((a) => !a)
                 setBuscaAberta(false)
+                setVisualizacaoAberta(false)
               }}
               aria-expanded={filtrosAbertos}
               className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
@@ -230,12 +236,26 @@ export default function Painel() {
             onClick={() => {
               setBuscaAberta((a) => !a)
               setFiltrosAbertos(false)
+              setVisualizacaoAberta(false)
             }}
             aria-expanded={buscaAberta}
             className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
           >
             🔍 Buscar
           </button>
+          {fazendaSelecionada && (
+            <button
+              onClick={() => {
+                setVisualizacaoAberta((a) => !a)
+                setFiltrosAbertos(false)
+                setBuscaAberta(false)
+              }}
+              aria-expanded={visualizacaoAberta}
+              className="vidro rounded-md border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-painel hover:bg-slate-100 dark:border-white/15 dark:text-slate-100 dark:hover:bg-white/10"
+            >
+              👁 Visualização
+            </button>
+          )}
         </div>
 
         {buscaAberta && (
@@ -253,6 +273,35 @@ export default function Painel() {
               carregando={carregandoAnalises}
               erro={erroAnalises}
             />
+          </div>
+        )}
+
+        {visualizacaoAberta && fazendaSelecionada && (
+          <div className="vidro-forte absolute left-3 top-14 z-[1100] w-56 rounded-lg border border-slate-200 p-3 shadow-painel dark:border-white/15">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">O que aparece no mapa</p>
+            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={mostrarTalhoes}
+                onChange={(e) => setMostrarTalhoes(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
+              />
+              Talhões
+            </label>
+            <label className="mt-1.5 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={mostrarGlebas}
+                onChange={(e) => setMostrarGlebas(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
+              />
+              Glebas
+            </label>
+            {!mostrarTalhoes && !mostrarGlebas && (
+              // Sem isto, desmarcar os dois parece um bug ("cadê meu mapa?") em
+              // vez da escolha deliberada que é: só a foto de satélite, puro.
+              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Mapa puro, sem desenhos.</p>
+            )}
           </div>
         )}
 
