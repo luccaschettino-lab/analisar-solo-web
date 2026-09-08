@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { CHAVES_PARAMETROS, TRACO } from '../../config/parametros.js'
 import { formatarValor, temMedicao, parametro } from '../../lib/parametros.js'
 
@@ -25,10 +24,10 @@ const BOTAO =
 /**
  * Análises já lançadas no talhão selecionado.
  *
- * Mostra um resumo, não os 24 parâmetros: a tabela completa é a tela do
- * talhão, e repeti-la aqui só faria o formulário sumir da tela. Um talhão
- * pode ter várias linhas na mesma safra/profundidade — uma por ponto de
- * coleta, e cada uma é uma amostra própria, não uma repetição.
+ * Mostra um resumo, não os 24 parâmetros: a lista existe para conferir o que
+ * já foi lançado, não para ler o laudo inteiro. Um talhão pode ter várias
+ * linhas na mesma safra/profundidade — uma por ponto de coleta, e cada uma é
+ * uma amostra própria, não uma repetição.
  */
 export default function ListaAnalises({
   talhao,
@@ -55,14 +54,6 @@ export default function ListaAnalises({
           Análises do talhão {talhao.codigo}
           {talhao.nome && <span className="font-normal text-slate-500 dark:text-slate-400"> · {talhao.nome}</span>}
         </h2>
-        {analises.length > 0 && (
-          <Link
-            to={`/talhoes/${talhao.id}`}
-            className="text-sm font-medium text-solo-700 hover:underline dark:text-solo-400"
-          >
-            Ver tabela completa e histórico
-          </Link>
-        )}
       </div>
 
       {carregando ? (

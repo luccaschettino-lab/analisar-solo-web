@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import PainelDetalhe from './painel/PainelDetalhe.jsx'
-import PainelTalhao from './painel/PainelTalhao.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
@@ -46,10 +45,6 @@ export default function Painel() {
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
   // de se mover — consultar a cada pixel de arrasto seria abuso do serviço.
   const [centroEstavel, setCentroEstavel] = useState(null)
-  // Preferência de largura do painel de talhão. Persiste entre seleções de
-  // propósito: quem abriu largo para ler o histórico não quer reabrir estreito
-  // a cada clique num talhão diferente.
-  const [painelExpandido, setPainelExpandido] = useState(false)
 
   const { aviso, mostrar: mostrarAviso } = useAviso()
 
@@ -68,17 +63,11 @@ export default function Painel() {
     setSelecionado,
   })
 
-  // O talhão selecionado é quem abre o painel lateral de conteúdo.
-  const talhaoSelecionado = item.itemSelecionado
-
   const mapaDaFazenda = useMapaDaFazenda({
     mapa,
     fazendaSelecionada,
     talhoes,
     carregandoHierarquia,
-    // Muda quando o painel abre, fecha ou troca de largura — é só isso que
-    // dispara o invalidateSize do mapa em `useEnquadramentoDaFazenda`.
-    larguraPainel: talhaoSelecionado ? (painelExpandido ? 'expandido' : 'compacto') : 'fechado',
     aplicarFazenda,
     mostrarAviso,
   })
@@ -325,15 +314,6 @@ export default function Painel() {
           aoFecharMesclarTalhoes={() => setMesclandoTalhoes(false)}
         />
       </div>
-
-      {talhaoSelecionado && (
-        <PainelTalhao
-          talhao={talhaoSelecionado}
-          expandido={painelExpandido}
-          aoAlternarExpandido={() => setPainelExpandido((e) => !e)}
-          aoFechar={item.limparSelecao}
-        />
-      )}
     </div>
   )
 }

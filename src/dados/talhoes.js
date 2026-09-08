@@ -61,30 +61,6 @@ export async function excluirTalhao(id) {
   checar(await supabase.from('talhoes').delete().eq('id', id), 'Falha ao excluir talhão')
 }
 
-/**
- * Um talhão com a fazenda a que pertence, para a trilha de navegação. Sobe a
- * hierarquia numa consulta só.
- *
- * Devolve `null` quando o talhão não existe ou a RLS não deixa ver. Os dois
- * casos são indistinguíveis do lado do cliente, e é assim que deve ser: dizer
- * "existe mas você não pode ver" já é vazar informação.
- */
-export async function buscarTalhaoComContexto(talhaoId) {
-  const linha = checar(
-    await supabase
-      .from('talhoes')
-      .select(`${CAMPOS}, fazendas!inner(id, nome, municipio, uf)`)
-      .eq('id', talhaoId)
-      .maybeSingle(),
-    'Falha ao carregar o talhão',
-  )
-
-  if (!linha) return null
-
-  const { fazendas, ...talhao } = linha
-  return { talhao, fazenda: fazendas }
-}
-
 // Glebas (historico, cadastro obsoleto) e analises que a cascata levara
 // junto. Alimenta a confirmacao.
 export async function resumoCascataTalhao(id) {

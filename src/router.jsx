@@ -10,7 +10,6 @@ import Comparar from './paginas/Comparar.jsx'
 import Monitoramento from './paginas/Monitoramento.jsx'
 import Criterios from './paginas/Criterios.jsx'
 import GlebaDetalhe from './paginas/GlebaDetalhe.jsx'
-import TalhaoDetalhe from './paginas/TalhaoDetalhe.jsx'
 import NaoEncontrado from './paginas/NaoEncontrado.jsx'
 
 // Modo hash: as URLs ficam .../analisar-solo-web/#/login, então o GitHub Pages
@@ -40,7 +39,6 @@ export const router = createHashRouter([
           { path: '/monitoramento', element: <Monitoramento /> },
           { path: '/criterios', element: <Criterios /> },
           { path: '/glebas/:id', element: <GlebaDetalhe /> },
-          { path: '/talhoes/:id', element: <TalhaoDetalhe /> },
         ],
       },
     ],

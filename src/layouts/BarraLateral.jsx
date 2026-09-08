@@ -22,9 +22,9 @@ function Seta({ aberto }) {
  * Substitui o menu do topo, as abas das telas e o painel do mapa. A ideia é
  * ter um lugar só onde se sabe onde está e para onde dá para ir.
  *
- * Clicar num talhão **seleciona** ele no mapa; as sub-entradas Análises e
- * Histórico **navegam**. A distinção existe porque as duas ações são
- * legítimas e a mais frequente — olhar no mapa — deve ser a mais barata.
+ * Clicar num talhão **seleciona** ele no mapa — é a única forma de ver os
+ * dados dele: o mapa de calor, de acordo com o filtro escolhido. Não há mais
+ * tabela de análises nem gráfico de histórico por talhão.
  */
 export default function BarraLateral({ aoNavegar }) {
   const {
@@ -39,26 +39,16 @@ export default function BarraLateral({ aoNavegar }) {
 
   const navegar = useNavigate()
   const local = useLocation()
-  const [abertos, setAbertos] = useState(() => new Set())
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
   // aberta empurrava Comparar/Dados/Critérios para fora da primeira tela.
   const [arvoreAberta, setArvoreAberta] = useState(false)
 
-  // Abre o ramo do item selecionado no mapa: clicar num talhão no mapa deve
-  // revelá-lo aqui, não deixá-lo escondido sob a árvore inteira recolhida.
+  // Selecionar um talhão no mapa revela a árvore aqui, não deixa a seleção
+  // escondida sob ela recolhida.
   useEffect(() => {
     if (!selecionado) return
-    setAbertos((a) => new Set(a).add(selecionado.id))
     setArvoreAberta(true)
   }, [selecionado])
-
-  function alternar(id) {
-    setAbertos((atual) => {
-      const proximo = new Set(atual)
-      proximo.has(id) ? proximo.delete(id) : proximo.add(id)
-      return proximo
-    })
-  }
 
   function irPara(caminho) {
     navegar(caminho)
@@ -204,45 +194,19 @@ export default function BarraLateral({ aoNavegar }) {
             ) : (
               <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
                 {talhoes.map((talhao) => {
-                  const aberto = abertos.has(talhao.id)
                   const ativo = selecionado?.tipo === 'talhao' && selecionado.id === talhao.id
                   return (
                     <li key={talhao.id}>
-                      <div className="flex items-stretch">
-                        <button
-                          onClick={() => alternar(talhao.id)}
-                          aria-expanded={aberto}
-                          aria-label={`${aberto ? 'Recolher' : 'Expandir'} talhão ${talhao.codigo}`}
-                          className={`w-8 shrink-0 md:w-5 ${FOCO}`}
-                        >
-                          <Seta aberto={aberto} />
-                        </button>
-                        <button
-                          onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
-                          className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
-                        >
-                          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
-                          <span className="truncate">
-                            {talhao.codigo}
-                            {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
-                          </span>
-                        </button>
-                      </div>
-
-                      {aberto && (
-                        <ul className="ml-8 md:ml-5">
-                          <li>
-                            <button onClick={() => irPara(`/talhoes/${talhao.id}`)} className={`${ITEM} ${INATIVO}`}>
-                              Análises
-                            </button>
-                          </li>
-                          <li>
-                            <button onClick={() => irPara(`/talhoes/${talhao.id}?aba=historico`)} className={`${ITEM} ${INATIVO}`}>
-                              Histórico
-                            </button>
-                          </li>
-                        </ul>
-                      )}
+                      <button
+                        onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
+                        className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
+                      >
+                        <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
+                        <span className="truncate">
+                          {talhao.codigo}
+                          {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
+                        </span>
+                      </button>
                     </li>
                   )
                 })}

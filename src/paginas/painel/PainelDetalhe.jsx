@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-
 function formatarArea(ha) {
   if (ha == null) return null
   return `${ha.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`
@@ -58,15 +56,6 @@ export default function PainelDetalhe({
           <dd className="font-medium text-slate-800 dark:text-slate-200">{area ?? 'sem geometria'}</dd>
         </div>
       </dl>
-
-      {/* Fora do bloco de permissão: consultar análises é leitura, e um
-          leitor tem tanto direito a isso quanto um proprietário. */}
-      <Link
-        to={`/talhoes/${item.id}`}
-        className="mt-1.5 block rounded bg-solo-600 px-2 py-1 text-center text-[11px] font-medium text-white transition hover:bg-solo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500"
-      >
-        Ver análises
-      </Link>
 
       {!editor ? (
         <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
