@@ -73,15 +73,6 @@ export function FazendaProvider({ children }) {
   const [selecionado, setSelecionado] = useState(null)
 
   /**
-   * Pedido de desenho feito pela barra ("+ Talhão", "+ Gleba").
-   *
-   * A barra não tem acesso ao mapa; ela registra a intenção e a página do mapa
-   * consome e limpa. É um evento carregado por estado — feio, mas honesto:
-   * a alternativa seria a barra segurar uma referência ao Leaflet.
-   */
-  const [pedidoDeDesenho, setPedidoDeDesenho] = useState(null)
-
-  /**
    * Diálogo de fazenda aberto ('nova', 'editar' ou null). Mora aqui, e não no
    * Painel, porque quem abre "Nova fazenda" agora é a barra lateral — perto do
    * seletor de fazenda, onde faz sentido — e ela não tem acesso ao estado do
@@ -94,8 +85,8 @@ export function FazendaProvider({ children }) {
    * Pedido de ação da fazenda feito pela barra ("Marcar sede", "Ir para a
    * sede", "Importar", "Mesclar talhões", "Excluir fazenda").
    *
-   * Mesmo motivo do `pedidoDeDesenho`: essas ações abrem um diálogo do Painel
-   * ou mexem no mapa, e a barra lateral não tem acesso a nenhum dos dois. Um
+   * A barra lateral não tem acesso ao mapa nem aos diálogos do Painel — só
+   * registra a intenção, e a página do mapa consome e limpa. Um
    * valor só (em vez de um booleano por ação) porque nunca há dois pedidos ao
    * mesmo tempo — é sempre um clique, uma intenção.
    */
@@ -133,8 +124,6 @@ export function FazendaProvider({ children }) {
 
       selecionado,
       setSelecionado,
-      pedidoDeDesenho,
-      setPedidoDeDesenho,
       formFazenda,
       setFormFazenda,
       pedidoDeAcao,
@@ -145,7 +134,7 @@ export function FazendaProvider({ children }) {
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
       criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
-      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda, pedidoDeAcao,
+      filtro, definirFiltro, coloracao, selecionado, formFazenda, pedidoDeAcao,
     ],
   )
 

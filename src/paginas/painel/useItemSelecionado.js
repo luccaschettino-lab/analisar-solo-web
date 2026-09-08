@@ -3,11 +3,10 @@ import { useGeometrias } from '../../mapa/useGeometrias.js'
 import { focarGeometria } from '../../mapa/enquadrar.js'
 import { primeiraFeature, areaEmHectares } from '../../lib/geo.js'
 import { atualizarTalhao, excluirTalhao, resumoCascataTalhao } from '../../dados/talhoes.js'
-import { atualizarGleba, excluirGleba, contarAnalisesDaGleba } from '../../dados/glebas.js'
 
 /**
- * O talhão ou gleba selecionado, e tudo que se faz com ele: focar, editar
- * dados, editar vértices e excluir.
+ * O talhão selecionado, e tudo que se faz com ele: focar, editar dados,
+ * editar vértices e excluir.
  *
  * Compõe `useGeometrias` em vez de recebê-lo pronto porque a dependência é
  * circular: o desenho das camadas precisa de `selecionado` e `revisao`, que
@@ -17,12 +16,9 @@ export function useItemSelecionado({
   mapa,
   idFazenda,
   talhoes,
-  glebas,
   editor,
   aplicarTalhao,
-  aplicarGleba,
   removerTalhao,
-  removerGleba,
   mostrarAviso,
   coloracao = null,
   filtro = null,
@@ -32,11 +28,11 @@ export function useItemSelecionado({
   selecionado,
   setSelecionado,
 }) {
-  // Chave "tipo:id" da geometria em edição. Guardar a chave, e não um booleano,
-  // deixa detectar sozinho quando a seleção muda no meio da edição.
-  const [editandoChave, setEditandoChave] = useState(null)
+  // Guardar o id, e não um booleano, deixa detectar sozinho quando a seleção
+  // muda no meio da edição.
+  const [editandoId, setEditandoId] = useState(null)
   const [gravandoGeometria, setGravandoGeometria] = useState(false)
-  const [editandoDados, setEditandoDados] = useState(null) // null | 'talhao' | 'gleba'
+  const [editandoDados, setEditandoDados] = useState(false)
   const [confirmandoItem, setConfirmandoItem] = useState(null)
   const [carregandoExclusao, setCarregandoExclusao] = useState(false)
   // Incrementado para redesenhar as camadas a partir dos dados salvos.
@@ -45,7 +41,6 @@ export function useItemSelecionado({
   const aoSelecionar = useCallback((alvo) => setSelecionado(alvo), [setSelecionado])
   const { obterCamada } = useGeometrias(mapa, {
     talhoes,
-    glebas,
     selecionado,
     aoSelecionar,
     revisao,
@@ -54,17 +49,8 @@ export function useItemSelecionado({
     mostrarCor,
   })
 
-  const chaveSelecionada = selecionado ? `${selecionado.tipo}:${selecionado.id}` : null
-  const itemSelecionado = selecionado
-    ? selecionado.tipo === 'talhao'
-      ? (talhoes.find((t) => t.id === selecionado.id) ?? null)
-      : (glebas.find((g) => g.id === selecionado.id) ?? null)
-    : null
-  const talhaoPai =
-    selecionado?.tipo === 'gleba' && itemSelecionado
-      ? (talhoes.find((t) => t.id === itemSelecionado.talhao_id) ?? null)
-      : null
-  const editandoGeometria = Boolean(editandoChave) && editandoChave === chaveSelecionada
+  const itemSelecionado = selecionado ? (talhoes.find((t) => t.id === selecionado.id) ?? null) : null
+  const editandoGeometria = Boolean(editandoId) && editandoId === selecionado?.id
 
   const limparSelecao = useCallback(() => setSelecionado(null), [setSelecionado])
 
@@ -74,10 +60,9 @@ export function useItemSelecionado({
   }, [idFazenda, setSelecionado])
 
   const desligarEdicao = useCallback(
-    (chave) => {
-      if (!chave) return
-      const [tipo, id] = chave.split(':')
-      obterCamada(tipo, id)?.eachLayer((filha) => filha.pm?.disable())
+    (id) => {
+      if (!id) return
+      obterCamada('talhao', id)?.eachLayer((filha) => filha.pm?.disable())
     },
     [obterCamada],
   )
@@ -85,11 +70,11 @@ export function useItemSelecionado({
   // Trocar de item no meio de uma edição descarta o que estava sendo arrastado.
   // Sem isto a camada ficaria editável e fora de sincronia com o banco.
   useEffect(() => {
-    if (!editandoChave || editandoChave === chaveSelecionada) return
-    desligarEdicao(editandoChave)
-    setEditandoChave(null)
+    if (!editandoId || editandoId === selecionado?.id) return
+    desligarEdicao(editandoId)
+    setEditandoId(null)
     setRevisao((r) => r + 1)
-  }, [editandoChave, chaveSelecionada, desligarEdicao])
+  }, [editandoId, selecionado, desligarEdicao])
 
   /**
    * Leva o mapa até o item já selecionado.
@@ -107,18 +92,15 @@ export function useItemSelecionado({
     (alvo) => {
       setSelecionado(alvo)
       if (!mapa) return
-      const item =
-        alvo.tipo === 'talhao'
-          ? talhoes.find((t) => t.id === alvo.id)
-          : glebas.find((g) => g.id === alvo.id)
+      const item = talhoes.find((t) => t.id === alvo.id)
       if (item?.geometria) focarGeometria(mapa, item.geometria)
     },
-    [mapa, talhoes, glebas],
+    [mapa, talhoes],
   )
 
   function iniciarEdicaoGeometria() {
     if (!editor || !selecionado) return
-    const camada = obterCamada(selecionado.tipo, selecionado.id)
+    const camada = obterCamada('talhao', selecionado.id)
     if (!camada) {
       mostrarAviso('Esta geometria ainda não está desenhada no mapa.')
       return
@@ -126,7 +108,7 @@ export function useItemSelecionado({
     // Habilita por camada filha, não no mapa inteiro: o modo global do Geoman
     // deixaria todas as geometrias editáveis de uma vez.
     camada.eachLayer((filha) => filha.pm?.enable({ allowSelfIntersection: false }))
-    setEditandoChave(chaveSelecionada)
+    setEditandoId(selecionado.id)
   }
 
   async function salvarGeometria() {
@@ -134,7 +116,7 @@ export function useItemSelecionado({
     // UPDATE. O botão também fica desabilitado, mas dois cliques rápidos
     // chegam antes do re-render.
     if (!selecionado || gravandoGeometria) return
-    const camada = obterCamada(selecionado.tipo, selecionado.id)
+    const camada = obterCamada('talhao', selecionado.id)
     if (!camada) return
 
     // L.geoJSON devolve FeatureCollection mesmo tendo recebido uma Feature.
@@ -143,22 +125,18 @@ export function useItemSelecionado({
 
     setGravandoGeometria(true)
     try {
-      if (selecionado.tipo === 'talhao') {
-        aplicarTalhao(await atualizarTalhao(selecionado.id, { geometria: feature, areaHa }))
-      } else {
-        aplicarGleba(await atualizarGleba(selecionado.id, { geometria: feature, areaHa }))
-      }
+      aplicarTalhao(await atualizarTalhao(selecionado.id, { geometria: feature, areaHa }))
       // Só sai do modo de edição depois de gravado. Sair antes daria a impressão
       // de sucesso mesmo quando a gravação falha.
-      desligarEdicao(chaveSelecionada)
-      setEditandoChave(null)
+      desligarEdicao(selecionado.id)
+      setEditandoId(null)
       mostrarAviso('Geometria gravada.')
     } catch (e) {
       mostrarAviso(e.message)
       // O desenho na tela não corresponde ao banco: volta ao que está salvo em
       // vez de deixar o usuário achar que gravou.
-      desligarEdicao(chaveSelecionada)
-      setEditandoChave(null)
+      desligarEdicao(selecionado.id)
+      setEditandoId(null)
       setRevisao((r) => r + 1)
     } finally {
       setGravandoGeometria(false)
@@ -166,8 +144,8 @@ export function useItemSelecionado({
   }
 
   function cancelarGeometria() {
-    desligarEdicao(chaveSelecionada)
-    setEditandoChave(null)
+    desligarEdicao(selecionado?.id)
+    setEditandoId(null)
     setRevisao((r) => r + 1)
   }
 
@@ -175,21 +153,13 @@ export function useItemSelecionado({
     if (!selecionado || carregandoExclusao) return
     setCarregandoExclusao(true)
     try {
-      if (selecionado.tipo === 'talhao') {
-        const resumo = await resumoCascataTalhao(selecionado.id)
-        setConfirmandoItem({
-          consequencias: [
-            { rotulo: 'glebas', quantidade: resumo.glebas },
-            { rotulo: 'análises', quantidade: resumo.analises },
-          ],
-        })
-      } else {
-        setConfirmandoItem({
-          consequencias: [
-            { rotulo: 'análises', quantidade: await contarAnalisesDaGleba(selecionado.id) },
-          ],
-        })
-      }
+      const resumo = await resumoCascataTalhao(selecionado.id)
+      setConfirmandoItem({
+        consequencias: [
+          { rotulo: 'glebas (histórico)', quantidade: resumo.glebas },
+          { rotulo: 'análises', quantidade: resumo.analises },
+        ],
+      })
     } catch (e) {
       mostrarAviso(e.message)
     } finally {
@@ -199,13 +169,8 @@ export function useItemSelecionado({
 
   async function confirmarExclusao() {
     if (!selecionado) return
-    if (selecionado.tipo === 'talhao') {
-      await excluirTalhao(selecionado.id)
-      removerTalhao(selecionado.id)
-    } else {
-      await excluirGleba(selecionado.id)
-      removerGleba(selecionado.id)
-    }
+    await excluirTalhao(selecionado.id)
+    removerTalhao(selecionado.id)
     setConfirmandoItem(null)
     setSelecionado(null)
   }
@@ -213,11 +178,9 @@ export function useItemSelecionado({
   return {
     selecionado,
     itemSelecionado,
-    talhaoPai,
     selecionarEFocar,
     focarSelecionado,
-    // Seleciona sem mover o mapa. Usado logo após criar uma geometria: nesse
-    // instante ela ainda não está na lista, então não haveria o que focar.
+    // Seleciona sem mover o mapa.
     selecionar: aoSelecionar,
     limparSelecao,
 
@@ -228,8 +191,8 @@ export function useItemSelecionado({
     cancelarGeometria,
 
     editandoDados,
-    abrirEdicaoDados: () => setEditandoDados(selecionado?.tipo ?? null),
-    fecharEdicaoDados: () => setEditandoDados(null),
+    abrirEdicaoDados: () => setEditandoDados(true),
+    fecharEdicaoDados: () => setEditandoDados(false),
 
     confirmandoItem,
     carregandoExclusao,

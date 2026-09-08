@@ -3,14 +3,14 @@ import { CHAVES_PARAMETROS } from '../config/parametros.js'
 import { paraNumeroOuNulo } from '../lib/numeros.js'
 
 const CAMPOS_BASE =
-  'id, gleba_id, ano_safra, data_coleta, profundidade, laboratorio, numero_amostra_lab, observacoes, origem, criado_em'
+  'id, talhao_id, geometria, ano_safra, data_coleta, profundidade, laboratorio, numero_amostra_lab, observacoes, origem, criado_em'
 
 const CAMPOS = `${CAMPOS_BASE}, ${CHAVES_PARAMETROS.join(', ')}, extras`
 
 // Para colorir o mapa basta a chave natural e os valores. Observações, extras,
-// laboratório e data ficam de fora: numa fazenda com dezenas de glebas e várias
-// safras, são campos de texto trafegando à toa.
-const CAMPOS_MAPA = `id, gleba_id, ano_safra, profundidade, ${CHAVES_PARAMETROS.join(', ')}`
+// laboratório e data ficam de fora: numa fazenda com dezenas de talhões e
+// várias safras, são campos de texto trafegando à toa.
+const CAMPOS_MAPA = `id, talhao_id, geometria, ano_safra, profundidade, ${CHAVES_PARAMETROS.join(', ')}`
 
 /**
  * Ordem de exibição: safra mais recente primeiro, e dentro da safra a camada
@@ -22,9 +22,14 @@ function ordenar(a, b) {
   return String(a.profundidade).localeCompare(String(b.profundidade), 'pt-BR', { numeric: true })
 }
 
-export async function listarAnalisesDaGleba(glebaId) {
+/**
+ * As análises de um talhão — um talhão pode ter várias por safra/profundidade,
+ * uma por ponto de coleta. A ordenação não desempata entre pontos do mesmo
+ * dia: quem consome decide como agrupar (ver `lib/historico.js`).
+ */
+export async function listarAnalisesDoTalhao(talhaoId) {
   const linhas = checar(
-    await supabase.from('analises').select(CAMPOS).eq('gleba_id', glebaId),
+    await supabase.from('analises').select(CAMPOS).eq('talhao_id', talhaoId),
     'Falha ao carregar análises',
   )
   return (linhas ?? []).sort(ordenar)
@@ -33,21 +38,21 @@ export async function listarAnalisesDaGleba(glebaId) {
 /**
  * Todas as análises da fazenda, para colorir o mapa.
  *
- * Sobe dois níveis pelo relacionamento (`analises → glebas → talhoes`) numa
- * consulta só. Uma ida por gleba transformaria a abertura do mapa em dezenas
- * de requisições, e o filtro por parâmetro precisa de tudo em memória para
+ * Um join só (`analises → talhoes`), agora que a análise aponta pro talhão
+ * direto. Uma ida por talhão transformaria a abertura do mapa em dezenas de
+ * requisições, e o filtro por parâmetro precisa de tudo em memória para
  * trocar de parâmetro sem voltar ao servidor.
  */
 export async function listarAnalisesDaFazenda(fazendaId) {
   const linhas = checar(
     await supabase
       .from('analises')
-      .select(`${CAMPOS_MAPA}, glebas!inner(talhoes!inner(fazenda_id))`)
-      .eq('glebas.talhoes.fazenda_id', fazendaId),
+      .select(`${CAMPOS_MAPA}, talhoes!inner(fazenda_id)`)
+      .eq('talhoes.fazenda_id', fazendaId),
     'Falha ao carregar análises da fazenda',
   )
   // Descarta o objeto do join: quem consome quer a análise, não o caminho.
-  return (linhas ?? []).map(({ glebas, ...analise }) => analise)
+  return (linhas ?? []).map(({ talhoes, ...analise }) => analise)
 }
 
 /**
@@ -58,7 +63,8 @@ export async function listarAnalisesDaFazenda(fazendaId) {
  * número digitado por engano ficaria impossível.
  */
 export function montarPayload({
-  glebaId,
+  talhaoId,
+  geometria,
   anoSafra,
   profundidade,
   dataColeta,
@@ -68,7 +74,8 @@ export function montarPayload({
   valores = {},
 }) {
   const payload = {
-    gleba_id: glebaId,
+    talhao_id: talhaoId,
+    geometria,
     ano_safra: anoSafra.trim(),
     profundidade,
     data_coleta: dataColeta || null,
@@ -83,27 +90,6 @@ export function montarPayload({
   }
 
   return payload
-}
-
-/**
- * A análise que já ocupa a chave natural (gleba, safra, profundidade).
- *
- * Consultada antes de gravar para o conflito virar uma pergunta ao usuário em
- * vez de um erro 23505 seco — ou, pior, de uma sobrescrita silenciosa.
- */
-export async function buscarConflito({ glebaId, anoSafra, profundidade, ignorarId = null }) {
-  let consulta = supabase
-    .from('analises')
-    .select(CAMPOS)
-    .eq('gleba_id', glebaId)
-    .eq('ano_safra', anoSafra.trim())
-    .eq('profundidade', profundidade)
-
-  // Ao editar, a própria linha não conta como conflito consigo mesma.
-  if (ignorarId) consulta = consulta.neq('id', ignorarId)
-
-  const linhas = checar(await consulta, 'Falha ao verificar análise existente')
-  return linhas?.[0] ?? null
 }
 
 export async function criarAnalise(payload) {

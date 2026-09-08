@@ -1,23 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { listarAnalisesDaGleba } from '../dados/analises.js'
+import { listarAnalisesDoTalhao } from '../dados/analises.js'
 
 /**
- * Análises de uma gleba.
+ * Análises de um talhão — pode ter várias por safra/profundidade, uma por
+ * ponto de coleta.
  *
  * Os mutadores locais evitam recarregar a lista inteira a cada gravação: numa
  * tela onde o usuário lança um laudo atrás do outro, recarregar faria a
  * listagem piscar a cada linha salva.
  */
-export function useAnalises(glebaId) {
+export function useAnalises(talhaoId) {
   const [analises, setAnalises] = useState([])
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
 
-  // Descarta resposta de uma gleba que não é mais a selecionada.
+  // Descarta resposta de um talhão que não é mais o selecionado.
   const requisicaoAtual = useRef(0)
 
   const carregar = useCallback(async () => {
-    if (!glebaId) {
+    if (!talhaoId) {
       setAnalises([])
       setErro('')
       setCarregando(false)
@@ -28,7 +29,7 @@ export function useAnalises(glebaId) {
     setCarregando(true)
     setErro('')
     try {
-      const lista = await listarAnalisesDaGleba(glebaId)
+      const lista = await listarAnalisesDoTalhao(talhaoId)
       if (meuToken !== requisicaoAtual.current) return
       setAnalises(lista)
     } catch (e) {
@@ -38,7 +39,7 @@ export function useAnalises(glebaId) {
     } finally {
       if (meuToken === requisicaoAtual.current) setCarregando(false)
     }
-  }, [glebaId])
+  }, [talhaoId])
 
   useEffect(() => {
     carregar()

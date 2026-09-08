@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import PainelDetalhe from './painel/PainelDetalhe.jsx'
-import PainelGleba from './painel/PainelGleba.jsx'
+import PainelTalhao from './painel/PainelTalhao.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
@@ -10,10 +10,8 @@ import InfoImagem from './painel/InfoImagem.jsx'
 import { useAlfineteBusca } from '../mapa/useAlfineteBusca.js'
 import ModaisDoPainel from './painel/ModaisDoPainel.jsx'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
-import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { useAviso } from '../hooks/useAviso.js'
 import { useMapaDaFazenda } from '../mapa/useMapaDaFazenda.js'
-import { useCriacaoDeGeometria } from './painel/useCriacaoDeGeometria.js'
 import { useItemSelecionado } from './painel/useItemSelecionado.js'
 import { excluirFazenda, resumoCascataFazenda } from '../dados/fazendas.js'
 
@@ -21,17 +19,17 @@ import { excluirFazenda, resumoCascataFazenda } from '../dados/fazendas.js'
  * Tela do mapa.
  *
  * A árvore de talhões e a seleção de fazenda saíram daqui para a barra lateral
- * do layout. Sobrou o que é do mapa: desenho, edição, coloração e os diálogos.
+ * do layout. Sobrou o que é do mapa: edição, coloração e os diálogos.
  */
 export default function Painel() {
   const ctx = useFazendaAtual()
   const {
     fazendaSelecionada, idSelecionada, selecionarFazenda, editor,
-    talhoes, glebas, aplicarTalhao, aplicarTalhoes, aplicarGleba, aplicarGlebas,
-    removerTalhao, removerGleba, carregando: carregandoHierarquia,
+    talhoes, aplicarTalhao, aplicarTalhoes,
+    removerTalhao, carregando: carregandoHierarquia,
     aplicarFazenda, removerFazenda,
     anos, filtro, definirFiltro, coloracao, carregandoAnalises, erroAnalises, criterio,
-    selecionado, setSelecionado, pedidoDeDesenho, setPedidoDeDesenho,
+    selecionado, setSelecionado,
     formFazenda, setFormFazenda, pedidoDeAcao, setPedidoDeAcao,
   } = ctx
 
@@ -48,9 +46,9 @@ export default function Painel() {
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
   // de se mover — consultar a cada pixel de arrasto seria abuso do serviço.
   const [centroEstavel, setCentroEstavel] = useState(null)
-  // Preferência de largura do painel de gleba. Persiste entre seleções de
+  // Preferência de largura do painel de talhão. Persiste entre seleções de
   // propósito: quem abriu largo para ler o histórico não quer reabrir estreito
-  // a cada clique numa gleba diferente.
+  // a cada clique num talhão diferente.
   const [painelExpandido, setPainelExpandido] = useState(false)
 
   const { aviso, mostrar: mostrarAviso } = useAviso()
@@ -59,12 +57,9 @@ export default function Painel() {
     mapa,
     idFazenda: idSelecionada,
     talhoes,
-    glebas,
     editor,
     aplicarTalhao,
-    aplicarGleba,
     removerTalhao,
-    removerGleba,
     mostrarAviso,
     coloracao,
     filtro,
@@ -73,16 +68,8 @@ export default function Painel() {
     setSelecionado,
   })
 
-  const criacao = useCriacaoDeGeometria({
-    mapa,
-    editor,
-    talhoes,
-    aoAvisar: mostrarAviso,
-  })
-
-  // A gleba selecionada é quem abre o painel lateral de conteúdo — talhão não
-  // tem análise nem foto, então não tem o que mostrar lá.
-  const glebaSelecionada = selecionado?.tipo === 'gleba' ? item.itemSelecionado : null
+  // O talhão selecionado é quem abre o painel lateral de conteúdo.
+  const talhaoSelecionado = item.itemSelecionado
 
   const mapaDaFazenda = useMapaDaFazenda({
     mapa,
@@ -91,7 +78,7 @@ export default function Painel() {
     carregandoHierarquia,
     // Muda quando o painel abre, fecha ou troca de largura — é só isso que
     // dispara o invalidateSize do mapa em `useEnquadramentoDaFazenda`.
-    larguraPainel: glebaSelecionada ? (painelExpandido ? 'expandido' : 'compacto') : 'fechado',
+    larguraPainel: talhaoSelecionado ? (painelExpandido ? 'expandido' : 'compacto') : 'fechado',
     aplicarFazenda,
     mostrarAviso,
   })
@@ -124,18 +111,6 @@ export default function Painel() {
     return () => mapa.off('moveend', registrar)
   }, [mapa])
 
-  /**
-   * A barra lateral pede o desenho da gleba pelo contexto; aqui o pedido é
-   * consumido e limpo. A barra não tem acesso ao Leaflet, e dar acesso a ela
-   * seria pior que carregar a intenção por estado. Só gleba usa isto agora —
-   * talhão nasce de arquivo importado, não se desenha mais do zero.
-   */
-  useEffect(() => {
-    if (!pedidoDeDesenho || !mapa) return
-    criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
-    setPedidoDeDesenho(null)
-  }, [pedidoDeDesenho, mapa, criacao, setPedidoDeDesenho])
-
   // Selecionar pela barra lateral também leva o mapa até a geometria.
   useEffect(() => {
     if (!selecionado) return
@@ -163,10 +138,9 @@ export default function Painel() {
   }
 
   /**
-   * Mesma ideia do `pedidoDeDesenho`: a barra lateral pede ("Marcar sede",
-   * "Ir para a sede", "Importar", "Mesclar talhões", "Excluir fazenda") e
-   * aqui o pedido vira a ação de fato — diálogo aberto ou, nos dois primeiros,
-   * uma chamada ao mapa.
+   * A barra lateral pede ("Marcar sede", "Ir para a sede", "Importar",
+   * "Mesclar talhões", "Excluir fazenda") e aqui o pedido vira a ação de
+   * fato — diálogo aberto ou, nos dois primeiros, uma chamada ao mapa.
    *
    * Marcar/ir para a sede dependem do mapa já ter montado: se `pedidoDeAcao`
    * chegar antes disso (troca de rota mais lenta que o clique), o efeito só
@@ -284,8 +258,8 @@ export default function Painel() {
               />
               Cor de preenchimento
             </label>
-            {/* As linhas de divisão e o código de cada talhão/gleba continuam
-                de qualquer jeito — isto só tira a cor de dentro delas. */}
+            {/* As linhas de divisão e o código de cada talhão continuam de
+                qualquer jeito — isto só tira a cor de dentro delas. */}
             <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
               A grade e o código continuam aparecendo mesmo sem cor.
             </p>
@@ -296,11 +270,6 @@ export default function Painel() {
           <div className="vidro-forte absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 shadow-painel dark:border-white/15 sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-52 sm:rounded-lg sm:border">
             <PainelDetalhe
               item={item.itemSelecionado}
-              tipo={selecionado.tipo}
-              talhaoPai={item.talhaoPai}
-              quantidadeGlebas={
-                selecionado.tipo === 'talhao' ? glebasDoTalhao(glebas, selecionado.id).length : 0
-              }
               editor={editor}
               editandoGeometria={item.editandoGeometria}
               gravandoGeometria={item.gravandoGeometria}
@@ -330,26 +299,19 @@ export default function Painel() {
           editor={editor}
           marcandoSede={mapaDaFazenda.marcandoSede}
           gravandoSede={mapaDaFazenda.gravandoSede}
-          desenhando={criacao.desenhando}
           aviso={aviso}
           aoMarcarSede={mapaDaFazenda.iniciarMarcacao}
           aoCancelarMarcacao={mapaDaFazenda.cancelarMarcacao}
-          aoAbortarDesenho={criacao.abortar}
         />
 
         <ModaisDoPainel
           fazendaSelecionada={fazendaSelecionada}
           talhoes={talhoes}
-          glebas={glebas}
-          mapa={mapa}
-          criacao={criacao}
           item={item}
           aplicarFazenda={aplicarFazenda}
           aplicarTalhao={aplicarTalhao}
           aplicarTalhoes={aplicarTalhoes}
           removerTalhao={removerTalhao}
-          aplicarGleba={aplicarGleba}
-          aplicarGlebas={aplicarGlebas}
           mostrarAviso={mostrarAviso}
           formFazenda={formFazenda}
           aoFecharFormFazenda={() => setFormFazenda(null)}
@@ -364,16 +326,12 @@ export default function Painel() {
         />
       </div>
 
-      {glebaSelecionada && (
-        <PainelGleba
-          gleba={glebaSelecionada}
-          talhao={item.talhaoPai}
-          fazendaId={fazendaSelecionada.id}
-          editor={editor}
+      {talhaoSelecionado && (
+        <PainelTalhao
+          talhao={talhaoSelecionado}
           expandido={painelExpandido}
           aoAlternarExpandido={() => setPainelExpandido((e) => !e)}
           aoFechar={item.limparSelecao}
-          aoAtualizarGleba={aplicarGleba}
         />
       )}
     </div>

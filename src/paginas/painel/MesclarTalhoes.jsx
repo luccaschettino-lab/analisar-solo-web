@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react'
 import { combinarGeometrias, areaEmHectares } from '../../lib/geo.js'
 import { atualizarTalhao, excluirTalhao } from '../../dados/talhoes.js'
-import { atualizarGleba } from '../../dados/glebas.js'
-import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
 import { CORES_TALHAO } from '../../config/mapa.js'
 
 function formatarArea(ha) {
@@ -19,12 +17,9 @@ function formatarArea(ha) {
  *
  * Um dos selecionados é a "base": mantém o id (e portanto o histórico), e
  * ganha a geometria combinada, a área recalculada, e o código/nome/cor que
- * a pessoa confirmar. As glebas dos outros mudam de pai; os outros talhões,
- * já vazios, são apagados por último — nessa ordem porque é a que arrisca
- * menos: se algo falhar no meio, o pior caso é sobrar um talhão vazio pra
- * apagar de novo, nunca uma gleba órfã.
+ * a pessoa confirmar. Os outros são apagados em seguida.
  */
-export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }) {
+export default function MesclarTalhoes({ talhoes, aoFechar, aoMesclado }) {
   const [selecionados, setSelecionados] = useState(() => new Set())
   const [baseId, setBaseId] = useState(null)
   const [codigo, setCodigo] = useState('')
@@ -60,14 +55,6 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
     })
   }
 
-  const quantidadeGlebasParaMover = useMemo(
-    () =>
-      talhoesSelecionados
-        .filter((t) => t.id !== baseId)
-        .reduce((acc, t) => acc + glebasDoTalhao(glebas, t.id).length, 0),
-    [talhoesSelecionados, baseId, glebas],
-  )
-
   const areaCombinada = useMemo(() => {
     if (talhoesSelecionados.length < 2) return null
     const combinada = combinarGeometrias(talhoesSelecionados.map((t) => t.geometria))
@@ -92,18 +79,8 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
 
     const base = talhoesSelecionados.find((t) => t.id === baseId)
     const outros = talhoesSelecionados.filter((t) => t.id !== baseId)
-    const glebasMovidas = []
 
     try {
-      // 1) Reparenta as glebas primeiro — é o que não pode se perder.
-      for (const talhao of outros) {
-        for (const gleba of glebasDoTalhao(glebas, talhao.id)) {
-          const salva = await atualizarGleba(gleba.id, { talhaoId: base.id })
-          glebasMovidas.push(salva)
-        }
-      }
-
-      // 2) Só então a base ganha a geometria e os dados combinados.
       const geometriaCombinada = combinarGeometrias(talhoesSelecionados.map((t) => t.geometria))
       const talhaoMesclado = await atualizarTalhao(base.id, {
         codigo,
@@ -113,12 +90,11 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
         areaHa: areaEmHectares(geometriaCombinada),
       })
 
-      // 3) Os outros, já sem gleba nenhuma, saem por último.
       for (const talhao of outros) {
         await excluirTalhao(talhao.id)
       }
 
-      aoMesclado({ talhao: talhaoMesclado, glebasMovidas, removidos: outros.map((t) => t.id) })
+      aoMesclado({ talhao: talhaoMesclado, removidos: outros.map((t) => t.id) })
       aoFechar()
     } catch (e) {
       setErro(
@@ -197,9 +173,6 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
           <div className="mt-4 space-y-3 border-t border-slate-200 pt-3 dark:border-white/10">
             <div className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-xs text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
               {talhoesSelecionados.length} talhões selecionados · {formatarArea(areaCombinada)} combinados
-              {quantidadeGlebasParaMover > 0 && (
-                <> · {quantidadeGlebasParaMover} {quantidadeGlebasParaMover === 1 ? 'gleba muda' : 'glebas mudam'} de talhão</>
-              )}
             </div>
 
             <div className="flex gap-3">
@@ -256,9 +229,8 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
             </div>
 
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Os outros {talhoesSelecionados.length - 1} talhões selecionados serão apagados depois de
-              mover as glebas deles pra cá — a área desenhada de cada um continua, só passa a ser uma
-              peça do talhão {codigo || '—'}.
+              Os outros {talhoesSelecionados.length - 1} talhões selecionados serão apagados — a área
+              desenhada de cada um continua, só passa a ser uma peça do talhão {codigo || '—'}.
             </p>
           </div>
         )}

@@ -25,17 +25,14 @@ function Nivel({ id, rotulo, valor, aoMudar, opcoes, desabilitado, vazio, rotula
   )
 }
 
-export default function SeletorGleba({ selecao, desabilitado }) {
+export default function SeletorTalhao({ selecao, desabilitado }) {
   const {
     fazendas,
     talhoes,
-    glebas,
     fazendaId,
     talhaoId,
-    glebaId,
     selecionarFazenda,
     selecionarTalhao,
-    selecionarGleba,
     carregandoFazendas,
     carregandoHierarquia,
     erro,
@@ -43,13 +40,13 @@ export default function SeletorGleba({ selecao, desabilitado }) {
   } = selecao
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       {/* Sem isto, uma falha de rede vira "nenhuma fazenda" — e o usuário
           conclui que perdeu os dados em vez de tentar de novo. */}
       {erro && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300 sm:col-span-3"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300 sm:col-span-2"
         >
           <span>{erro}</span>
           <button
@@ -96,17 +93,6 @@ export default function SeletorGleba({ selecao, desabilitado }) {
                 : 'nenhum talhão'
         }
         rotularOpcao={(t) => (t.nome ? `${t.codigo} · ${t.nome}` : t.codigo)}
-      />
-
-      <Nivel
-        id="sel-gleba"
-        rotulo="Gleba"
-        valor={glebaId}
-        aoMudar={selecionarGleba}
-        opcoes={glebas}
-        desabilitado={desabilitado || !talhaoId || carregandoHierarquia}
-        vazio={!talhaoId ? 'escolha o talhão' : 'nenhuma gleba neste talhão'}
-        rotularOpcao={(g) => (g.nome ? `${g.codigo} · ${g.nome}` : g.codigo)}
       />
     </div>
   )

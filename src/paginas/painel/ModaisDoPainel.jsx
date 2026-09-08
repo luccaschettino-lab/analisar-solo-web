@@ -1,13 +1,8 @@
 import FormFazenda from './FormFazenda.jsx'
 import FormTalhao from './FormTalhao.jsx'
-import FormGleba from './FormGleba.jsx'
-import EscolherTipoGleba from './EscolherTipoGleba.jsx'
-import GlebasEmLote from './GlebasEmLote.jsx'
 import ImportarArquivo from './ImportarArquivo.jsx'
 import MesclarTalhoes from './MesclarTalhoes.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
-import Modal from '../../componentes/Modal.jsx'
-import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
 
 /**
  * Todos os diálogos do painel. Ficam juntos porque nenhum deles tem estado
@@ -17,16 +12,11 @@ import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
 export default function ModaisDoPainel({
   fazendaSelecionada,
   talhoes,
-  glebas,
-  mapa,
-  criacao,
   item,
   aplicarFazenda,
   aplicarTalhao,
   aplicarTalhoes,
   removerTalhao,
-  aplicarGleba,
-  aplicarGlebas,
   mostrarAviso,
   formFazenda,
   aoFecharFormFazenda,
@@ -53,41 +43,15 @@ export default function ModaisDoPainel({
         />
       )}
 
-      {criacao.talhaoDaEscolha && (
-        <EscolherTipoGleba
-          talhao={criacao.talhaoDaEscolha}
-          aoEscolher={criacao.escolherForma}
-          aoFechar={criacao.fecharEscolha}
-        />
-      )}
-
-      {criacao.talhaoDoLote && (
-        <GlebasEmLote
-          talhao={criacao.talhaoDoLote}
-          glebasExistentes={glebasDoTalhao(glebas, criacao.talhaoDoLote.id)}
-          mapa={mapa}
-          aoFechar={criacao.fecharLote}
-          aoSalvar={(criadas) => {
-            aplicarGlebas(criadas)
-            criacao.fecharLote()
-            mostrarAviso(
-              `${criadas.length} ${criadas.length === 1 ? 'gleba criada' : 'glebas criadas'} no talhão ${criacao.talhaoDoLote.codigo}.`,
-            )
-          }}
-        />
-      )}
-
       {importandoArquivo && fazendaSelecionada && (
         <ImportarArquivo
           fazendaId={fazendaSelecionada.id}
           talhoes={talhoes}
           aoFechar={aoFecharImportarArquivo}
-          aoImportado={({ talhoes: novosTalhoes, glebas: novasGlebas }) => {
+          aoImportado={({ talhoes: novosTalhoes }) => {
             if (novosTalhoes.length) aplicarTalhoes(novosTalhoes)
-            if (novasGlebas.length) aplicarGlebas(novasGlebas)
             mostrarAviso(
-              `${novosTalhoes.length} ${novosTalhoes.length === 1 ? 'talhão' : 'talhões'} e ` +
-              `${novasGlebas.length} ${novasGlebas.length === 1 ? 'gleba' : 'glebas'} importados.`,
+              `${novosTalhoes.length} ${novosTalhoes.length === 1 ? 'talhão importado' : 'talhões importados'}.`,
             )
           }}
         />
@@ -96,57 +60,16 @@ export default function ModaisDoPainel({
       {mesclandoTalhoes && (
         <MesclarTalhoes
           talhoes={talhoes}
-          glebas={glebas}
           aoFechar={aoFecharMesclarTalhoes}
-          aoMesclado={({ talhao, glebasMovidas, removidos }) => {
+          aoMesclado={({ talhao, removidos }) => {
             aplicarTalhao(talhao)
-            if (glebasMovidas.length) aplicarGlebas(glebasMovidas)
             for (const id of removidos) removerTalhao(id)
             mostrarAviso(`Talhão ${talhao.codigo} criado a partir da mesclagem de ${removidos.length + 1} talhões.`)
           }}
         />
       )}
 
-      {criacao.pendente?.tipo === 'gleba' && criacao.talhaoPendente && (
-        <FormGleba
-          talhao={criacao.talhaoPendente}
-          geometria={criacao.pendente.geometria}
-          aoFechar={criacao.fecharPendente}
-          aoSalvar={(gleba) => {
-            aplicarGleba(gleba)
-            criacao.fecharPendente()
-            item.selecionar({ tipo: 'gleba', id: gleba.id })
-            mostrarAviso(`Gleba ${gleba.codigo} criada.`)
-          }}
-        />
-      )}
-
-      {/* A geometria foi desenhada mas o talhao sumiu — apagado em outra aba,
-          ou fazenda trocada no meio do fluxo. Antes esta combinacao nao
-          renderizava nada: o desenho era engolido em silencio e a pessoa
-          ficava olhando o mapa sem entender. */}
-      {criacao.pendente?.tipo === 'gleba' && !criacao.talhaoPendente && (
-        <Modal titulo="Talhão não encontrado" aoFechar={criacao.fecharPendente}>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            O desenho foi concluído, mas o talhão a que ele pertenceria não está mais na lista —
-            ele pode ter sido apagado em outra aba, ou a fazenda foi trocada no meio do caminho.
-          </p>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            A gleba <strong>não foi criada</strong>. Recarregue a página e desenhe de novo.
-          </p>
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={criacao.fecharPendente}
-              className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800"
-            >
-              Entendi
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {item.editandoDados === 'talhao' && item.itemSelecionado && fazendaSelecionada && (
+      {item.editandoDados && item.itemSelecionado && fazendaSelecionada && (
         <FormTalhao
           talhao={item.itemSelecionado}
           aoFechar={item.fecharEdicaoDados}
@@ -158,22 +81,9 @@ export default function ModaisDoPainel({
         />
       )}
 
-      {item.editandoDados === 'gleba' && item.itemSelecionado && (
-        <FormGleba
-          talhao={item.talhaoPai}
-          gleba={item.itemSelecionado}
-          aoFechar={item.fecharEdicaoDados}
-          aoSalvar={(gleba) => {
-            aplicarGleba(gleba)
-            item.fecharEdicaoDados()
-            mostrarAviso(`Gleba ${gleba.codigo} atualizada.`)
-          }}
-        />
-      )}
-
       {item.confirmandoItem && item.itemSelecionado && (
         <ConfirmarExclusao
-          titulo={`Excluir ${item.selecionado.tipo === 'talhao' ? 'talhão' : 'gleba'} ${item.itemSelecionado.codigo}?`}
+          titulo={`Excluir talhão ${item.itemSelecionado.codigo}?`}
           descricao="Não há como desfazer."
           consequencias={item.confirmandoItem.consequencias}
           aoFechar={item.fecharExclusao}

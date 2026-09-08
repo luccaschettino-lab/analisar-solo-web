@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { ehPonto } from '../../lib/geo.js'
 
 function formatarArea(ha) {
   if (ha == null) return null
@@ -10,16 +9,13 @@ const BOTAO =
   'rounded border border-slate-300 px-1.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500 dark:border-white/20 dark:text-slate-200 dark:hover:bg-white/10'
 
 /**
- * Detalhe do item selecionado, no rodapé do painel.
+ * Detalhe do talhão selecionado, no rodapé do painel.
  *
  * Fica na coluna do painel em vez de flutuar sobre o mapa: um cartão sobre o
  * mapa taparia justamente a geometria que o usuário acabou de clicar.
  */
 export default function PainelDetalhe({
   item,
-  tipo,
-  talhaoPai,
-  quantidadeGlebas,
   editor,
   editandoGeometria,
   gravandoGeometria,
@@ -33,7 +29,6 @@ export default function PainelDetalhe({
 }) {
   if (!item) return null
 
-  const ponto = ehPonto(item.geometria)
   const area = formatarArea(item.area_ha)
 
   return (
@@ -41,7 +36,7 @@ export default function PainelDetalhe({
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0">
           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-            {tipo === 'talhao' ? 'Talhão' : `Gleba · talhão ${talhaoPai?.codigo ?? '—'}`}
+            Talhão
           </p>
           <p className="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
             {item.codigo}
@@ -60,28 +55,18 @@ export default function PainelDetalhe({
       <dl className="mt-1 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-400">
         <div className="flex justify-between">
           <dt>Área</dt>
-          <dd className="font-medium text-slate-800 dark:text-slate-200">
-            {ponto ? 'ponto de coleta' : (area ?? 'sem geometria')}
-          </dd>
+          <dd className="font-medium text-slate-800 dark:text-slate-200">{area ?? 'sem geometria'}</dd>
         </div>
-        {tipo === 'talhao' && (
-          <div className="flex justify-between">
-            <dt>Glebas</dt>
-            <dd className="font-medium text-slate-800 dark:text-slate-200">{quantidadeGlebas}</dd>
-          </div>
-        )}
       </dl>
 
       {/* Fora do bloco de permissão: consultar análises é leitura, e um
           leitor tem tanto direito a isso quanto um proprietário. */}
-      {tipo === 'gleba' && (
-        <Link
-          to={`/glebas/${item.id}`}
-          className="mt-1.5 block rounded bg-solo-600 px-2 py-1 text-center text-[11px] font-medium text-white transition hover:bg-solo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500"
-        >
-          Ver análises
-        </Link>
-      )}
+      <Link
+        to={`/talhoes/${item.id}`}
+        className="mt-1.5 block rounded bg-solo-600 px-2 py-1 text-center text-[11px] font-medium text-white transition hover:bg-solo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500"
+      >
+        Ver análises
+      </Link>
 
       {!editor ? (
         <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
@@ -90,9 +75,7 @@ export default function PainelDetalhe({
       ) : editandoGeometria ? (
         <div className="mt-1.5 space-y-1.5">
           <p className="rounded border border-solo-100 bg-solo-50 px-1.5 py-1 text-[11px] text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
-            {ponto
-              ? 'Arraste o ponto para a posição correta.'
-              : 'Arraste os vértices. Clique num vértice para removê-lo.'}
+            Arraste os vértices. Clique num vértice para removê-lo.
           </p>
           <div className="flex gap-1.5">
             <button

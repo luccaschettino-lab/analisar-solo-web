@@ -45,17 +45,3 @@ export function conteudoRotuloTalhao(talhao) {
 
   return `${titulo}<br><span class="rotulo-area">${escapar(area)}</span>`
 }
-
-/**
- * Rótulo fixo da gleba: só o código.
- *
- * Um talhão cabe quatro rótulos na tela; uma gleba não — um talhão só de
- * amostragem tem dezenas. Nome e área, que o rótulo do talhão mostra, aqui
- * virariam ruído antes de virar informação; o código já é o que basta para
- * diferenciar uma gleba da vizinha, e nome/área continuam a um clique.
- * Por isso também só aparece com o mapa bem mais próximo — ver
- * `ZOOM_MINIMO_ROTULO_GLEBA`.
- */
-export function conteudoRotuloGleba(gleba) {
-  return escapar(gleba.codigo)
-}

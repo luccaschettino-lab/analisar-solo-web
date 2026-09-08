@@ -2,16 +2,11 @@ import { useEffect, useState } from 'react'
 import { Campo, Aviso } from '../../componentes/formulario.jsx'
 import { PROFUNDIDADES, CHAVES_PARAMETROS } from '../../config/parametros.js'
 import { ehNumeroInvalido, paraTextoDeCampo } from '../../lib/numeros.js'
-import {
-  montarPayload,
-  buscarConflito,
-  criarAnalise,
-  atualizarAnalise,
-  excluirAnalise,
-} from '../../dados/analises.js'
-import SeletorGleba from './SeletorGleba.jsx'
+import { pontoFeature, latLngDoPonto } from '../../lib/geo.js'
+import { montarPayload, criarAnalise, atualizarAnalise } from '../../dados/analises.js'
+import SeletorTalhao from './SeletorTalhao.jsx'
+import MapaPontoColeta from './MapaPontoColeta.jsx'
 import CamposParametros from './CamposParametros.jsx'
-import ConfirmarSubstituicao from './ConfirmarSubstituicao.jsx'
 
 const FORMATO_SAFRA = /^\d{2}-\d{2}$/
 const VAZIO = { anoSafra: '', profundidade: '0-20', dataColeta: '', laboratorio: '', numeroAmostraLab: '', observacoes: '' }
@@ -27,9 +22,9 @@ function valoresDe(analise) {
 export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdicao }) {
   const [cabecalho, setCabecalho] = useState(VAZIO)
   const [valores, setValores] = useState(() => valoresDe(null))
+  const [ponto, setPonto] = useState(null) // { lat, lng } | null
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
-  const [conflito, setConflito] = useState(null)
 
   // Entrar ou sair da edição repovoa o formulário inteiro.
   useEffect(() => {
@@ -43,9 +38,12 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
         observacoes: emEdicao.observacoes ?? '',
       })
       setValores(valoresDe(emEdicao))
+      const [lat, lng] = latLngDoPonto(emEdicao.geometria) ?? [null, null]
+      setPonto(lat != null ? { lat, lng } : null)
     } else {
       setCabecalho(VAZIO)
       setValores(valoresDe(null))
+      setPonto(null)
     }
     setErro('')
   }, [emEdicao])
@@ -58,23 +56,11 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
     setValores((atual) => ({ ...atual, [chave]: valor }))
   }
 
-  function montar() {
-    return montarPayload({
-      glebaId: selecao.glebaId,
-      anoSafra: cabecalho.anoSafra,
-      profundidade: cabecalho.profundidade,
-      dataColeta: cabecalho.dataColeta,
-      laboratorio: cabecalho.laboratorio,
-      numeroAmostraLab: cabecalho.numeroAmostraLab,
-      observacoes: cabecalho.observacoes,
-      valores,
-    })
-  }
-
   async function enviar(evento) {
     evento.preventDefault()
 
-    if (!selecao.glebaId) return setErro('Escolha a gleba antes de salvar.')
+    if (!selecao.talhaoId) return setErro('Escolha o talhão antes de salvar.')
+    if (!ponto) return setErro('Marque no mapa o ponto onde a amostra foi coletada.')
     if (!FORMATO_SAFRA.test(cabecalho.anoSafra.trim())) {
       return setErro('O ano-safra precisa estar no formato 25-26.')
     }
@@ -88,38 +74,24 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
     setErro('')
     setSalvando(true)
     try {
-      const existente = await buscarConflito({
-        glebaId: selecao.glebaId,
+      const payload = montarPayload({
+        talhaoId: selecao.talhaoId,
+        geometria: pontoFeature(ponto.lat, ponto.lng),
         anoSafra: cabecalho.anoSafra,
         profundidade: cabecalho.profundidade,
-        ignorarId: emEdicao?.id ?? null,
+        dataColeta: cabecalho.dataColeta,
+        laboratorio: cabecalho.laboratorio,
+        numeroAmostraLab: cabecalho.numeroAmostraLab,
+        observacoes: cabecalho.observacoes,
+        valores,
       })
-
-      if (existente) {
-        // Nunca sobrescreve calado: quem decide é o usuário.
-        setConflito(existente)
-        setSalvando(false)
-        return
-      }
-
-      const salva = emEdicao
-        ? await atualizarAnalise(emEdicao.id, montar())
-        : await criarAnalise(montar())
+      const salva = emEdicao ? await atualizarAnalise(emEdicao.id, payload) : await criarAnalise(payload)
       aoSalvar(salva, emEdicao ? 'atualizada' : 'criada')
       setSalvando(false)
     } catch (e) {
       setErro(e.message)
       setSalvando(false)
     }
-  }
-
-  async function substituir() {
-    const salva = await atualizarAnalise(conflito.id, montar())
-    // Editando outra linha e movendo-a para uma chave ocupada: as duas
-    // passariam a ocupar a mesma safra e profundidade, então a de origem sai.
-    if (emEdicao && emEdicao.id !== conflito.id) await excluirAnalise(emEdicao.id)
-    setConflito(null)
-    aoSalvar(salva, 'substituída', emEdicao?.id !== conflito.id ? emEdicao?.id : null)
   }
 
   const bloqueado = salvando || !selecao.podeLancar
@@ -132,12 +104,27 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
         </p>
       )}
 
-      <SeletorGleba selecao={selecao} desabilitado={salvando || Boolean(emEdicao)} />
+      <SeletorTalhao selecao={selecao} desabilitado={salvando || Boolean(emEdicao)} />
       {emEdicao && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Editando uma análise existente — a gleba não pode ser trocada. Cancele para
-          lançar em outra.
+          Editando uma análise existente — o talhão não pode ser trocado. Cancele para
+          lançar em outro.
         </p>
+      )}
+
+      {selecao.talhao && (
+        <div>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Ponto de coleta
+          </span>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Clique no mapa pra marcar onde a amostra foi coletada dentro do talhão. Alimenta
+            o mapa de calor — cada ponto marcado separadamente, mesmo no mesmo talhão.
+          </p>
+          <div className="mt-1.5">
+            <MapaPontoColeta talhao={selecao.talhao} ponto={ponto} aoEscolherPonto={setPonto} />
+          </div>
+        </div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -193,8 +180,8 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
       </div>
 
       <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
-        O número da amostra é a referência do laudo deste ano. A identidade da gleba é
-        o cadastro dela, não esse número.
+        O número da amostra é a referência do laudo deste ano — o laboratório renumera a
+        cada coleta, então serve só de referência, nunca para identificar o ponto.
       </p>
 
       <CamposParametros valores={valores} aoMudar={mudarParametro} desabilitado={bloqueado} />
@@ -234,17 +221,6 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
           </button>
         )}
       </div>
-
-      {conflito && (
-        <ConfirmarSubstituicao
-          existente={conflito}
-          anoSafra={cabecalho.anoSafra}
-          profundidade={cabecalho.profundidade}
-          moveria={Boolean(emEdicao && emEdicao.id !== conflito.id)}
-          aoSubstituir={substituir}
-          aoFechar={() => setConflito(null)}
-        />
-      )}
     </form>
   )
 }

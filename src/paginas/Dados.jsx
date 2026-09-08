@@ -5,7 +5,7 @@ import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx'
 import ImportarPdf from '../features/importacao/pdf/ImportarPdf.jsx'
 import FormAnalise from './dados/FormAnalise.jsx'
 import ListaAnalises from './dados/ListaAnalises.jsx'
-import { useSelecaoGleba } from './dados/useSelecaoGleba.js'
+import { useSelecaoTalhao } from './dados/useSelecaoTalhao.js'
 import { useAnalises } from '../hooks/useAnalises.js'
 import { useAviso } from '../hooks/useAviso.js'
 import { excluirAnalise } from '../dados/analises.js'
@@ -19,8 +19,8 @@ export default function Dados() {
   const [params, setParams] = useSearchParams()
   const abaAtiva = ABAS.some((a) => a.chave === params.get('aba')) ? params.get('aba') : 'manual'
 
-  const selecao = useSelecaoGleba()
-  const { analises, carregando, erro, aplicar, remover } = useAnalises(selecao.glebaId || null)
+  const selecao = useSelecaoTalhao()
+  const { analises, carregando, erro, aplicar, remover } = useAnalises(selecao.talhaoId || null)
 
   const [emEdicao, setEmEdicao] = useState(null)
   const [excluindo, setExcluindo] = useState(null)
@@ -61,7 +61,7 @@ export default function Dados() {
           <div>
             <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Dados de análise</h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Lance os laudos do laboratório para acompanhar a evolução de cada gleba.
+              Lance os laudos do laboratório para acompanhar a evolução de cada talhão.
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function Dados() {
           />
 
           <ListaAnalises
-            gleba={selecao.gleba}
+            talhao={selecao.talhao}
             analises={analises}
             carregando={carregando}
             erro={erro}
@@ -102,7 +102,7 @@ export default function Dados() {
       {excluindo && (
         <ConfirmarExclusao
           titulo={`Excluir a análise de ${excluindo.ano_safra}?`}
-          descricao={`Profundidade ${excluindo.profundidade} cm. Os valores desse laudo serão perdidos e a série histórica da gleba fica com um ano a menos. Não há como desfazer.`}
+          descricao={`Profundidade ${excluindo.profundidade} cm. Os valores desse laudo serão perdidos e a série histórica do talhão fica com um ano a menos. Não há como desfazer.`}
           aoFechar={() => setExcluindo(null)}
           aoConfirmar={async () => {
             await excluirAnalise(excluindo.id)

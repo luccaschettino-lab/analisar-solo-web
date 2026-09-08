@@ -92,12 +92,6 @@ export const SNAP_DISTANCIA = 8
 // na tela quatro rotulos cabem; trinta viram mancha sobre o mapa.
 export const ZOOM_MINIMO_ROTULO = 13
 
-// Rotulo fixo da gleba pede mais zoom que o do talhao: um talhao de
-// amostragem tem dezenas de glebas, e mostra-las todas na visao da fazenda
-// inteira vira parede de texto. So aparecem depois que o produtor ja deu
-// zoom num talhao especifico.
-export const ZOOM_MINIMO_ROTULO_GLEBA = 16
-
 // Folga ao redor da geometria no fitBounds, para o desenho nao encostar
 // nas bordas nem ficar sob o painel lateral.
 export const PADDING_FIT = [40, 40]
@@ -143,8 +137,8 @@ export const ESTILO_CONTORNO_TALHAO = {
   fill: false,
   interactive: false,
 }
-// Destaque de seleção no mesmo amarelo já usado em ESTILO_GLEBA_DESTACADA —
-// um só sinal visual de "isto está selecionado" no mapa inteiro.
+// Destaque de seleção em amarelo — um só sinal visual de "isto está
+// selecionado" no mapa inteiro.
 export const ESTILO_CONTORNO_TALHAO_DESTACADO = {
   color: '#ffff00',
   weight: 4,
@@ -152,10 +146,6 @@ export const ESTILO_CONTORNO_TALHAO_DESTACADO = {
   fill: false,
   interactive: false,
 }
-export const ESTILO_GLEBA = { color: '#ffffff', weight: 2, opacity: 1, fillOpacity: 0.55 }
-export const ESTILO_GLEBA_DESTACADA = { color: '#ffff00', weight: 3, opacity: 1, fillOpacity: 0.7 }
-export const COR_GLEBA = '#ffb300'
-export const RAIO_PONTO_GLEBA = 7
 
 /**
  * Tons neutros das geometrias sem classificação.
@@ -177,23 +167,6 @@ export const CINZA_HACHURA = ARDOSIA_300
 /** Fundo e traço do padrão de hachura, no SVG do mapa e no CSS da legenda. */
 export const HACHURA_FUNDO = ARDOSIA_100
 export const HACHURA_TRACO = ARDOSIA_400
-
-/**
- * Gleba-ponto sem dado: círculo vazado, com traço tracejado.
- *
- * A hachura usada nos polígonos não serve aqui. O ladrilho tem 8 px e o
- * círculo tem 14 px de diâmetro — caberiam uma ou duas listras, que leem como
- * ruído e não como ausência. Num alvo pequeno, o que comunica "sem dado" é
- * estar visualmente vazio.
- */
-export const ESTILO_PONTO_SEM_DADO = {
-  color: '#64748b',
-  weight: 2,
-  opacity: 1,
-  dashArray: '3 3',
-  fillColor: '#ffffff',
-  fillOpacity: 0.3,
-}
 
 /**
  * Escala divergente da comparação entre safras.

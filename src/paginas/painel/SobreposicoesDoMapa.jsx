@@ -19,32 +19,23 @@ export default function SobreposicoesDoMapa({
   editor,
   marcandoSede,
   gravandoSede,
-  desenhando,
   aviso,
   aoMarcarSede,
   aoCancelarMarcacao,
-  aoAbortarDesenho,
 }) {
   return (
     <>
-      {semReferencia && !marcandoSede && !gravandoSede && !desenhando && (
+      {semReferencia && !marcandoSede && !gravandoSede && (
         // O padding compensa o painel lateral, que só existe a partir de md.
         // No celular o painel é gaveta sobreposta, e um pl-80 empurraria o
         // cartão para fora da tela.
-        //
-        // `!desenhando` é obrigatório, não estético: sem geometria nenhuma
-        // ainda, `semReferencia` fica true durante o desenho do primeiro
-        // talhão inteiro. O cartão fica centralizado e com pointer-events —
-        // exatamente onde a pessoa clica para começar o polígono — e engolia
-        // o clique antes de chegar ao mapa. Para quem usava, o desenho
-        // simplesmente não começava.
         <div className="pointer-events-none absolute inset-0 z-[1050] flex items-center justify-center p-4 md:pl-80">
           <div className="vidro-forte pointer-events-auto max-w-sm rounded-xl border border-slate-200 p-5 text-center shadow-painel dark:border-white/15">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Onde fica a propriedade?</h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
               Navegue até a fazenda no mapa e marque a sede. Ela aparece no mapa
               com o nome da fazenda, e é por ela que o mapa abre enquanto não houver
-              talhões desenhados.
+              talhão importado.
             </p>
             {editor && (
               <button
@@ -68,17 +59,6 @@ export default function SobreposicoesDoMapa({
       )}
 
       {gravandoSede && <Banner>Gravando a sede da fazenda…</Banner>}
-
-      {desenhando && (
-        <Banner>
-          {desenhando.forma === 'ponto'
-            ? 'Clique no ponto onde a amostra é coletada.'
-            : 'Clique para marcar os vértices. Dê duplo clique para fechar.'}{' '}
-          <button onClick={aoAbortarDesenho} className="ml-2 underline">
-            cancelar
-          </button>
-        </Banner>
-      )}
 
       {aviso && (
         <div

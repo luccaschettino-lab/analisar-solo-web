@@ -23,13 +23,15 @@ const BOTAO =
   'rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 disabled:cursor-not-allowed disabled:text-slate-300 dark:border-white/15 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:text-slate-600'
 
 /**
- * Análises já lançadas na gleba selecionada.
+ * Análises já lançadas no talhão selecionado.
  *
- * Mostra um resumo, não os 24 parâmetros: a tabela completa é a tela da
- * gleba, e repeti-la aqui só faria o formulário sumir da tela.
+ * Mostra um resumo, não os 24 parâmetros: a tabela completa é a tela do
+ * talhão, e repeti-la aqui só faria o formulário sumir da tela. Um talhão
+ * pode ter várias linhas na mesma safra/profundidade — uma por ponto de
+ * coleta, e cada uma é uma amostra própria, não uma repetição.
  */
 export default function ListaAnalises({
-  gleba,
+  talhao,
   analises,
   carregando,
   erro,
@@ -38,10 +40,10 @@ export default function ListaAnalises({
   aoEditar,
   aoExcluir,
 }) {
-  if (!gleba) {
+  if (!talhao) {
     return (
       <p className="border-t border-slate-200 px-6 py-4 text-sm text-slate-400 dark:border-white/10 dark:text-slate-500">
-        Escolha a gleba para ver as análises já lançadas.
+        Escolha o talhão para ver as análises já lançadas.
       </p>
     )
   }
@@ -50,12 +52,12 @@ export default function ListaAnalises({
     <section className="border-t border-slate-200 px-6 py-4 dark:border-white/10">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-          Análises da gleba {gleba.codigo}
-          {gleba.nome && <span className="font-normal text-slate-500 dark:text-slate-400"> · {gleba.nome}</span>}
+          Análises do talhão {talhao.codigo}
+          {talhao.nome && <span className="font-normal text-slate-500 dark:text-slate-400"> · {talhao.nome}</span>}
         </h2>
         {analises.length > 0 && (
           <Link
-            to={`/glebas/${gleba.id}`}
+            to={`/talhoes/${talhao.id}`}
             className="text-sm font-medium text-solo-700 hover:underline dark:text-solo-400"
           >
             Ver tabela completa e histórico
@@ -71,7 +73,7 @@ export default function ListaAnalises({
         </p>
       ) : analises.length === 0 ? (
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Nenhuma análise nesta gleba ainda. Preencha o formulário acima para lançar a
+          Nenhuma análise neste talhão ainda. Preencha o formulário acima para lançar a
           primeira.
         </p>
       ) : (

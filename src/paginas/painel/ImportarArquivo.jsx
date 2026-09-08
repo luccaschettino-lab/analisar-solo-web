@@ -1,9 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { candidatosDoArquivo, EXTENSOES_ACEITAS } from '../../lib/importarArquivo.js'
 import { prepararLinhasDeImportacao } from '../../lib/kml.js'
-import { avaliarContencao, CONTENCAO } from '../../lib/geo.js'
 import { criarTalhao } from '../../dados/talhoes.js'
-import { criarGleba } from '../../dados/glebas.js'
 import { CORES_TALHAO } from '../../config/mapa.js'
 
 const CAMPO =
@@ -15,12 +13,11 @@ function formatarArea(ha) {
 }
 
 /**
- * Assistente de importação de talhões/glebas a partir de um arquivo
- * geoespacial (KML, KMZ, GeoJSON ou shapefile zipado) — a única forma de
- * criar um talhão agora. Desenhar um talhão do zero no mapa saiu de propósito:
- * com o volume de talhões de uma fazenda de verdade, digitar vértice por
- * vértice não compete com abrir o arquivo que o QGIS ou o app de campo já
- * exportou.
+ * Assistente de importação de talhões a partir de um arquivo geoespacial
+ * (KML, KMZ, GeoJSON ou shapefile zipado) — a única forma de criar um talhão
+ * agora. Desenhar um talhão do zero no mapa saiu de propósito: com o volume
+ * de talhões de uma fazenda de verdade, digitar vértice por vértice não
+ * compete com abrir o arquivo que o QGIS ou o app de campo já exportou.
  *
  * Fica num painel largo, não num Modal pequeno — a lista de polígonos para
  * revisar não cabe num diálogo centralizado.
@@ -62,19 +59,6 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
     setLinhas((atual) => atual.map((l) => (l.id === id ? { ...l, ...patch } : l)))
   }
 
-  // Quem pode ser "pai" de uma gleba: os talhões já existentes na fazenda,
-  // mais as linhas deste próprio arquivo marcadas como talhão — uma gleba
-  // pode nascer junto com o talhão dela, na mesma importação.
-  const paisDisponiveis = useMemo(() => {
-    const existentes = talhoes.map((t) => ({
-      id: t.id, codigo: t.codigo, geometria: t.geometria, novo: false,
-    }))
-    const doArquivo = (linhas ?? [])
-      .filter((l) => l.incluir && l.tipo === 'talhao')
-      .map((l) => ({ id: l.id, codigo: l.codigo, geometria: l.geometria, novo: true }))
-    return [...existentes, ...doArquivo]
-  }, [talhoes, linhas])
-
   // Erros por linha — o que trava o botão de importar. Recalculado a cada
   // edição porque um código digitado numa linha pode resolver (ou criar) um
   // conflito em outra.
@@ -82,11 +66,11 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
     if (!linhas) return new Map()
     const mapa = new Map()
 
-    const contagemCodigoTalhao = new Map()
+    const contagemCodigo = new Map()
     for (const l of linhas) {
-      if (l.incluir && l.tipo === 'talhao' && l.codigo.trim()) {
+      if (l.incluir && l.codigo.trim()) {
         const c = l.codigo.trim()
-        contagemCodigoTalhao.set(c, (contagemCodigoTalhao.get(c) ?? 0) + 1)
+        contagemCodigo.set(c, (contagemCodigo.get(c) ?? 0) + 1)
       }
     }
     const codigosExistentes = new Set(talhoes.map((t) => t.codigo))
@@ -98,30 +82,15 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
 
       if (!codigo) {
         lista.push('Código obrigatório.')
-      } else if (l.tipo === 'talhao') {
-        if (contagemCodigoTalhao.get(codigo) > 1) lista.push('Código repetido nesta importação.')
+      } else {
+        if (contagemCodigo.get(codigo) > 1) lista.push('Código repetido nesta importação.')
         if (codigosExistentes.has(codigo)) lista.push(`Já existe um talhão "${codigo}" nesta fazenda.`)
-      }
-
-      if (l.tipo === 'gleba') {
-        // Busca na lista atual, não só o id: se o pai escolhido saiu da
-        // lista (desmarcado, ou virou gleba ele mesmo), o id fica pra trás
-        // apontando pra nada — e isso deve pedir escolha de novo, não passar
-        // batido como "não dá pra verificar".
-        const pai = paisDisponiveis.find((p) => p.id === l.talhaoPaiId)
-        if (!pai) {
-          lista.push('Escolha o talhão desta gleba.')
-        } else {
-          const { situacao } = avaliarContencao(l.geometria, pai.geometria)
-          if (situacao === CONTENCAO.FORA) lista.push('Fica fora do talhão escolhido.')
-        }
       }
 
       mapa.set(l.id, lista)
     }
     return mapa
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linhas, talhoes, paisDisponiveis])
+  }, [linhas, talhoes])
 
   const incluidas = linhas?.filter((l) => l.incluir) ?? []
   const temErro = incluidas.some((l) => (erros.get(l.id) ?? []).length > 0)
@@ -133,13 +102,10 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
     setImportando(true)
     setProgresso({ feito: 0, total: incluidas.length })
 
-    const idReal = new Map() // id da linha -> id real gravado no banco
     const talhoesCriados = []
-    const glebasCriadas = []
 
     try {
-      const linhasTalhao = incluidas.filter((l) => l.tipo === 'talhao')
-      for (const [i, l] of linhasTalhao.entries()) {
+      for (const [i, l] of incluidas.entries()) {
         const salvo = await criarTalhao({
           fazendaId,
           codigo: l.codigo,
@@ -148,35 +114,20 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
           areaHa: l.areaHa,
           cor: CORES_TALHAO[i % CORES_TALHAO.length],
         })
-        idReal.set(l.id, salvo.id)
         talhoesCriados.push(salvo)
-        setProgresso((p) => ({ ...p, feito: p.feito + 1 }))
-      }
-
-      const linhasGleba = incluidas.filter((l) => l.tipo === 'gleba')
-      for (const l of linhasGleba) {
-        const talhaoId = idReal.get(l.talhaoPaiId) ?? l.talhaoPaiId
-        const salvo = await criarGleba({
-          talhaoId,
-          codigo: l.codigo,
-          nome: l.nome,
-          geometria: l.geometria,
-          areaHa: l.areaHa,
-        })
-        glebasCriadas.push(salvo)
         setProgresso((p) => ({ ...p, feito: p.feito + 1 }))
       }
 
       // Só fecha no sucesso completo — no erro, quem revisa precisa ver a
       // mensagem e o que sobrou pendente continua na tela.
-      aoImportado({ talhoes: talhoesCriados, glebas: glebasCriadas })
+      aoImportado({ talhoes: talhoesCriados })
       aoFechar()
     } catch (e) {
       // O que já foi gravado no banco não pode ser desfeito daqui — e não
       // devia sumir da tela só porque o resto falhou.
-      if (talhoesCriados.length || glebasCriadas.length) aoImportado({ talhoes: talhoesCriados, glebas: glebasCriadas })
+      if (talhoesCriados.length) aoImportado({ talhoes: talhoesCriados })
       setErroImportacao(
-        `${e.message} Antes do erro, ${talhoesCriados.length} talhão(ões) e ${glebasCriadas.length} gleba(s) já tinham sido gravados — eles continuam salvos.`,
+        `${e.message} Antes do erro, ${talhoesCriados.length} talhão(ões) já tinham sido gravados — eles continuam salvos.`,
       )
       setImportando(false)
     }
@@ -188,7 +139,7 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Importar arquivo</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Talhões e glebas a partir de um arquivo do QGIS, Google Earth ou app de campo —
+            Talhões a partir de um arquivo do QGIS, Google Earth ou app de campo —
             .kml, .kmz, .geojson ou shapefile (.zip).
           </p>
         </div>
@@ -287,39 +238,7 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
                             className={`${CAMPO} min-w-0 flex-1`}
                             aria-label="Nome"
                           />
-                          <select
-                            value={l.tipo}
-                            onChange={(e) =>
-                              atualizarLinha(l.id, {
-                                tipo: e.target.value,
-                                talhaoPaiId: e.target.value === 'talhao' ? null : l.talhaoPaiId,
-                              })
-                            }
-                            disabled={!l.incluir}
-                            className={`${CAMPO} w-24`}
-                            aria-label="Tipo"
-                          >
-                            <option value="talhao">Talhão</option>
-                            <option value="gleba">Gleba</option>
-                          </select>
                         </div>
-
-                        {l.tipo === 'gleba' && (
-                          <select
-                            value={l.talhaoPaiId ?? ''}
-                            onChange={(e) => atualizarLinha(l.id, { talhaoPaiId: e.target.value || null })}
-                            disabled={!l.incluir}
-                            className={CAMPO}
-                            aria-label="Talhão desta gleba"
-                          >
-                            <option value="">Escolha o talhão…</option>
-                            {paisDisponiveis.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.codigo} {p.novo ? '(deste arquivo)' : ''}
-                              </option>
-                            ))}
-                          </select>
-                        )}
 
                         {errosLinha.length > 0 && (
                           <p className="text-[11px] text-red-700 dark:text-red-300">{errosLinha.join(' ')}</p>

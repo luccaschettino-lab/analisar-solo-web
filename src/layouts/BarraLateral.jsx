@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
-import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { ROTULO_PAPEL } from '../lib/permissoes.js'
 
 const FOCO = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500'
@@ -18,12 +17,12 @@ function Seta({ aberto }) {
 }
 
 /**
- * Navegação em cascata: Fazenda › Talhão › Gleba › seção.
+ * Navegação em cascata: Fazenda › Talhão › seção.
  *
  * Substitui o menu do topo, as abas das telas e o painel do mapa. A ideia é
  * ter um lugar só onde se sabe onde está e para onde dá para ir.
  *
- * Clicar numa gleba **seleciona** ela no mapa; as sub-entradas Análises e
+ * Clicar num talhão **seleciona** ele no mapa; as sub-entradas Análises e
  * Histórico **navegam**. A distinção existe porque as duas ações são
  * legítimas e a mais frequente — olhar no mapa — deve ser a mais barata.
  */
@@ -31,8 +30,8 @@ export default function BarraLateral({ aoNavegar }) {
   const {
     fazendas, carregandoFazendas, erroFazendas,
     fazendaSelecionada, selecionarFazenda, editor,
-    talhoes, glebas, carregando: carregandoHierarquia,
-    selecionado, setSelecionado, setPedidoDeDesenho,
+    talhoes, carregando: carregandoHierarquia,
+    selecionado, setSelecionado,
     setFormFazenda, setPedidoDeAcao,
   } = useFazendaAtual()
 
@@ -41,24 +40,17 @@ export default function BarraLateral({ aoNavegar }) {
   const navegar = useNavigate()
   const local = useLocation()
   const [abertos, setAbertos] = useState(() => new Set())
-  const [glebaAberta, setGlebaAberta] = useState(null)
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
   // aberta empurrava Comparar/Dados/Critérios para fora da primeira tela.
   const [arvoreAberta, setArvoreAberta] = useState(false)
 
-  // Abre o ramo do item selecionado no mapa: clicar numa gleba no mapa deve
-  // revelá-la aqui, não deixá-la escondida sob um nó fechado — nem sob a
-  // árvore inteira recolhida.
+  // Abre o ramo do item selecionado no mapa: clicar num talhão no mapa deve
+  // revelá-lo aqui, não deixá-lo escondido sob a árvore inteira recolhida.
   useEffect(() => {
     if (!selecionado) return
-    const idTalhao =
-      selecionado.tipo === 'talhao'
-        ? selecionado.id
-        : glebas.find((g) => g.id === selecionado.id)?.talhao_id
-    if (idTalhao) setAbertos((a) => new Set(a).add(idTalhao))
-    if (selecionado.tipo === 'gleba') setGlebaAberta(selecionado.id)
+    setAbertos((a) => new Set(a).add(selecionado.id))
     setArvoreAberta(true)
-  }, [selecionado, glebas])
+  }, [selecionado])
 
   function alternar(id) {
     setAbertos((atual) => {
@@ -76,12 +68,6 @@ export default function BarraLateral({ aoNavegar }) {
   function selecionarNoMapa(alvo) {
     setSelecionado(alvo)
     // Selecionar é ação de mapa: se o usuário está em outra tela, leva de volta.
-    if (local.pathname !== '/') navegar('/')
-    aoNavegar?.()
-  }
-
-  function pedirDesenho(pedido) {
-    setPedidoDeDesenho(pedido)
     if (local.pathname !== '/') navegar('/')
     aoNavegar?.()
   }
@@ -218,7 +204,6 @@ export default function BarraLateral({ aoNavegar }) {
             ) : (
               <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
                 {talhoes.map((talhao) => {
-                  const filhas = glebasDoTalhao(glebas, talhao.id)
                   const aberto = abertos.has(talhao.id)
                   const ativo = selecionado?.tipo === 'talhao' && selecionado.id === talhao.id
                   return (
@@ -241,70 +226,21 @@ export default function BarraLateral({ aoNavegar }) {
                             {talhao.codigo}
                             {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
                           </span>
-                          <span className="ml-auto shrink-0 text-xs text-slate-400 dark:text-slate-500">{filhas.length}</span>
                         </button>
                       </div>
 
                       {aberto && (
-                        <ul className="ml-4 border-l border-slate-200 pl-1 dark:border-white/10">
-                          {filhas.map((gleba) => {
-                            const expandida = glebaAberta === gleba.id
-                            const glebaAtiva = selecionado?.tipo === 'gleba' && selecionado.id === gleba.id
-                            return (
-                              <li key={gleba.id}>
-                                <div className="flex items-stretch">
-                                  <button
-                                    onClick={() => setGlebaAberta(expandida ? null : gleba.id)}
-                                    aria-expanded={expandida}
-                                    aria-label={`${expandida ? 'Recolher' : 'Expandir'} gleba ${gleba.codigo}`}
-                                    className={`w-8 shrink-0 md:w-5 ${FOCO}`}
-                                  >
-                                    <Seta aberto={expandida} />
-                                  </button>
-                                  <button
-                                    onClick={() => selecionarNoMapa({ tipo: 'gleba', id: gleba.id })}
-                                    className={`${ITEM} ${glebaAtiva ? 'bg-amber-100 text-slate-900 dark:bg-amber-400/15 dark:text-amber-200' : INATIVO}`}
-                                  >
-                                    <span className="truncate">
-                                      {gleba.codigo}
-                                      {gleba.nome && <span className="text-slate-400 dark:text-slate-500"> · {gleba.nome}</span>}
-                                    </span>
-                                  </button>
-                                </div>
-
-                                {expandida && (
-                                  <ul className="ml-8 md:ml-5">
-                                    <li>
-                                      <button onClick={() => irPara(`/glebas/${gleba.id}`)} className={`${ITEM} ${INATIVO}`}>
-                                        Análises
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button onClick={() => irPara(`/glebas/${gleba.id}?aba=historico`)} className={`${ITEM} ${INATIVO}`}>
-                                        Histórico
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button onClick={() => irPara(`/glebas/${gleba.id}?aba=foto`)} className={`${ITEM} ${INATIVO}`}>
-                                        Foto{gleba.foto_path && <span aria-label="tem foto" title="tem foto"> 📷</span>}
-                                      </button>
-                                    </li>
-                                  </ul>
-                                )}
-                              </li>
-                            )
-                          })}
-
-                          {editor && (
-                            <li>
-                              <button
-                                onClick={() => pedirDesenho({ tipo: 'gleba', talhaoId: talhao.id })}
-                                className={`${ITEM} pl-8 text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10 md:pl-5`}
-                              >
-                                + Gleba
-                              </button>
-                            </li>
-                          )}
+                        <ul className="ml-8 md:ml-5">
+                          <li>
+                            <button onClick={() => irPara(`/talhoes/${talhao.id}`)} className={`${ITEM} ${INATIVO}`}>
+                              Análises
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => irPara(`/talhoes/${talhao.id}?aba=historico`)} className={`${ITEM} ${INATIVO}`}>
+                              Histórico
+                            </button>
+                          </li>
                         </ul>
                       )}
                     </li>

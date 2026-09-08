@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
-import SeletorGleba from './dados/SeletorGleba.jsx'
-import { useSelecaoGleba } from './dados/useSelecaoGleba.js'
+import SeletorTalhao from './dados/SeletorTalhao.jsx'
+import { useSelecaoTalhao } from './dados/useSelecaoTalhao.js'
 import { useBuscaCenas } from './monitoramento/useBuscaCenas.js'
 import { pontoRotulo } from '../lib/geo.js'
 
@@ -70,7 +70,7 @@ function ListaCenas({ cenas, carregando, erro, temPonto }) {
   if (!temPonto) {
     return (
       <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
-        Escolha um talhão ou gleba acima pra ver as cenas do Planet disponíveis pra essa área.
+        Escolha um talhão acima pra ver as cenas do Planet disponíveis pra essa área.
       </p>
     )
   }
@@ -118,13 +118,11 @@ function ListaCenas({ cenas, carregando, erro, temPonto }) {
 }
 
 export default function Monitoramento() {
-  const selecao = useSelecaoGleba()
+  const selecao = useSelecaoTalhao()
   const [indiceAtivo, setIndiceAtivo] = useState('ndvi')
   const indice = INDICES.find((i) => i.chave === indiceAtivo)
 
-  // Gleba tem prioridade sobre talhão: quem chegou até a gleba quer a área
-  // mais específica, não a média do talhão inteiro.
-  const geometriaDeReferencia = selecao.gleba?.geometria ?? selecao.talhao?.geometria ?? null
+  const geometriaDeReferencia = selecao.talhao?.geometria ?? null
   const [lat, lng] = useMemo(() => pontoRotulo(geometriaDeReferencia) ?? [null, null], [geometriaDeReferencia])
 
   const { cenas, carregando, erro } = useBuscaCenas(lat, lng)
@@ -160,7 +158,7 @@ export default function Monitoramento() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
-        <SeletorGleba selecao={selecao} />
+        <SeletorTalhao selecao={selecao} />
 
         {INDICES.map((i) => (
           <PainelDeAba key={i.chave} chave={i.chave} ativa={indiceAtivo}>
