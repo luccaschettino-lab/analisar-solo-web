@@ -1,3 +1,5 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   // Classe 'dark' no <html>, ligada pelo ThemeContext — não a preferência do
@@ -6,23 +8,29 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Manrope', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
-        // verde base usado como cor padrão de talhão (talhoes.cor)
+        // Azul da marca (Moinho) — calibrado a partir dos tons reais do
+        // logo (as pás e o wordmark), não escolhido de olho. Era verde
+        // ("solo" = terra) até a troca de marca; o nome do token ficou pra
+        // não reescrever as classes em 34 arquivos, mas o valor agora é
+        // este azul — pense nele como "cor de ação/marca", não "verde".
         solo: {
-          50: '#f1f8f2',
-          100: '#dcedde',
-          // 300/400 completam a escala para texto/ícone verde sobre fundo
-          // escuro (chrome técnico) — o conjunto original pulava de 100 a 500.
-          300: '#81c784',
-          400: '#66bb6a',
-          500: '#4caf50',
-          600: '#3d8b40',
-          700: '#2e7d32',
-          800: '#245e27',
-          900: '#1b451d',
+          50: '#eef6fc',
+          100: '#d6ebf7',
+          300: '#7ec1e8',
+          400: '#4aa3d9',
+          500: '#2f8cc9',
+          600: '#1f72ab',
+          700: '#175a87',
+          800: '#12456a',
+          900: '#0c2f49',
         },
         // Azul-noite do chrome do app: header, barra lateral e painéis
-        // flutuantes sobre o mapa. Substitui o branco/cinza-claro anterior.
+        // flutuantes sobre o mapa. Já nasceu na família de azul da marca —
+        // não precisou mudar com a troca de identidade.
         noite: {
           950: '#050b16',
           900: '#0a1526',
