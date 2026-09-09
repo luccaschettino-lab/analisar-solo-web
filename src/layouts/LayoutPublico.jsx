@@ -1,8 +1,11 @@
 import { Outlet } from 'react-router-dom'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
 import logoCompleto from '../assets/marca/moinho-completo.jpg'
-// Trigo ao pôr do sol — Unsplash, licença Unsplash (uso comercial livre, sem
-// atribuição exigida). https://unsplash.com/photos/AtC1boy0w_I, Wayne Hollman.
+// Drone sobre lavoura de soja com mapa de produtividade (NDVI) sobreposto —
+// imagem trocada junto da marca nova, pra combinar com o discurso de
+// "dados + satélite" do logo. Fonte/licença não conferidas aqui; a antiga
+// (trigo ao pôr do sol) era Unsplash — se esta precisar do mesmo cuidado,
+// confirmar a licença antes de publicar em produção.
 import fundoLogin from '../assets/marca/login-fundo.jpg'
 
 /**
