@@ -16,24 +16,93 @@ function Seta({ aberto }) {
   )
 }
 
-/**
- * Ícone sozinho, sem rótulo ao lado — todas as abas da barra viraram isso a
- * pedido, empilhadas na vertical em vez de uma linha de texto por aba. O
- * nome não some de verdade: `title` mostra no hover, e `aria-label` mantém a
- * tela legível para quem usa leitor de tela.
- */
-function IconeNav({ to, icone, rotulo, onClick }) {
+// Ícones de traço, no estilo Feather — um SVG só, sem depender de emoji do
+// sistema. Emoji renderiza cor e forma diferente em cada fonte/SO (o mapa
+// ficava colorido, o funil vinha num quadrado azul, o gráfico noutro
+// branco), e o resultado era uma coluna sem identidade única. `currentColor`
+// deixa o ícone seguir a mesma cor do texto do item — ativo, inativo, hover,
+// tudo já resolvido pelas classes que já existiam.
+const PROPRIEDADES_ICONE = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+}
+
+function IconeMapa(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      <line x1="8" y1="2" x2="8" y2="18" />
+      <line x1="16" y1="6" x2="16" y2="22" />
+    </svg>
+  )
+}
+
+function IconeFiltro(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  )
+}
+
+function IconeComparar(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  )
+}
+
+function IconeDados(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    </svg>
+  )
+}
+
+function IconeMonitoramento(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M4 11a9 9 0 0 1 9 9" />
+      <path d="M4 4a16 16 0 0 1 16 16" />
+      <circle cx="5" cy="19" r="1" />
+    </svg>
+  )
+}
+
+function IconeCriterios(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <line x1="4" y1="21" x2="4" y2="14" />
+      <line x1="4" y1="10" x2="4" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12" y2="3" />
+      <line x1="20" y1="21" x2="20" y2="16" />
+      <line x1="20" y1="12" x2="20" y2="3" />
+      <line x1="1" y1="14" x2="7" y2="14" />
+      <line x1="9" y1="8" x2="15" y2="8" />
+      <line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+  )
+}
+
+/** Ícone + rótulo, na mesma linha — o padrão de todo item da barra. */
+function ItemNav({ to, Icone, rotulo, onClick }) {
   return (
     <NavLink
       to={to}
-      title={rotulo}
-      aria-label={rotulo}
       onClick={onClick}
-      className={({ isActive }) =>
-        `flex h-9 w-full items-center justify-center rounded text-base transition ${FOCO} ${isActive ? ATIVO : INATIVO}`
-      }
+      className={({ isActive }) => `${ITEM} font-medium ${isActive ? ATIVO : INATIVO}`}
     >
-      <span aria-hidden="true">{icone}</span>
+      <Icone aria-hidden="true" className="h-4 w-4 shrink-0" />
+      {rotulo}
     </NavLink>
   )
 }
@@ -189,24 +258,21 @@ export default function BarraLateral({ aoNavegar }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {/* Todas as abas viram ícone sozinho, empilhadas na vertical — o
-            nome continua acessível por `title` (hover) e `aria-label`
-            (leitor de tela), só não ocupa mais uma linha de texto cada. */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-stretch gap-1">
-            {fazendaSelecionada && (
-              <button
-                onClick={() => setArvoreAberta((a) => !a)}
-                aria-expanded={arvoreAberta}
-                aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
-                className={`w-5 shrink-0 ${FOCO}`}
-              >
-                <Seta aberto={arvoreAberta} />
-              </button>
-            )}
-            <IconeNav to="/" icone="🗺" rotulo="Mapa" onClick={aoNavegar} />
-          </div>
+        <div className="flex items-stretch">
+          {fazendaSelecionada && (
+            <button
+              onClick={() => setArvoreAberta((a) => !a)}
+              aria-expanded={arvoreAberta}
+              aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
+              className={`w-5 shrink-0 ${FOCO}`}
+            >
+              <Seta aberto={arvoreAberta} />
+            </button>
+          )}
+          <ItemNav to="/" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
+        </div>
 
+        <div className="mt-0.5 flex flex-col gap-0.5">
           {fazendaSelecionada && arvoreAberta && (
             <div>
               {carregandoHierarquia ? (
@@ -260,12 +326,12 @@ export default function BarraLateral({ aoNavegar }) {
             </div>
           )}
 
-          <IconeNav to="/filtros" icone="🔽" rotulo="Filtros" onClick={aoNavegar} />
-          <IconeNav to="/comparar" icone="📈" rotulo="Comparar anos" onClick={aoNavegar} />
+          <ItemNav to="/filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} />
+          <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} />
 
           <div className="my-1 border-t border-slate-200 dark:border-white/10" />
 
-          <IconeNav to="/dados" icone="📋" rotulo="Dados" onClick={aoNavegar} />
+          <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} />
           {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —
               não de "Critérios", onde estavam por engano. */}
           <ul className="ml-6 space-y-0.5 border-l border-slate-200 pl-1 dark:border-white/10">
@@ -281,12 +347,12 @@ export default function BarraLateral({ aoNavegar }) {
             </li>
           </ul>
 
-          <IconeNav to="/monitoramento" icone="🛰" rotulo="Monitoramento" onClick={aoNavegar} />
+          <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} />
 
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
-          <IconeNav to="/criterios" icone="🎚" rotulo="Critérios" onClick={aoNavegar} />
+          <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} />
         </div>
       </div>
     </nav>
