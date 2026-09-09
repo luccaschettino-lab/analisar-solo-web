@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router-dom'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
 import logoCompleto from '../assets/marca/moinho-completo.jpg'
-// Drone sobre lavoura de soja com mapa de produtividade (NDVI) sobreposto —
-// imagem trocada junto da marca nova, pra combinar com o discurso de
-// "dados + satélite" do logo. Fonte/licença não conferidas aqui; a antiga
-// (trigo ao pôr do sol) era Unsplash — se esta precisar do mesmo cuidado,
-// confirmar a licença antes de publicar em produção.
+// PROVISÓRIA — placeholder de MVP, não a foto definitiva. Drone sobre
+// lavoura de soja com mapa de produtividade (NDVI) sobreposto, resolução
+// baixa (900x624, a antiga era 2200x1465) e fonte/licença não conferidas.
+// Trocar antes de considerar o site pronto pra produção: precisa de uma
+// versão em resolução mais alta, com licença confirmada — a antiga (trigo
+// ao pôr do sol) era Unsplash, com isso documentado.
 import fundoLogin from '../assets/marca/login-fundo.jpg'
 
 /**
