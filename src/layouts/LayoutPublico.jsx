@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
-import logoCompleto from '../assets/marca/boss-agro-completo.png'
+import logoCompleto from '../assets/marca/moinho-completo.jpg'
 // Trigo ao pôr do sol — Unsplash, licença Unsplash (uso comercial livre, sem
 // atribuição exigida). https://unsplash.com/photos/AtC1boy0w_I, Wayne Hollman.
 import fundoLogin from '../assets/marca/login-fundo.jpg'
@@ -32,11 +32,10 @@ export default function LayoutPublico() {
             no ponto mais fraco do degradê, e o texto quase sumia). */}
         <div className="absolute inset-0 bg-gradient-to-t from-noite-950/95 via-noite-950/55 to-noite-950/10" />
         <div className="relative flex h-full flex-col justify-end p-6 sm:p-10 md:p-14">
-          {/* Plaquinha clara atrás da logo: a arte é verde/marrom sobre fundo
-              transparente, feita pra superfície clara — direto sobre a foto
-              ela sumiria. */}
+          {/* Plaquinha clara atrás da logo: a arte é sobre fundo branco,
+              feita pra superfície clara — direto sobre a foto ela sumiria. */}
           <div className="inline-block w-fit rounded-xl bg-white/95 px-5 py-4 shadow-painel">
-            <img src={logoCompleto} alt="Boss-Agro" className="h-14 w-auto sm:h-16 md:h-20" />
+            <img src={logoCompleto} alt="Moinho Soluções Agronômicas" className="h-28 w-auto sm:h-36 md:h-44" />
           </div>
           <p className="mt-4 max-w-sm text-base font-medium text-white drop-shadow-md sm:text-lg">
             Mapa, análise e histórico do solo — talhão por talhão, safra após safra.
