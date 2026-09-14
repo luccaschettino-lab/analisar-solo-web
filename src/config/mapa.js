@@ -8,6 +8,8 @@ const ATRIB_EOX =
   'Sentinel-2 cloudless por <a href="https://eox.at/">EOX</a> — contém dados Copernicus Sentinel modificados'
 const ATRIB_OSM =
   '&copy; contribuidores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+// PROVISÓRIO — ver comentário na camada `google` abaixo.
+const ATRIB_GOOGLE = 'Imagens &copy; Google'
 
 // maxNativeZoom evita pedir tile que a fonte não tem: o Leaflet estica o
 // último nível disponível em vez de receber 404 e mostrar buraco cinza. Sem
@@ -50,6 +52,17 @@ export const CAMADAS_BASE = {
   s2_2024: sentinel(2024),
   s2_2021: sentinel(2021),
   s2_2018: sentinel(2018),
+  // PROVISÓRIO: tile XYZ não-oficial do Google Maps (sem chave, sem billing).
+  // Funciona, mas não é a Maps Platform licenciada — os Termos de Serviço do
+  // Google exigem a API paga para exibir esses tiles fora do próprio Google.
+  // Serve para avaliação/demo; trocar pela API oficial (ou remover) antes de
+  // produção. Mesma ressalva da foto de capa do login.
+  google: {
+    rotulo: 'Satélite (Google) · provisório',
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    opcoes: { attribution: ATRIB_GOOGLE, ...ZOOM_ALTA },
+    info: { tipo: 'fixo', texto: 'Fonte provisória — data não publicada' },
+  },
   relevo: {
     rotulo: 'Relevo',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
