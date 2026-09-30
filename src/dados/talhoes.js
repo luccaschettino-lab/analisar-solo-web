@@ -61,8 +61,7 @@ export async function excluirTalhao(id) {
   checar(await supabase.from('talhoes').delete().eq('id', id), 'Falha ao excluir talhão')
 }
 
-// Glebas (historico, cadastro obsoleto) e analises que a cascata levara
-// junto. Alimenta a confirmacao.
+// Glebas e analises que a cascata levara junto. Alimenta a confirmacao.
 export async function resumoCascataTalhao(id) {
   const [glebas, analises] = await Promise.all([
     supabase.from('glebas').select('id', { count: 'exact', head: true }).eq('talhao_id', id),

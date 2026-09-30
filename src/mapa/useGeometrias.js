@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
-import { paraFeature, pontoRotulo } from '../lib/geo.js'
+import { paraFeature, ehPonto, pontoRotulo } from '../lib/geo.js'
+import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipTalhao } from './tooltipTalhao.js'
-import { conteudoRotuloTalhao } from './rotuloTalhao.js'
+import { conteudoTooltipGleba } from './tooltipGleba.js'
+import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
 import { criarCamadaCalor, criarMarcadoresDeAmostra, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
 import { posicaoDoNivel } from '../lib/coloracao.js'
 import {
   ZOOM_MINIMO_ROTULO,
+  ZOOM_MINIMO_ROTULO_GLEBA,
   ESTILO_TALHAO,
   ESTILO_TALHAO_DESTACADO,
   ESTILO_CONTORNO_TALHAO,
   ESTILO_CONTORNO_TALHAO_DESTACADO,
+  ESTILO_GLEBA,
+  ESTILO_GLEBA_DESTACADA,
+  COR_GLEBA,
+  RAIO_PONTO_GLEBA,
 } from '../config/mapa.js'
 
 // Pane próprio para o contorno do talhão: acima do overlayPane (400), onde
@@ -21,20 +28,28 @@ import {
 const PANE_CONTORNO_TALHAO = 'contornoTalhao'
 const Z_CONTORNO_TALHAO = 450
 
+// Pane da gleba: acima do mapa de calor (420), abaixo do contorno do talhão
+// (450). A gleba é subdivisão de cadastro, não dado — por isso fica entre a
+// superfície colorida e a linha grossa que marca "aqui acaba o talhão", nunca
+// escondendo nenhuma das duas.
+const PANE_GLEBA = 'glebas'
+const Z_GLEBA = 430
+
 function rotulo(talhao) {
   return talhao.nome ? `${talhao.codigo} — ${talhao.nome}` : talhao.codigo
 }
 
 /**
- * Desenha os talhões sobre o mapa.
+ * Desenha talhões e glebas sobre o mapa.
  *
- * Gleba saiu de cena: o talhão é a unidade que se seleciona, colore e
- * analisa agora. Sem filtro, cada talhão mostra a cor do próprio cadastro.
- * Com filtro completo, o preenchimento do talhão some e quem mostra a cor é
- * o mapa de calor por interpolação (`camadaCalor.js`) — uma superfície
- * contínua entre os pontos de coleta reais, não um tom sólido por talhão.
+ * O talhão é a unidade que se seleciona, colore e analisa — sem filtro, cada
+ * talhão mostra a cor do próprio cadastro; com filtro completo, quem carrega
+ * a cor é o mapa de calor por interpolação (`camadaCalor.js`). Nada disso
+ * mudou com a volta da gleba: ela é desenhada por cima, como subdivisão do
+ * talhão, mas não participa da coloração nem do filtro — é cadastro, não
+ * amostra. Ver `ESTILO_GLEBA` em `config/mapa.js`.
  *
- * O destaque (seleção) é aplicado num efeito próprio, alterando o estilo das
+ * O destaque (seleção) é aplicado em efeitos próprios, alterando o estilo das
  * camadas que já existem. Reconstruir tudo a cada seleção faria o mapa
  * piscar e perderia o tooltip aberto sob o cursor. O mapa de calor mora num
  * efeito à parte, que não depende da seleção — trocar de talhão selecionado
@@ -49,6 +64,7 @@ export function useGeometrias(
   mapa,
   {
     talhoes,
+    glebas = [],
     selecionado,
     aoSelecionar,
     revisao = 0,
@@ -61,15 +77,50 @@ export function useGeometrias(
 ) {
   const grupoTalhoes = useRef(null)
   const grupoContornoTalhao = useRef(null)
+  const grupoGlebas = useRef(null)
+  const grupoRotulosGleba = useRef(null)
   const camadaCalor = useRef(null)
   const marcadoresAmostra = useRef(null)
   const porId = useRef(new Map())
+  const porIdGleba = useRef(new Map())
 
   // Mantém o callback fresco sem recriar as camadas a cada render do pai.
   const aoSelecionarRef = useRef(aoSelecionar)
   useEffect(() => {
     aoSelecionarRef.current = aoSelecionar
   }, [aoSelecionar])
+
+  // Cor da gleba sem filtro: herda do talhão-pai, com uma variação de
+  // luminosidade entre as glebas do mesmo talhão — é o que deixa cada uma
+  // reconhecível sem precisar passar o mouse uma a uma.
+  const corPorTalhao = useMemo(() => new Map(talhoes.map((t) => [t.id, t.cor])), [talhoes])
+
+  const corPorGleba = useMemo(() => {
+    const glebasPorTalhao = new Map()
+    for (const gleba of glebas) {
+      if (!glebasPorTalhao.has(gleba.talhao_id)) glebasPorTalhao.set(gleba.talhao_id, [])
+      glebasPorTalhao.get(gleba.talhao_id).push(gleba)
+    }
+
+    const cores = new Map()
+    for (const [talhaoId, lista] of glebasPorTalhao) {
+      const corBase = corPorTalhao.get(talhaoId) ?? COR_GLEBA
+      // Ordem estável pelo código (numérica quando dá) para a progressão
+      // clara→escura não mudar de gleba a cada revisão do mapa.
+      const ordenada = [...lista].sort((a, b) => {
+        const na = Number(a.codigo)
+        const nb = Number(b.codigo)
+        if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb
+        return String(a.codigo).localeCompare(String(b.codigo))
+      })
+      const n = ordenada.length
+      ordenada.forEach((gleba, i) => {
+        const delta = n > 1 ? -0.16 + (0.32 * i) / (n - 1) : 0
+        cores.set(gleba.id, variarLuminosidade(corBase, delta))
+      })
+    }
+    return cores
+  }, [glebas, corPorTalhao])
 
   useEffect(() => {
     if (!mapa) return
@@ -80,32 +131,44 @@ export function useGeometrias(
       pane.style.pointerEvents = 'none'
     }
 
+    if (!mapa.getPane(PANE_GLEBA)) {
+      const pane = mapa.createPane(PANE_GLEBA)
+      pane.style.zIndex = Z_GLEBA
+    }
+
     if (!mapa.getPane(PANE_CONTORNO_TALHAO)) {
       const pane = mapa.createPane(PANE_CONTORNO_TALHAO)
       pane.style.zIndex = Z_CONTORNO_TALHAO
-      // O contorno é só linha: um clique nele tem que atingir o talhão por
-      // baixo, não a própria linha.
+      // O contorno é só linha: um clique nele tem que atingir o que está por
+      // baixo (gleba ou talhão), não a própria linha.
       pane.style.pointerEvents = 'none'
     }
 
     grupoTalhoes.current = L.layerGroup().addTo(mapa)
+    grupoGlebas.current = L.layerGroup().addTo(mapa)
+    grupoRotulosGleba.current = L.layerGroup().addTo(mapa)
     grupoContornoTalhao.current = L.layerGroup().addTo(mapa)
 
     return () => {
       grupoTalhoes.current?.remove()
+      grupoGlebas.current?.remove()
+      grupoRotulosGleba.current?.remove()
       grupoContornoTalhao.current?.remove()
       camadaCalor.current?.remove()
       marcadoresAmostra.current?.remove()
       grupoTalhoes.current = null
+      grupoGlebas.current = null
+      grupoRotulosGleba.current = null
       grupoContornoTalhao.current = null
       camadaCalor.current = null
       marcadoresAmostra.current = null
       porId.current.clear()
+      porIdGleba.current.clear()
     }
   }, [mapa])
 
   /**
-   * O rótulo fixo some quando o mapa se afasta.
+   * Os rótulos fixos somem quando o mapa se afasta.
    *
    * Uma classe no container e o CSS faz o resto. A alternativa — abrir e
    * fechar dezenas de tooltips a cada zoom — faria o Leaflet destruir e
@@ -116,14 +179,16 @@ export function useGeometrias(
     const container = mapa.getContainer()
 
     function ajustar() {
-      container.classList.toggle('mapa-sem-rotulos', mapa.getZoom() < ZOOM_MINIMO_ROTULO)
+      const zoom = mapa.getZoom()
+      container.classList.toggle('mapa-sem-rotulos', zoom < ZOOM_MINIMO_ROTULO)
+      container.classList.toggle('mapa-sem-rotulos-gleba', zoom < ZOOM_MINIMO_ROTULO_GLEBA)
     }
 
     ajustar()
     mapa.on('zoomend', ajustar)
     return () => {
       mapa.off('zoomend', ajustar)
-      container.classList.remove('mapa-sem-rotulos')
+      container.classList.remove('mapa-sem-rotulos', 'mapa-sem-rotulos-gleba')
     }
   }, [mapa])
 
@@ -160,7 +225,8 @@ export function useGeometrias(
       camada.addTo(grupo)
 
       // Contorno grosso, sem preenchimento, numa pane acima — é o que de
-      // fato marca "aqui acaba o talhão" por cima do mapa de calor.
+      // fato marca "aqui acaba o talhão" por cima do mapa de calor e das
+      // glebas.
       const contorno = L.geoJSON(f, {
         pane: PANE_CONTORNO_TALHAO,
         style: ESTILO_CONTORNO_TALHAO,
@@ -193,8 +259,75 @@ export function useGeometrias(
     // mudança de revisão reconstrói a camada.
   }, [mapa, talhoes, revisao])
 
+  // Glebas — subdivisão do talhão. Camada própria, redesenhada independente
+  // do talhão: criar uma gleba não deveria reconstruir o polígono do talhão
+  // inteiro, e vice-versa.
+  useEffect(() => {
+    const grupo = grupoGlebas.current
+    const grupoRotulos = grupoRotulosGleba.current
+    if (!mapa || !grupo || !grupoRotulos) return
+
+    grupo.clearLayers()
+    grupoRotulos.clearLayers()
+    porIdGleba.current.clear()
+
+    for (const gleba of glebas) {
+      const f = paraFeature(gleba.geometria)
+      if (!f?.geometry) continue
+
+      const corHerdada = corPorGleba.get(gleba.id) ?? COR_GLEBA
+      const ponto = ehPonto(f)
+
+      const camada = L.geoJSON(f, {
+        pane: PANE_GLEBA,
+        style: { ...ESTILO_GLEBA, fillColor: corHerdada },
+        // Ponto vira circleMarker, não marker: é SVG, dispensa arquivo de
+        // ícone (que quebra com bundler) e aceita as mesmas opções de estilo.
+        pointToLayer: (_feature, latlng) =>
+          L.circleMarker(latlng, {
+            pane: PANE_GLEBA,
+            ...ESTILO_GLEBA,
+            fillColor: corHerdada,
+            radius: RAIO_PONTO_GLEBA,
+          }),
+      })
+      camada.bindTooltip(conteudoTooltipGleba(gleba, null), { sticky: true })
+      camada.on('click', (e) => {
+        // Mesmo motivo do talhão: uma gleba nova pode ser desenhada perto ou
+        // sobre uma já existente, e o clique de desenho não pode ser
+        // engolido pela seleção da que já está lá.
+        if (mapa.pm.globalDrawModeEnabled?.()) return
+        L.DomEvent.stopPropagation(e)
+        aoSelecionarRef.current?.({ tipo: 'gleba', id: gleba.id })
+      })
+      camada.addTo(grupo)
+
+      porIdGleba.current.set(gleba.id, { camada, cor: corHerdada, ponto, gleba })
+
+      // Marcador só do rótulo: invisível e sem eventos, existe unicamente
+      // para ancorar o tooltip permanente num ponto certo — ver `pontoRotulo`.
+      const pontoRot = pontoRotulo(f)
+      if (pontoRot) {
+        L.circleMarker(pontoRot, {
+          pane: PANE_CONTORNO_TALHAO,
+          opacity: 0,
+          fillOpacity: 0,
+          interactive: false,
+          radius: 1,
+        })
+          .bindTooltip(conteudoRotuloGleba(gleba), {
+            permanent: true,
+            direction: 'center',
+            className: 'rotulo-gleba',
+            opacity: 1,
+          })
+          .addTo(grupoRotulos)
+      }
+    }
+  }, [mapa, glebas, revisao, corPorGleba])
+
   /**
-   * Destaque e coloração no mesmo efeito.
+   * Destaque e coloração do talhão no mesmo efeito.
    *
    * Os dois escrevem `fillColor` na mesma camada; separados, o último a rodar
    * apagaria o outro. Foi exatamente o que aconteceu no primeiro teste da
@@ -252,6 +385,27 @@ export function useGeometrias(
   }, [mapa, selecionado, talhoes, revisao, coloracao, filtro, conteudoTooltip, mostrarCor])
 
   /**
+   * Destaque da gleba — efeito próprio e mais simples que o do talhão: gleba
+   * não participa de coloração nem de hachura, só existe versão normal e
+   * selecionada.
+   */
+  useEffect(() => {
+    if (!mapa) return
+    const idAtivo = selecionado?.tipo === 'gleba' ? selecionado.id : null
+
+    for (const [id, registro] of porIdGleba.current) {
+      const ativo = id === idAtivo
+      const estilo = ativo
+        ? { ...ESTILO_GLEBA_DESTACADA, fillColor: registro.cor }
+        : { ...ESTILO_GLEBA, fillColor: registro.cor }
+      if (registro.ponto) estilo.radius = ativo ? RAIO_PONTO_GLEBA + 3 : RAIO_PONTO_GLEBA
+
+      registro.camada.setStyle(estilo)
+      if (ativo) registro.camada.bringToFront()
+    }
+  }, [mapa, selecionado, glebas, revisao])
+
+  /**
    * Mapa de calor: uma superfície contínua por interpolação (IDW), cobrindo
    * cada talhão colorido inteiro — não um borrão em volta de cada ponto.
    *
@@ -301,10 +455,15 @@ export function useGeometrias(
     }
   }, [mapa, talhoes, coloracao, mostrarCor, mostrarAmostras])
 
-  // Dá acesso à camada Leaflet do talhão, para o Geoman editar aquela
+  // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.
   const obterCamada = useCallback(
-    (tipo, id) => (tipo === 'talhao' ? (porId.current.get(id)?.camada ?? null) : null),
+    (tipo, id) =>
+      tipo === 'talhao'
+        ? (porId.current.get(id)?.camada ?? null)
+        : tipo === 'gleba'
+          ? (porIdGleba.current.get(id)?.camada ?? null)
+          : null,
     [],
   )
 

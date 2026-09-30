@@ -3,13 +3,17 @@ import Mapa from '../mapa/Mapa.jsx'
 import PainelDetalhe from './painel/PainelDetalhe.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import SobreposicoesDoMapa from './painel/SobreposicoesDoMapa.jsx'
+import CoordenadasCursor from './painel/CoordenadasCursor.jsx'
 import BuscaLocal from './painel/BuscaLocal.jsx'
 import InfoImagem from './painel/InfoImagem.jsx'
 import { useAlfineteBusca } from '../mapa/useAlfineteBusca.js'
+import { useCoordenadasCursor } from '../mapa/useCoordenadasCursor.js'
 import ModaisDoPainel from './painel/ModaisDoPainel.jsx'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
+import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { useAviso } from '../hooks/useAviso.js'
 import { useMapaDaFazenda } from '../mapa/useMapaDaFazenda.js'
+import { useCriacaoDeGeometria } from './painel/useCriacaoDeGeometria.js'
 import { useItemSelecionado } from './painel/useItemSelecionado.js'
 import { excluirFazenda, resumoCascataFazenda } from '../dados/fazendas.js'
 
@@ -23,11 +27,11 @@ export default function Painel() {
   const ctx = useFazendaAtual()
   const {
     fazendaSelecionada, idSelecionada, selecionarFazenda, editor,
-    talhoes, aplicarTalhao, aplicarTalhoes,
-    removerTalhao, carregando: carregandoHierarquia,
+    talhoes, glebas, aplicarTalhao, aplicarTalhoes, aplicarGleba, aplicarGlebas,
+    removerTalhao, removerGleba, carregando: carregandoHierarquia,
     aplicarFazenda, removerFazenda,
     filtro, coloracao, criterio,
-    selecionado, setSelecionado,
+    selecionado, setSelecionado, pedidoDeDesenho, setPedidoDeDesenho,
     formFazenda, setFormFazenda, pedidoDeAcao, setPedidoDeAcao,
   } = ctx
 
@@ -54,9 +58,12 @@ export default function Painel() {
     mapa,
     idFazenda: idSelecionada,
     talhoes,
+    glebas,
     editor,
     aplicarTalhao,
+    aplicarGleba,
     removerTalhao,
+    removerGleba,
     mostrarAviso,
     coloracao,
     filtro,
@@ -64,6 +71,13 @@ export default function Painel() {
     mostrarAmostras,
     selecionado,
     setSelecionado,
+  })
+
+  const criacao = useCriacaoDeGeometria({
+    mapa,
+    editor,
+    talhoes,
+    aoAvisar: mostrarAviso,
   })
 
   const mapaDaFazenda = useMapaDaFazenda({
@@ -78,6 +92,7 @@ export default function Painel() {
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
   const aoTrocarCamada = useCallback((chave) => setCamadaAtiva(chave), [])
   const alfinete = useAlfineteBusca(mapa)
+  const posicaoCursor = useCoordenadasCursor(mapa, Boolean(criacao.desenhando))
 
   /**
    * O centro do mapa só é atualizado quando o movimento termina, e só se
@@ -102,6 +117,19 @@ export default function Painel() {
     mapa.on('moveend', registrar)
     return () => mapa.off('moveend', registrar)
   }, [mapa])
+
+  /**
+   * A barra lateral pede o desenho da gleba pelo contexto; aqui o pedido é
+   * consumido e limpo. A barra não tem acesso ao Leaflet, e dar acesso a ela
+   * seria pior que carregar a intenção por estado. Só gleba usa isto — talhão
+   * nasce de arquivo importado, não se desenha mais do zero.
+   */
+  useEffect(() => {
+    if (!pedidoDeDesenho || !mapa) return
+    criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
+    setPedidoDeDesenho(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidoDeDesenho, mapa])
 
   // Selecionar pela barra lateral também leva o mapa até a geometria.
   useEffect(() => {
@@ -172,6 +200,8 @@ export default function Painel() {
         <Mapa aoCriarMapa={aoCriarMapa} aoTrocarCamada={aoTrocarCamada} />
 
         <InfoImagem camadaAtiva={camadaAtiva} centro={centroEstavel} />
+
+        <CoordenadasCursor posicao={posicaoCursor} />
 
         {/* Só o que é de fato "ver o mapa agora": localizar um lugar. O
             resto (editar fazenda, marcar sede, importar, mesclar talhões,
@@ -249,6 +279,11 @@ export default function Painel() {
           <div className="vidro-forte absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 shadow-painel dark:border-white/15 sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-52 sm:rounded-lg sm:border">
             <PainelDetalhe
               item={item.itemSelecionado}
+              tipo={selecionado.tipo}
+              talhaoPai={item.talhaoPai}
+              quantidadeGlebas={
+                selecionado.tipo === 'talhao' ? glebasDoTalhao(glebas, selecionado.id).length : 0
+              }
               editor={editor}
               editandoGeometria={item.editandoGeometria}
               gravandoGeometria={item.gravandoGeometria}
@@ -278,19 +313,26 @@ export default function Painel() {
           editor={editor}
           marcandoSede={mapaDaFazenda.marcandoSede}
           gravandoSede={mapaDaFazenda.gravandoSede}
+          desenhando={criacao.desenhando}
           aviso={aviso}
           aoMarcarSede={mapaDaFazenda.iniciarMarcacao}
           aoCancelarMarcacao={mapaDaFazenda.cancelarMarcacao}
+          aoAbortarDesenho={criacao.abortar}
         />
 
         <ModaisDoPainel
           fazendaSelecionada={fazendaSelecionada}
           talhoes={talhoes}
+          glebas={glebas}
+          mapa={mapa}
+          criacao={criacao}
           item={item}
           aplicarFazenda={aplicarFazenda}
           aplicarTalhao={aplicarTalhao}
           aplicarTalhoes={aplicarTalhoes}
           removerTalhao={removerTalhao}
+          aplicarGleba={aplicarGleba}
+          aplicarGlebas={aplicarGlebas}
           mostrarAviso={mostrarAviso}
           formFazenda={formFazenda}
           aoFecharFormFazenda={() => setFormFazenda(null)}

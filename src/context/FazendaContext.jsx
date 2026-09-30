@@ -73,6 +73,16 @@ export function FazendaProvider({ children }) {
   const [selecionado, setSelecionado] = useState(null)
 
   /**
+   * Pedido de desenho de gleba feito pela barra ("+ Gleba" de um talhão).
+   *
+   * A barra não tem acesso ao mapa; ela registra a intenção (`{ talhaoId }`)
+   * e a página do mapa consome e limpa. É um evento carregado por estado —
+   * feio, mas honesto: a alternativa seria a barra segurar uma referência ao
+   * Leaflet.
+   */
+  const [pedidoDeDesenho, setPedidoDeDesenho] = useState(null)
+
+  /**
    * Diálogo de fazenda aberto ('nova', 'editar' ou null). Mora aqui, e não no
    * Painel, porque quem abre "Nova fazenda" agora é a barra lateral — perto do
    * seletor de fazenda, onde faz sentido — e ela não tem acesso ao estado do
@@ -124,6 +134,8 @@ export function FazendaProvider({ children }) {
 
       selecionado,
       setSelecionado,
+      pedidoDeDesenho,
+      setPedidoDeDesenho,
       formFazenda,
       setFormFazenda,
       pedidoDeAcao,
@@ -134,7 +146,7 @@ export function FazendaProvider({ children }) {
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
       criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
-      filtro, definirFiltro, coloracao, selecionado, formFazenda, pedidoDeAcao,
+      filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda, pedidoDeAcao,
     ],
   )
 

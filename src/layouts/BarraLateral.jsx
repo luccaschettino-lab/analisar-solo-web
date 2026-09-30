@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
+import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { ROTULO_PAPEL } from '../lib/permissoes.js'
 
 const FOCO = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500'
@@ -108,21 +109,23 @@ function ItemNav({ to, Icone, rotulo, onClick }) {
 }
 
 /**
- * Navegação em cascata: Fazenda › Talhão › seção.
+ * Navegação em cascata: Fazenda › Talhão › Gleba › seção.
  *
  * Substitui o menu do topo, as abas das telas e o painel do mapa. A ideia é
  * ter um lugar só onde se sabe onde está e para onde dá para ir.
  *
  * Clicar num talhão **seleciona** ele no mapa — é a única forma de ver os
- * dados dele: o mapa de calor, de acordo com o filtro escolhido. Não há mais
- * tabela de análises nem gráfico de histórico por talhão.
+ * dados dele: o mapa de calor, de acordo com o filtro escolhido. Gleba é
+ * cadastro (subdivisão do talhão), não dado: ela não participa do filtro nem
+ * do mapa de calor, só aparece na árvore e no mapa como subdivisão, e leva
+ * para análises e foto na própria gleba (`/#/glebas/:id`).
  */
 export default function BarraLateral({ aoNavegar }) {
   const {
     fazendas, carregandoFazendas, erroFazendas,
     fazendaSelecionada, selecionarFazenda, editor,
-    talhoes, carregando: carregandoHierarquia,
-    selecionado, setSelecionado,
+    talhoes, glebas, carregando: carregandoHierarquia,
+    selecionado, setSelecionado, setPedidoDeDesenho,
     setFormFazenda, setPedidoDeAcao,
   } = useFazendaAtual()
 
@@ -133,13 +136,34 @@ export default function BarraLateral({ aoNavegar }) {
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
   // aberta empurrava Dados/Monitoramento/Critérios para fora da primeira tela.
   const [arvoreAberta, setArvoreAberta] = useState(false)
+  // Quais talhões mostram a lista de glebas por baixo. Fechado por padrão
+  // pelo mesmo motivo da árvore inteira — só abre quando há algo ali para ver.
+  const [talhoesAbertos, setTalhoesAbertos] = useState(() => new Set())
 
-  // Selecionar um talhão no mapa revela a árvore aqui, não deixa a seleção
-  // escondida sob ela recolhida.
+  // Selecionar um talhão ou gleba no mapa revela a árvore aqui — e, no caso
+  // da gleba, também o talhão-pai — em vez de deixar a seleção escondida sob
+  // um nó recolhido.
   useEffect(() => {
     if (!selecionado) return
     setArvoreAberta(true)
-  }, [selecionado])
+    const idTalhao =
+      selecionado.tipo === 'talhao' ? selecionado.id : glebas.find((g) => g.id === selecionado.id)?.talhao_id
+    if (idTalhao) setTalhoesAbertos((atual) => new Set(atual).add(idTalhao))
+  }, [selecionado, glebas])
+
+  function alternarTalhao(id) {
+    setTalhoesAbertos((atual) => {
+      const proximo = new Set(atual)
+      proximo.has(id) ? proximo.delete(id) : proximo.add(id)
+      return proximo
+    })
+  }
+
+  function pedirDesenhoDeGleba(talhaoId) {
+    setPedidoDeDesenho({ talhaoId })
+    if (local.pathname !== '/') navegar('/')
+    aoNavegar?.()
+  }
 
   function irPara(caminho) {
     navegar(caminho)
@@ -285,18 +309,64 @@ export default function BarraLateral({ aoNavegar }) {
                 <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
                   {talhoes.map((talhao) => {
                     const ativo = selecionado?.tipo === 'talhao' && selecionado.id === talhao.id
+                    const filhas = glebasDoTalhao(glebas, talhao.id)
+                    const aberto = talhoesAbertos.has(talhao.id)
                     return (
                       <li key={talhao.id}>
-                        <button
-                          onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
-                          className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
-                        >
-                          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
-                          <span className="truncate">
-                            {talhao.codigo}
-                            {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
-                          </span>
-                        </button>
+                        <div className="flex items-stretch">
+                          <button
+                            onClick={() => alternarTalhao(talhao.id)}
+                            aria-expanded={aberto}
+                            aria-label={`${aberto ? 'Recolher' : 'Expandir'} glebas do talhão ${talhao.codigo}`}
+                            className={`w-5 shrink-0 ${FOCO}`}
+                          >
+                            <Seta aberto={aberto} />
+                          </button>
+                          <button
+                            onClick={() => selecionarNoMapa({ tipo: 'talhao', id: talhao.id })}
+                            className={`${ITEM} ${ativo ? ATIVO : INATIVO}`}
+                          >
+                            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: talhao.cor }} />
+                            <span className="truncate">
+                              {talhao.codigo}
+                              {talhao.nome && <span className="text-slate-400 dark:text-slate-500"> · {talhao.nome}</span>}
+                            </span>
+                            {filhas.length > 0 && (
+                              <span className="ml-auto shrink-0 text-xs text-slate-400 dark:text-slate-500">{filhas.length}</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {aberto && (
+                          <ul className="ml-4 border-l border-slate-200 pl-1 dark:border-white/10">
+                            {filhas.map((gleba) => {
+                              const glebaAtiva = selecionado?.tipo === 'gleba' && selecionado.id === gleba.id
+                              return (
+                                <li key={gleba.id}>
+                                  <button
+                                    onClick={() => selecionarNoMapa({ tipo: 'gleba', id: gleba.id })}
+                                    className={`${ITEM} text-xs ${glebaAtiva ? 'bg-amber-100 text-slate-900 dark:bg-amber-400/15 dark:text-amber-200' : INATIVO}`}
+                                  >
+                                    <span className="truncate">
+                                      {gleba.codigo}
+                                      {gleba.nome && <span className="text-slate-400 dark:text-slate-500"> · {gleba.nome}</span>}
+                                    </span>
+                                  </button>
+                                </li>
+                              )
+                            })}
+                            {editor && (
+                              <li>
+                                <button
+                                  onClick={() => pedirDesenhoDeGleba(talhao.id)}
+                                  className={`${ITEM} text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                                >
+                                  + Gleba
+                                </button>
+                              </li>
+                            )}
+                          </ul>
+                        )}
                       </li>
                     )
                   })}

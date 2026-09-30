@@ -45,3 +45,12 @@ export function conteudoRotuloTalhao(talhao) {
 
   return `${titulo}<br><span class="rotulo-area">${escapar(area)}</span>`
 }
+
+/**
+ * Rótulo fixo da gleba — só o código, sem a palavra "Gleba" na frente. Ela é
+ * bem menor que o talhão no mapa, e um rótulo de duas linhas como o do talhão
+ * não cabe perto da borda sem sair por cima da gleba vizinha.
+ */
+export function conteudoRotuloGleba(gleba) {
+  return escapar(gleba.codigo)
+}

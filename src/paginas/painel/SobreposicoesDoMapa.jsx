@@ -19,13 +19,15 @@ export default function SobreposicoesDoMapa({
   editor,
   marcandoSede,
   gravandoSede,
+  desenhando,
   aviso,
   aoMarcarSede,
   aoCancelarMarcacao,
+  aoAbortarDesenho,
 }) {
   return (
     <>
-      {semReferencia && !marcandoSede && !gravandoSede && (
+      {semReferencia && !marcandoSede && !gravandoSede && !desenhando && (
         // O padding compensa o painel lateral, que só existe a partir de md.
         // No celular o painel é gaveta sobreposta, e um pl-80 empurraria o
         // cartão para fora da tela.
@@ -59,6 +61,17 @@ export default function SobreposicoesDoMapa({
       )}
 
       {gravandoSede && <Banner>Gravando a sede da fazenda…</Banner>}
+
+      {desenhando && (
+        <Banner>
+          {desenhando.forma === 'ponto'
+            ? 'Clique no ponto onde a amostra é coletada.'
+            : 'Clique para marcar os vértices. Dê duplo clique para fechar.'}{' '}
+          <button onClick={aoAbortarDesenho} className="ml-2 underline">
+            cancelar
+          </button>
+        </Banner>
+      )}
 
       {aviso && (
         <div

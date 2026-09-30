@@ -526,3 +526,21 @@ de código.
 
 Importação de GeoJSON do QGIS. Fora do escopo da Fase 5 por decisão do
 responsável.
+
+### Gleba volta a poder ser criada e editada
+
+O commit `958f844` ("Glebas saem de cena") tirou o cadastro de gleba da
+interface: amostra e mapa de calor passaram a ser por talhão, e o talhão
+passou a nascer só de arquivo importado. A tabela `glebas` e a RLS dela nunca
+saíram do banco — só o app parou de ler e escrever nela. A pedido do
+responsável, o cadastro de gleba **volta**, mas só ele: análise e mapa de
+calor continuam por talhão, sem reverter o resto daquela mudança.
+
+| Decisão | Motivo |
+|---|---|
+| **Gleba volta como subdivisão de cadastro, não como unidade de dado.** Ela não participa do filtro, da coloração nem do mapa de calor — só existe para desenhar, nomear e navegar até `/#/glebas/:id` (análises e foto, que já liam da tabela sem nunca terem sido desligadas). | Reverter a Fase 8 inteira (amostra por talhão → amostra por gleba de novo) não foi pedido, e traria de volta a limitação de "um ponto de coleta por gleba" que a mudança original resolveu. |
+| **Pane própria para a gleba (`glebas`, z 430), entre o mapa de calor (420) e o contorno do talhão (450).** | A gleba tem que ficar visível por cima do mapa de calor — senão o cadastro em si não aparece —, mas nunca pode competir com a cor que o mapa de calor mostra. `fillOpacity` baixo (0.12) faz o mesmo papel que o `0.02` do talhão sem filtro: mantém a área clicável sem pintar por cima do dado. |
+| **Três formas de criar gleba voltaram juntas — ponto, sub-área e lote colado —, não só uma.** | As três são a mesma funcionalidade (`useCriacaoDeGeometria`, `EscolherTipoGleba`, `GlebasEmLote`) e nenhuma delas toca análise; excluir alguma seria corte arbitrário sem ganho de escopo. |
+| **Coordenada do cursor (lat/lon) durante o desenho**, pedido à parte. | Ajuda a conferir a posição de um vértice contra uma referência externa (GPS de campo, planilha) sem sair do mapa. Só liga durante o desenho (`useCoordenadasCursor`) — fora disso é um `mousemove` sem utilidade, custando um re-render por pixel à toa. |
+| **Mesclar talhões voltou a mover as glebas do talhão apagado para o talhão base antes de excluir.** | `glebas.talhao_id` é `on delete cascade` — sem mover primeiro, mesclar dois talhões com gleba cadastrada apagaria as glebas em silêncio. Isso não foi pedido explicitamente, mas é consequência direta de reativar a criação: o risco de perda silenciosa só existe porque agora há gleba de verdade para perder. |
+| **Importação de arquivo (KML/KMZ/GeoJSON/shapefile) continua só criando talhão.** | Não fazia parte do pedido, e o parser (`lib/kml.js`, `testes/kml.mjs`) não foi alterado. Quem importa um arquivo com sub-áreas ainda cadastra a gleba à mão depois. |

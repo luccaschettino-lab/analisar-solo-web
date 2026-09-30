@@ -105,6 +105,12 @@ export const SNAP_DISTANCIA = 8
 // na tela quatro rotulos cabem; trinta viram mancha sobre o mapa.
 export const ZOOM_MINIMO_ROTULO = 13
 
+// Rotulo fixo da gleba pede mais zoom que o do talhao: um talhao tem
+// potencialmente dezenas de glebas, e mostra-las todas na visao da fazenda
+// inteira vira parede de texto. So aparecem depois que o produtor ja deu
+// zoom num talhao especifico.
+export const ZOOM_MINIMO_ROTULO_GLEBA = 16
+
 // Folga ao redor da geometria no fitBounds, para o desenho nao encostar
 // nas bordas nem ficar sob o painel lateral.
 export const PADDING_FIT = [40, 40]
@@ -159,6 +165,23 @@ export const ESTILO_CONTORNO_TALHAO_DESTACADO = {
   fill: false,
   interactive: false,
 }
+
+/**
+ * Estilo da gleba — subdivisão dentro do talhão, redesenhada por cima do
+ * preenchimento do talhão e do mapa de calor (pane própria, ver
+ * `useGeometrias.js`).
+ *
+ * O preenchimento é propositalmente fraco (`fillOpacity` baixo): a gleba é
+ * cadastro, não dado — cobrir o mapa de calor com uma cor sólida esconderia
+ * justamente a classificação que o filtro está mostrando. A borda branca é o
+ * que de fato demarca a gleba; a cor de preenchimento (herdada do talhão-pai,
+ * variando de luminosidade entre glebas vizinhas — ver `useGeometrias.js`)
+ * é só uma pista fraca de "aqui é uma gleba diferente da vizinha".
+ */
+export const ESTILO_GLEBA = { color: '#ffffff', weight: 1.5, opacity: 0.9, fillOpacity: 0.12 }
+export const ESTILO_GLEBA_DESTACADA = { color: '#ffff00', weight: 3, opacity: 1, fillOpacity: 0.3 }
+export const COR_GLEBA = '#ffb300'
+export const RAIO_PONTO_GLEBA = 7
 
 /**
  * Tons neutros das geometrias sem classificação.

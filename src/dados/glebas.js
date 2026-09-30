@@ -109,8 +109,12 @@ export async function excluirGleba(id) {
   checar(await supabase.from('glebas').delete().eq('id', id), 'Falha ao excluir gleba')
 }
 
-// Analises perdidas na cascata. Hoje sempre zero — a Fase 3 nao existe —
-// mas o dialogo ja conta de verdade em vez de assumir.
+// Analises perdidas na cascata ao excluir a gleba. Hoje sempre zero: a
+// analise passou a ser do talhao (`analises.talhao_id`), e o app nao le nem
+// grava mais `analises.gleba_id` — ver a migracao
+// `amostra_passa_a_ser_do_talhao`. Ainda assim o dialogo conta de verdade em
+// vez de assumir, porque uma analise antiga (de antes da migracao) pode ter
+// sobrado com o vinculo.
 export async function contarAnalisesDaGleba(id) {
   return checarContagem(
     await supabase.from('analises').select('id', { count: 'exact', head: true }).eq('gleba_id', id),
