@@ -36,20 +36,38 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
   const [erroImportacao, setErroImportacao] = useState('')
   const entradaArquivo = useRef(null)
 
-  async function aoEscolherArquivo(evento) {
-    const arquivo = evento.target.files?.[0]
+  async function aoEscolherArquivos(evento) {
+    const arquivos = Array.from(evento.target.files ?? [])
     evento.target.value = ''
-    if (!arquivo) return
+    if (arquivos.length === 0) return
 
     setErroArquivo('')
-    setNomeArquivo(arquivo.name)
+    setNomeArquivo(arquivos.length === 1 ? arquivos[0].name : `${arquivos.length} arquivos`)
     setLendoArquivo(true)
     try {
-      const candidatos = await candidatosDoArquivo(arquivo)
-      setLinhas(prepararLinhasDeImportacao(candidatos))
-    } catch (e) {
-      setErroArquivo(e.message)
-      setLinhas(null)
+      // Lê todos e junta numa lista só: prepararLinhasDeImportacao então
+      // numera os ids e desambigua códigos repetidos entre os arquivos.
+      const candidatos = []
+      const falhas = []
+      for (const arquivo of arquivos) {
+        try {
+          for (const c of await candidatosDoArquivo(arquivo)) candidatos.push({ ...c, arquivo: arquivo.name })
+        } catch (e) {
+          falhas.push(`${arquivo.name}: ${e.message}`)
+        }
+      }
+      if (candidatos.length === 0) {
+        setErroArquivo(falhas.join(' | '))
+        setLinhas(null)
+        return
+      }
+      const novasLinhas = prepararLinhasDeImportacao(candidatos).map((l, i) => ({
+        ...l,
+        arquivo: candidatos[i].arquivo,
+      }))
+      setLinhas(novasLinhas)
+      // Arquivos que falharam não derrubam os demais — ficam como aviso.
+      setErroArquivo(falhas.join(' | '))
     } finally {
       setLendoArquivo(false)
     }
@@ -139,7 +157,7 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Importar arquivo</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Talhões a partir de um arquivo do QGIS, Google Earth ou app de campo —
+            Talhões a partir de um ou mais arquivos do QGIS, Google Earth ou app de campo —
             .kml, .kmz, .geojson ou shapefile (.zip).
           </p>
         </div>
@@ -162,23 +180,24 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
             >
               <span aria-hidden="true" className="text-2xl">🗺</span>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                {lendoArquivo ? 'Lendo arquivo…' : 'Clique para escolher um arquivo'}
+                {lendoArquivo ? 'Lendo arquivo…' : 'Clique para escolher um ou vários arquivos'}
               </span>
               <span className="text-xs text-slate-400 dark:text-slate-500">
-                .kml, .kmz, .geojson ou shapefile (.zip). Cada polígono vira uma linha para revisar antes de gravar.
+                .kml, .kmz, .geojson ou shapefile (.zip). Pode selecionar vários de uma vez. Cada polígono vira uma linha para revisar antes de gravar.
               </span>
             </label>
             <input
               ref={entradaArquivo}
               id="importar-arquivo"
               type="file"
+              multiple
               accept={EXTENSOES_ACEITAS}
-              onChange={aoEscolherArquivo}
+              onChange={aoEscolherArquivos}
               disabled={lendoArquivo}
               className="hidden"
             />
             {erroArquivo && (
-              <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
+              <p role="alert" className="mt-3 whitespace-pre-line rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
                 {nomeArquivo && <span className="block font-medium">{nomeArquivo}</span>}
                 {erroArquivo}
               </p>
@@ -192,6 +211,12 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
               {incluidas.length === 1 ? 'selecionado' : 'selecionados'}.
               {' '}Confira código, tipo e talhão de cada um antes de importar.
             </div>
+
+            {erroArquivo && (
+              <p role="alert" className="whitespace-pre-line rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                Alguns arquivos foram ignorados: {erroArquivo}
+              </p>
+            )}
 
             <ul className="space-y-2">
               {linhas.map((l) => {
@@ -218,6 +243,7 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
 
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <p className="truncate text-xs text-slate-400 dark:text-slate-500" title={l.nomeOriginal}>
+                          {linhas.some((x) => x.arquivo !== l.arquivo) && `${l.arquivo} · `}
                           {l.nomeOriginal || '(sem nome no arquivo)'} · {formatarArea(l.areaHa)}
                         </p>
 
