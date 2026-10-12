@@ -10,7 +10,7 @@ import { criarGlebasEmLote } from '../../dados/glebas.js'
  *
  * Duas etapas, como a importação de talhões: ler o arquivo e mostrar a revisão,
  * e só gravar no "Criar glebas". Ponto fora de qualquer talhão é avisado em
- * destaque e fica de fora — o resto é gravado normalmente.
+ * destaque, mas também é cadastrado: vai para o talhão mais próximo.
  */
 export default function ImportarPontos() {
   const { fazendaSelecionada, talhoes, glebas, aplicarGlebas, editor } = useFazendaAtual()
@@ -124,24 +124,25 @@ export default function ImportarPontos() {
       {distribuicao && (
         <>
           <div className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-sm text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
-            <strong className="font-medium">{nomeArquivo}</strong> · {pontos.length} pontos lidos: {totalDentro} dentro de
-            talhões e {distribuicao.fora.length} fora.
+            <strong className="font-medium">{nomeArquivo}</strong> · {pontos.length} pontos lidos: {totalDentro - distribuicao.fora.length} dentro
+            de talhões e {distribuicao.fora.length} fora.
           </div>
 
           {distribuicao.fora.length > 0 && (
-            <div role="alert" className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200">
+            <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
               <p className="text-sm font-medium">
                 ⚠ {distribuicao.fora.length} {distribuicao.fora.length === 1 ? 'ponto não cai' : 'pontos não caem'} dentro de nenhum talhão
               </p>
               <p className="mt-1">
-                Esses pontos <strong>não serão importados</strong>. Confira se o talhão correspondente está cadastrado ou se a
-                coordenada está certa.
+                Esses pontos <strong>serão cadastrados mesmo assim</strong>, no talhão mais próximo. Confira se a distância
+                faz sentido — uma distância grande pode ser coordenada errada ou talhão que falta cadastrar.
               </p>
               <ul className="mt-2 max-h-48 overflow-auto font-mono">
-                {distribuicao.fora.map((p) => (
-                  <li key={p.indice}>
-                    ponto {p.indice}
-                    {p.propriedades?.id != null && ` (id ${p.propriedades.id})`} · {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
+                {distribuicao.fora.map(({ ponto, talhao, distanciaM, codigo }) => (
+                  <li key={ponto.indice}>
+                    ponto {ponto.indice}
+                    {ponto.propriedades?.id != null && ` (id ${ponto.propriedades.id})`} · {ponto.lat.toFixed(6)},{' '}
+                    {ponto.lng.toFixed(6)} → {codigo} no talhão {talhao.codigo}, a {Math.round(distanciaM)} m
                   </li>
                 ))}
               </ul>
@@ -164,7 +165,14 @@ export default function ImportarPontos() {
                       {talhao.codigo}
                       {talhao.nome && <span className="font-normal text-slate-400"> · {talhao.nome}</span>}
                     </td>
-                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{itens.length}</td>
+                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
+                      {itens.length}
+                      {itens.some((i) => i.fora) && (
+                        <span className="text-xs text-amber-700 dark:text-amber-300">
+                          {' '}({itens.filter((i) => i.fora).length} fora)
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs text-slate-500 dark:text-slate-400">
                       {itens[0].codigo} … {itens[itens.length - 1].codigo}
                     </td>
@@ -173,7 +181,7 @@ export default function ImportarPontos() {
                 {linhasPorTalhao.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-3 py-4 text-center text-xs text-slate-400">
-                      Nenhum ponto caiu em talhão cadastrado.
+                      Nenhum ponto para criar.
                     </td>
                   </tr>
                 )}

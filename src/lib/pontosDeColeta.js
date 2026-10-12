@@ -61,7 +61,8 @@ export async function pontosDoArquivo(arquivo) {
  * talhão, um hífen e um número de ordem (`8-1`, `8-2`…). A contagem continua de
  * onde as glebas que o talhão já tem pararam, para não repetir código.
  *
- * Ponto que não cai em nenhum talhão vai para `fora` — não vira gleba.
+ * Ponto que não cai em nenhum talhão não é descartado: vai para o talhão mais
+ * próximo e entra também em `fora`, com a distância, para a revisão avisar.
  * Se um ponto cair em dois talhões sobrepostos, fica com o primeiro da lista.
  */
 export function distribuirPontos(pontos, talhoes, glebasExistentes) {
@@ -80,14 +81,17 @@ export function distribuirPontos(pontos, talhoes, glebasExistentes) {
   }
 
   const porTalhao = new Map() // talhaoId -> [{ codigo, ponto }]
-  const fora = []
+  const fora = [] // { ponto, talhao, distanciaM, codigo }
 
   for (const ponto of pontos) {
     const feature = pontoFeature(ponto.lat, ponto.lng)
-    const talhao = talhoes.find((t) => glebaDentroDoTalhao(feature, t.geometria) === true)
+    let talhao = talhoes.find((t) => glebaDentroDoTalhao(feature, t.geometria) === true)
+    let foraInfo = null
     if (!talhao) {
-      fora.push(ponto)
-      continue
+      const mais = talhaoMaisProximo(ponto, talhoes)
+      if (!mais) continue // nenhum talhão com polígono utilizável
+      talhao = mais.talhao
+      foraInfo = { ponto, talhao, distanciaM: mais.distanciaM }
     }
 
     let numero = proximoNumero.get(talhao.id)
@@ -95,8 +99,48 @@ export function distribuirPontos(pontos, talhoes, glebasExistentes) {
     proximoNumero.set(talhao.id, numero + 1)
 
     if (!porTalhao.has(talhao.id)) porTalhao.set(talhao.id, [])
-    porTalhao.get(talhao.id).push({ codigo: `${talhao.codigo}-${numero}`, ponto })
+    const codigo = `${talhao.codigo}-${numero}`
+    porTalhao.get(talhao.id).push({ codigo, ponto, fora: Boolean(foraInfo) })
+    if (foraInfo) fora.push({ ...foraInfo, codigo })
   }
 
   return { porTalhao, fora }
+}
+
+// Distância (m) de um ponto a um segmento, numa projeção plana local — para
+// distâncias de centenas de metros o erro é desprezível.
+function distanciaAoSegmentoM(lat, lng, a, b) {
+  const kLat = 111320
+  const kLng = 111320 * Math.cos((lat * Math.PI) / 180)
+  const px = 0
+  const py = 0
+  const ax = (a[0] - lng) * kLng
+  const ay = (a[1] - lat) * kLat
+  const bx = (b[0] - lng) * kLng
+  const by = (b[1] - lat) * kLat
+  const dx = bx - ax
+  const dy = by - ay
+  const comp = dx * dx + dy * dy
+  const t = comp === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / comp))
+  return Math.hypot(ax + t * dx - px, ay + t * dy - py)
+}
+
+function aneisDoTalhao(geometria) {
+  const g = geometria?.geometry ?? geometria
+  if (g?.type === 'Polygon') return g.coordinates
+  if (g?.type === 'MultiPolygon') return g.coordinates.flat()
+  return []
+}
+
+function talhaoMaisProximo(ponto, talhoes) {
+  let melhor = null
+  for (const talhao of talhoes) {
+    for (const anel of aneisDoTalhao(talhao.geometria)) {
+      for (let i = 0; i < anel.length - 1; i++) {
+        const d = distanciaAoSegmentoM(ponto.lat, ponto.lng, anel[i], anel[i + 1])
+        if (!melhor || d < melhor.distanciaM) melhor = { talhao, distanciaM: d }
+      }
+    }
+  }
+  return melhor
 }
