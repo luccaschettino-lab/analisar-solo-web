@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { validarSenha } from '../lib/senha.js'
 import { Campo, BotaoPrincipal, Aviso } from '../componentes/formulario.jsx'
 
 export default function Cadastro() {
@@ -23,8 +24,9 @@ export default function Cadastro() {
       setErro('As senhas não conferem.')
       return
     }
-    if (senha.length < 6) {
-      setErro('A senha precisa ter no mínimo 6 caracteres.')
+    const problemaSenha = validarSenha(senha)
+    if (problemaSenha) {
+      setErro(problemaSenha)
       return
     }
 
@@ -94,10 +96,13 @@ export default function Cadastro() {
         value={senha}
         onChange={(e) => setSenha(e.target.value)}
         autoComplete="new-password"
-        minLength={6}
+        minLength={8}
         required
         disabled={enviando}
       />
+      <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
+        Mínimo de 8 caracteres, com letras e números.
+      </p>
       <Campo
         id="confirmacao"
         rotulo="Confirmar senha"

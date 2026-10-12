@@ -16,7 +16,7 @@ function traduzirErro(erro) {
   if (/invalid login credentials/i.test(msg)) return 'E-mail ou senha incorretos.'
   if (/email not confirmed/i.test(msg)) return 'Confirme seu e-mail antes de entrar.'
   if (/user already registered/i.test(msg)) return 'Já existe uma conta com este e-mail.'
-  if (/password should be at least/i.test(msg)) return 'A senha precisa ter no mínimo 6 caracteres.'
+  if (/password should be at least/i.test(msg)) return 'A senha precisa ter no mínimo 8 caracteres, com letras e números.'
   if (/unable to validate email/i.test(msg)) return 'E-mail inválido.'
   if (/rate limit|too many requests/i.test(msg)) return 'Muitas tentativas. Aguarde um minuto.'
   // Falha de rede mostra o endereço tentado. Sem isso, um erro de digitação na
