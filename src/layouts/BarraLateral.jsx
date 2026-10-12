@@ -425,6 +425,11 @@ export default function BarraLateral({ aoNavegar }) {
                 Importar laudo PDF
               </button>
             </li>
+            <li>
+              <button onClick={() => irPara('/dados?aba=pontos')} className={`${ITEM} text-xs ${INATIVO}`}>
+                Importar pontos de coleta
+              </button>
+            </li>
           </ul>
 
           <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} />

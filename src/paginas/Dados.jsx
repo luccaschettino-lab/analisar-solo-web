@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { PainelDeAba } from '../componentes/Abas.jsx'
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx'
 import ImportarPdf from '../features/importacao/pdf/ImportarPdf.jsx'
+import ImportarPontos from './dados/ImportarPontos.jsx'
 import FormAnalise from './dados/FormAnalise.jsx'
 import ListaAnalises from './dados/ListaAnalises.jsx'
 import { useSelecaoTalhao } from './dados/useSelecaoTalhao.js'
@@ -13,6 +14,7 @@ import { excluirAnalise } from '../dados/analises.js'
 const ABAS = [
   { chave: 'manual', rotulo: 'Entrada manual' },
   { chave: 'pdf', rotulo: 'Importar laudo PDF' },
+  { chave: 'pontos', rotulo: 'Importar pontos de coleta' },
 ]
 
 export default function Dados() {
@@ -67,7 +69,7 @@ export default function Dados() {
         </div>
         {/* Sem abas: a barra lateral já leva às duas formas de entrada. */}
         <p className="mb-3 mt-2.5 inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
-          {abaAtiva === 'pdf' ? 'Importar laudo PDF' : 'Entrada manual'}
+          {ABAS.find((a) => a.chave === abaAtiva).rotulo}
         </p>
       </header>
 
@@ -96,6 +98,10 @@ export default function Dados() {
 
         <PainelDeAba chave="pdf" ativa={abaAtiva}>
           <ImportarPdf />
+        </PainelDeAba>
+
+        <PainelDeAba chave="pontos" ativa={abaAtiva}>
+          <ImportarPontos />
         </PainelDeAba>
       </div>
 
