@@ -45,6 +45,13 @@ export default function Painel() {
   // coleta, mas competem com o mapa de calor por atenção — quem quer os dois
   // juntos liga aqui.
   const [mostrarAmostras, setMostrarAmostras] = useState(false)
+  const [mostrarCoordenadas, setMostrarCoordenadas] = useState(() => {
+    try {
+      return localStorage.getItem('mostrarCoordenadas') === '1'
+    } catch {
+      return false
+    }
+  })
   const [importandoArquivo, setImportandoArquivo] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
@@ -77,6 +84,7 @@ export default function Painel() {
     mapa,
     editor,
     talhoes,
+    aoLimparSelecao: item.limparSelecao,
     aoAvisar: mostrarAviso,
   })
 
@@ -92,7 +100,9 @@ export default function Painel() {
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
   const aoTrocarCamada = useCallback((chave) => setCamadaAtiva(chave), [])
   const alfinete = useAlfineteBusca(mapa)
-  const posicaoCursor = useCoordenadasCursor(mapa, Boolean(criacao.desenhando))
+  // Ligada pelo usuário em "Visualização" (a escolha fica lembrada); durante
+  // um desenho a etiqueta aparece de qualquer jeito, pra conferir o ponto.
+  const posicaoCursor = useCoordenadasCursor(mapa, mostrarCoordenadas || Boolean(criacao.desenhando))
 
   /**
    * O centro do mapa só é atualizado quando o movimento termina, e só se
@@ -121,12 +131,12 @@ export default function Painel() {
   /**
    * A barra lateral pede o desenho da gleba pelo contexto; aqui o pedido é
    * consumido e limpo. A barra não tem acesso ao Leaflet, e dar acesso a ela
-   * seria pior que carregar a intenção por estado. Só gleba usa isto — talhão
-   * nasce de arquivo importado, não se desenha mais do zero.
+   * seria pior que carregar a intenção por estado.
    */
   useEffect(() => {
     if (!pedidoDeDesenho || !mapa) return
-    criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
+    if (pedidoDeDesenho.tipo === 'talhao') criacao.iniciarTalhao()
+    else criacao.iniciarGleba(pedidoDeDesenho.talhaoId)
     setPedidoDeDesenho(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidoDeDesenho, mapa])
@@ -137,6 +147,15 @@ export default function Painel() {
     item.focarSelecionado()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selecionado, mapa])
+
+  function alternarCoordenadas(ligado) {
+    setMostrarCoordenadas(ligado)
+    try {
+      localStorage.setItem('mostrarCoordenadas', ligado ? '1' : '0')
+    } catch {
+      // sem armazenamento: a escolha vale só nesta sessão
+    }
+  }
 
   async function abrirExclusaoFazenda() {
     if (!fazendaSelecionada || carregandoExclusaoFazenda) return
@@ -223,7 +242,6 @@ export default function Painel() {
           >
             🔍 Buscar
           </button>
-          {fazendaSelecionada && (
             <button
               onClick={() => {
                 setVisualizacaoAberta((a) => !a)
@@ -234,7 +252,6 @@ export default function Painel() {
             >
               👁 Visualização
             </button>
-          )}
         </div>
 
         {buscaAberta && (
@@ -243,9 +260,21 @@ export default function Painel() {
           </div>
         )}
 
-        {visualizacaoAberta && fazendaSelecionada && (
+        {visualizacaoAberta && (
           <div className="vidro-forte absolute left-3 top-14 z-[1100] w-56 rounded-lg border border-slate-200 p-3 shadow-painel dark:border-white/15">
             <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={mostrarCoordenadas}
+                onChange={(e) => alternarCoordenadas(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
+              />
+              Latitude/longitude no cursor
+            </label>
+
+            {fazendaSelecionada && (
+              <>
+            <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={mostrarCor}
@@ -272,6 +301,8 @@ export default function Painel() {
             <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
               Quadradinho numerado onde cada análise foi coletada.
             </p>
+              </>
+            )}
           </div>
         )}
 

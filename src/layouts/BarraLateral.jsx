@@ -160,7 +160,13 @@ export default function BarraLateral({ aoNavegar }) {
   }
 
   function pedirDesenhoDeGleba(talhaoId) {
-    setPedidoDeDesenho({ talhaoId })
+    setPedidoDeDesenho({ tipo: 'gleba', talhaoId })
+    if (local.pathname !== '/') navegar('/')
+    aoNavegar?.()
+  }
+
+  function pedirDesenhoDeTalhao() {
+    setPedidoDeDesenho({ tipo: 'talhao' })
     if (local.pathname !== '/') navegar('/')
     aoNavegar?.()
   }
@@ -303,7 +309,7 @@ export default function BarraLateral({ aoNavegar }) {
                 <p className="px-2 py-2 text-xs text-slate-400 dark:text-slate-500">carregando talhões…</p>
               ) : talhoes.length === 0 ? (
                 <p className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">
-                  Nenhum talhão. {editor && 'Importe um arquivo pra começar.'}
+                  Nenhum talhão. {editor && 'Desenhe o primeiro no mapa ou importe um arquivo.'}
                 </p>
               ) : (
                 <ul className="ml-2 border-l border-slate-200 pl-1 dark:border-white/10">
@@ -374,9 +380,13 @@ export default function BarraLateral({ aoNavegar }) {
               )}
 
               {editor && (
-                // Talhão só nasce de arquivo importado agora — "Importar" é a
-                // ação principal aqui, não mais um item ao lado de "+ Talhão".
                 <div className="mt-1 flex flex-wrap gap-x-1">
+                  <button
+                    onClick={pedirDesenhoDeTalhao}
+                    className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                  >
+                    + Talhão
+                  </button>
                   <button
                     onClick={() => pedirAcao('importar-arquivo')}
                     className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}

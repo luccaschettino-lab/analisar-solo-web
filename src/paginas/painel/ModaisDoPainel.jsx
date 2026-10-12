@@ -105,6 +105,20 @@ export default function ModaisDoPainel({
         />
       )}
 
+      {criacao.pendente?.tipo === 'talhao' && fazendaSelecionada && (
+        <FormTalhao
+          fazendaId={fazendaSelecionada.id}
+          geometria={criacao.pendente.geometria}
+          aoFechar={criacao.fecharPendente}
+          aoSalvar={(talhao) => {
+            aplicarTalhao(talhao)
+            criacao.fecharPendente()
+            item.selecionar({ tipo: 'talhao', id: talhao.id })
+            mostrarAviso(`Talhão ${talhao.codigo} criado.`)
+          }}
+        />
+      )}
+
       {criacao.pendente?.tipo === 'gleba' && criacao.talhaoPendente && (
         <FormGleba
           talhao={criacao.talhaoPendente}
