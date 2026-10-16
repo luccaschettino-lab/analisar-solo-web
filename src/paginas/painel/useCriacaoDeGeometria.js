@@ -12,7 +12,7 @@ import { useDesenho } from '../../mapa/useDesenho.js'
  * formulário. Assim um desenho abandonado no meio não deixa lixo no banco.
  */
 export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, aoAvisar }) {
-  // null | { tipo:'talhao' } | { tipo:'gleba', talhaoId, forma }
+  // null | { tipo:'talhao' } | { tipo:'gleba'|'gleba-pontos', talhaoId, forma }
   const [desenhando, setDesenhando] = useState(null)
   // Geometria desenhada esperando o formulário: { tipo, talhaoId?, geometria }
   const [pendente, setPendente] = useState(null)
@@ -77,6 +77,12 @@ export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, 
         return
       }
 
+      if (forma === 'pontos') {
+        setDesenhando({ tipo: 'gleba-pontos', talhaoId })
+        desenharPoligono()
+        return
+      }
+
       setDesenhando({ tipo: 'gleba', talhaoId, forma })
       if (forma === 'ponto') desenharPonto()
       else desenharPoligono()
@@ -97,7 +103,9 @@ export function useCriacaoDeGeometria({ mapa, editor, talhoes, aoLimparSelecao, 
     desenhando,
     pendente,
     talhaoDaEscolha: acharTalhao(escolhendoGleba),
-    talhaoPendente: pendente?.tipo === 'gleba' ? acharTalhao(pendente.talhaoId) : null,
+    talhaoPendente: ['gleba', 'gleba-pontos'].includes(pendente?.tipo)
+      ? acharTalhao(pendente.talhaoId)
+      : null,
     talhaoDoLote: acharTalhao(loteAberto),
     iniciarTalhao,
     iniciarGleba,

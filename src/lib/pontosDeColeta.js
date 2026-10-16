@@ -2,12 +2,11 @@ import shp from 'shpjs'
 import { pontoFeature, glebaDentroDoTalhao } from './geo.js'
 
 /**
- * Pontos de coleta vindos de um arquivo (shapefile zipado ou GeoJSON), prontos
- * para virar glebas de ponto.
+ * Pontos de coleta vindos de um arquivo (shapefile zipado ou GeoJSON).
  *
  * Mesma ideia de `importarArquivo.js`, mas para pontos: lá só interessam
  * polígonos. Cada ponto sai como `{ indice, lat, lng, propriedades }`, na ordem
- * em que aparece no arquivo (a ordem define a numeração das glebas).
+ * em que aparece no arquivo.
  */
 
 function pontosDaColecao(colecao) {
@@ -57,31 +56,15 @@ export async function pontosDoArquivo(arquivo) {
 }
 
 /**
- * Descobre em que talhão cada ponto cai e dá o código da gleba: o código do
- * talhão, um hífen e um número de ordem (`8-1`, `8-2`…). A contagem continua de
- * onde as glebas que o talhão já tem pararam, para não repetir código.
+ * Descobre em que talhão cada ponto cai.
  *
  * Ponto que não cai em nenhum talhão não é descartado: vai para o talhão mais
  * próximo e entra também em `fora`, com a distância, para a revisão avisar.
  * Se um ponto cair em dois talhões sobrepostos, fica com o primeiro da lista.
  */
-export function distribuirPontos(pontos, talhoes, glebasExistentes) {
-  const proximoNumero = new Map() // talhaoId -> próximo número livre
-  const codigosEmUso = new Set(glebasExistentes.map((g) => `${g.talhao_id}|${g.codigo}`))
-
-  for (const t of talhoes) {
-    const prefixo = `${t.codigo}-`
-    let maior = 0
-    for (const g of glebasExistentes) {
-      if (g.talhao_id !== t.id || !g.codigo.startsWith(prefixo)) continue
-      const n = Number(g.codigo.slice(prefixo.length))
-      if (Number.isInteger(n) && n > maior) maior = n
-    }
-    proximoNumero.set(t.id, maior + 1)
-  }
-
-  const porTalhao = new Map() // talhaoId -> [{ codigo, ponto }]
-  const fora = [] // { ponto, talhao, distanciaM, codigo }
+export function distribuirPontos(pontos, talhoes) {
+  const porTalhao = new Map() // talhaoId -> [{ ponto, fora }]
+  const fora = [] // { ponto, talhao, distanciaM }
 
   for (const ponto of pontos) {
     const feature = pontoFeature(ponto.lat, ponto.lng)
@@ -94,17 +77,20 @@ export function distribuirPontos(pontos, talhoes, glebasExistentes) {
       foraInfo = { ponto, talhao, distanciaM: mais.distanciaM }
     }
 
-    let numero = proximoNumero.get(talhao.id)
-    while (codigosEmUso.has(`${talhao.id}|${talhao.codigo}-${numero}`)) numero += 1
-    proximoNumero.set(talhao.id, numero + 1)
-
     if (!porTalhao.has(talhao.id)) porTalhao.set(talhao.id, [])
-    const codigo = `${talhao.codigo}-${numero}`
-    porTalhao.get(talhao.id).push({ codigo, ponto, fora: Boolean(foraInfo) })
-    if (foraInfo) fora.push({ ...foraInfo, codigo })
+    porTalhao.get(talhao.id).push({ ponto, fora: Boolean(foraInfo) })
+    if (foraInfo) fora.push(foraInfo)
   }
 
   return { porTalhao, fora }
+}
+
+export function pontosNaGleba(pontos, geometriaGleba) {
+  return pontos.filter(
+    (ponto) =>
+      !ponto.gleba_id &&
+      glebaDentroDoTalhao(ponto.geometria, geometriaGleba) === true,
+  )
 }
 
 // Distância (m) de um ponto a um segmento, numa projeção plana local — para

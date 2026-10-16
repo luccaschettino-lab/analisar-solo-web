@@ -1,7 +1,7 @@
 // Índices espectrais a partir de reflectância de banda (0 a 1, não número
 // digital bruto do sensor). Fórmulas padrão de sensoriamento remoto — não são
-// específicas do Planet, servem pra qualquer fonte multiespectral com essas
-// bandas (NIR, vermelho, azul).
+// específicas de um sensor, servem pra qualquer fonte multiespectral com
+// essas bandas (NIR, vermelho, azul).
 //
 // Cada função devolve `null` quando o denominador zera (region sem sinal,
 // tipicamente água profunda ou nuvem) em vez de Infinity/NaN — ausência de
@@ -37,9 +37,9 @@ export function savi(nir, red, l = 0.5) {
 
 /**
  * NDWI (McFeeters, 1996) — feito pra achar água superficial (rio, açude,
- * área alagada), não umidade do solo. Sem banda SWIR ou radar, nenhum índice
- * do Planet mede umidade de terra de verdade; isto aqui é o que dá pra fazer
- * só com bandas óticas, e o rótulo na tela precisa deixar isso claro.
+ * área alagada), não umidade do solo. Sem banda SWIR ou radar, este índice
+ * mede água superficial com bandas óticas, e não umidade de terra; o rótulo
+ * na tela precisa deixar isso claro.
  */
 export function ndwi(green, nir) {
   const soma = green + nir

@@ -2,9 +2,19 @@ import { useState } from 'react'
 import Modal from '../../componentes/Modal.jsx'
 import { Campo, BotaoPrincipal, Aviso } from '../../componentes/formulario.jsx'
 import { criarGleba, atualizarGleba } from '../../dados/glebas.js'
+import { criarGlebaComPontosColeta } from '../../dados/pontosColeta.js'
 import { areaEmHectares, avaliarContencao, CONTENCAO, ehPonto } from '../../lib/geo.js'
 
-export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar }) {
+export default function FormGleba({
+  talhao,
+  gleba,
+  geometria,
+  pontosColetaIds,
+  carregandoPontosColeta = false,
+  erroPontosColeta = '',
+  aoSalvar,
+  aoFechar,
+}) {
   const edicao = Boolean(gleba)
   const geo = geometria ?? gleba?.geometria
 
@@ -36,6 +46,10 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
       setErro('O código da gleba é obrigatório.')
       return
     }
+    if (pontosColetaIds && pontosColetaIds.length === 0) {
+      setErro('O contorno precisa incluir pelo menos um ponto de coleta ainda não usado.')
+      return
+    }
 
     // Bloqueio, não confirmação. Antes o primeiro clique só acendia um aviso e
     // o segundo salvava — o que fazia o botão parecer quebrado para quem não
@@ -54,7 +68,16 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
     try {
       const salva = edicao
         ? await atualizarGleba(gleba.id, { codigo, nome, geometria: geo, areaHa })
-        : await criarGleba({ talhaoId: talhao.id, codigo, nome, geometria: geo, areaHa })
+        : pontosColetaIds
+          ? await criarGlebaComPontosColeta({
+              talhaoId: talhao.id,
+              codigo,
+              nome,
+              geometria: geo,
+              areaHa,
+              pontosColetaIds,
+            })
+          : await criarGleba({ talhaoId: talhao.id, codigo, nome, geometria: geo, areaHa })
       aoSalvar(salva)
     } catch (e) {
       setErro(e.message)
@@ -69,6 +92,19 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
     >
       <form onSubmit={enviar} className="space-y-4">
         <Aviso>{erro}</Aviso>
+
+        {pontosColetaIds && (
+          <p className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-sm text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
+            {carregandoPontosColeta
+              ? 'Conferindo os pontos de coleta deste grupo…'
+              : erroPontosColeta
+                ? 'Não foi possível confirmar os pontos. Recarregue e tente novamente.'
+                : pontosColetaIds.length > 0
+                  ? `Esta gleba agrupará ${pontosColetaIds.length} ponto(s) importado(s), que serão marcados como usados ao salvar.`
+                  : 'O contorno não inclui pontos de coleta disponíveis. Feche a janela e desenhe outro contorno.'}
+          </p>
+        )}
+        {erroPontosColeta && <Aviso>{erroPontosColeta}</Aviso>}
 
         {foraDoTalhao && (
           <div
@@ -142,7 +178,14 @@ export default function FormGleba({ talhao, gleba, geometria, aoSalvar, aoFechar
           <div className="w-40">
             {/* Desabilitado, e não "salvar mesmo assim": o botão diz a verdade
                 sobre o que vai acontecer se for clicado. */}
-            <BotaoPrincipal type="submit" disabled={salvando || foraDoTalhao}>
+            <BotaoPrincipal
+              type="submit"
+              disabled={
+                salvando ||
+                foraDoTalhao ||
+                Boolean(pontosColetaIds && (carregandoPontosColeta || erroPontosColeta || pontosColetaIds.length === 0))
+              }
+            >
               {salvando ? 'Salvando…' : 'Salvar'}
             </BotaoPrincipal>
           </div>

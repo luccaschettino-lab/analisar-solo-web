@@ -2,18 +2,17 @@ import { useMemo, useState } from 'react'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { pontosDoArquivo, distribuirPontos } from '../../lib/pontosDeColeta.js'
 import { pontoFeature } from '../../lib/geo.js'
-import { criarGlebasEmLote } from '../../dados/glebas.js'
+import { criarPontosColetaEmLote } from '../../dados/pontosColeta.js'
 
 /**
- * Importa pontos de coleta de um arquivo (shapefile zipado ou GeoJSON) e cria
- * uma gleba de ponto para cada um, no talhão em que o ponto cai.
+ * Importa pontos de coleta sem transformá-los em glebas ou análises.
  *
  * Duas etapas, como a importação de talhões: ler o arquivo e mostrar a revisão,
- * e só gravar no "Criar glebas". Ponto fora de qualquer talhão é avisado em
- * destaque, mas também é cadastrado: vai para o talhão mais próximo.
+ * e só gravar ao confirmar a importação. Ponto fora de qualquer talhão é avisado em
+ * destaque, mas também é importado: vai para o talhão mais próximo.
  */
 export default function ImportarPontos() {
-  const { fazendaSelecionada, talhoes, glebas, aplicarGlebas, editor } = useFazendaAtual()
+  const { fazendaSelecionada, talhoes, editor } = useFazendaAtual()
 
   const [nomeArquivo, setNomeArquivo] = useState('')
   const [pontos, setPontos] = useState(null)
@@ -42,36 +41,37 @@ export default function ImportarPontos() {
   }
 
   const distribuicao = useMemo(
-    () => (pontos ? distribuirPontos(pontos, talhoes, glebas) : null),
-    [pontos, talhoes, glebas],
+    () => (pontos ? distribuirPontos(pontos, talhoes) : null),
+    [pontos, talhoes],
   )
 
-  const totalDentro = distribuicao ? [...distribuicao.porTalhao.values()].reduce((s, l) => s + l.length, 0) : 0
+  const totalAImportar = distribuicao ? [...distribuicao.porTalhao.values()].reduce((s, l) => s + l.length, 0) : 0
   const linhasPorTalhao = distribuicao
     ? talhoes.filter((t) => distribuicao.porTalhao.has(t.id)).map((t) => ({ talhao: t, itens: distribuicao.porTalhao.get(t.id) }))
     : []
 
   async function gravar() {
-    if (!distribuicao || totalDentro === 0 || gravando) return
+    if (!distribuicao || totalAImportar === 0 || gravando) return
     setErro('')
     setGravando(true)
-    setProgresso({ feito: 0, total: totalDentro })
-    let criadas = 0
+    setProgresso({ feito: 0, total: totalAImportar })
+    let importados = 0
     try {
       for (const { talhao, itens } of linhasPorTalhao) {
-        const novas = await criarGlebasEmLote(
+        const novos = await criarPontosColetaEmLote(
           talhao.id,
-          itens.map(({ codigo, ponto }) => ({ codigo, geometria: pontoFeature(ponto.lat, ponto.lng) })),
+          itens.map(({ ponto }) => ({
+            geometria: pontoFeature(ponto.lat, ponto.lng),
+            propriedades: ponto.propriedades,
+          })),
         )
-        aplicarGlebas(novas)
-        criadas += novas.length
-        setProgresso({ feito: criadas, total: totalDentro })
+        importados += novos.length
+        setProgresso({ feito: importados, total: totalAImportar })
       }
-      setResultado(`${criadas} ${criadas === 1 ? 'gleba criada' : 'glebas criadas'}.`)
+      setResultado(`${importados} ${importados === 1 ? 'ponto de coleta importado' : 'pontos de coleta importados'}.`)
       setPontos(null)
     } catch (e) {
-      // Cada talhão é um insert só; o que já passou continua gravado.
-      setErro(`${e.message} Antes do erro, ${criadas} gleba(s) já tinham sido gravadas — elas continuam salvas.`)
+      setErro(`${e.message} Antes do erro, ${importados} ponto(s) já tinham sido importados — eles continuam salvos.`)
     } finally {
       setGravando(false)
       setProgresso(null)
@@ -85,7 +85,7 @@ export default function ImportarPontos() {
     return <Caixa>Só quem pode editar a fazenda importa pontos de coleta.</Caixa>
   }
   if (talhoes.length === 0) {
-    return <Caixa>Esta fazenda ainda não tem talhões. Cadastre os talhões antes: cada ponto vira uma gleba dentro do talhão em que cai.</Caixa>
+    return <Caixa>Esta fazenda ainda não tem talhões. Cadastre os talhões antes de importar os pontos de coleta.</Caixa>
   }
 
   return (
@@ -93,8 +93,8 @@ export default function ImportarPontos() {
       <div>
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Importar pontos de coleta</h2>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          Fazenda {fazendaSelecionada.nome}. Cada ponto do arquivo vira uma gleba no talhão em que ele cai, com código
-          do talhão + número (ex.: talhão 8 → 8-1, 8-2…).
+          Fazenda {fazendaSelecionada.nome}. Os pontos são salvos como pontos de coleta independentes, associados ao talhão
+          onde caem. Eles não criam glebas nem análises.
         </p>
       </div>
 
@@ -124,7 +124,7 @@ export default function ImportarPontos() {
       {distribuicao && (
         <>
           <div className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-sm text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
-            <strong className="font-medium">{nomeArquivo}</strong> · {pontos.length} pontos lidos: {totalDentro - distribuicao.fora.length} dentro
+            <strong className="font-medium">{nomeArquivo}</strong> · {pontos.length} pontos lidos: {totalAImportar - distribuicao.fora.length} dentro
             de talhões e {distribuicao.fora.length} fora.
           </div>
 
@@ -134,15 +134,15 @@ export default function ImportarPontos() {
                 ⚠ {distribuicao.fora.length} {distribuicao.fora.length === 1 ? 'ponto não cai' : 'pontos não caem'} dentro de nenhum talhão
               </p>
               <p className="mt-1">
-                Esses pontos <strong>serão cadastrados mesmo assim</strong>, no talhão mais próximo. Confira se a distância
+                Esses pontos <strong>serão importados mesmo assim</strong>, associados ao talhão mais próximo. Confira se a distância
                 faz sentido — uma distância grande pode ser coordenada errada ou talhão que falta cadastrar.
               </p>
               <ul className="mt-2 max-h-48 overflow-auto font-mono">
-                {distribuicao.fora.map(({ ponto, talhao, distanciaM, codigo }) => (
+                {distribuicao.fora.map(({ ponto, talhao, distanciaM }) => (
                   <li key={ponto.indice}>
                     ponto {ponto.indice}
                     {ponto.propriedades?.id != null && ` (id ${ponto.propriedades.id})`} · {ponto.lat.toFixed(6)},{' '}
-                    {ponto.lng.toFixed(6)} → {codigo} no talhão {talhao.codigo}, a {Math.round(distanciaM)} m
+                    {ponto.lng.toFixed(6)} → talhão {talhao.codigo}, a {Math.round(distanciaM)} m
                   </li>
                 ))}
               </ul>
@@ -154,8 +154,8 @@ export default function ImportarPontos() {
               <thead className="bg-slate-50 text-left text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Talhão</th>
-                  <th className="px-3 py-2 font-medium">Glebas a criar</th>
-                  <th className="px-3 py-2 font-medium">Códigos</th>
+                  <th className="px-3 py-2 font-medium">Pontos a importar</th>
+                  <th className="px-3 py-2 font-medium">Localizações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -174,14 +174,14 @@ export default function ImportarPontos() {
                       )}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs text-slate-500 dark:text-slate-400">
-                      {itens[0].codigo} … {itens[itens.length - 1].codigo}
+                      {itens.length === 1 ? `ponto ${itens[0].ponto.indice}` : `${itens.length} pontos`}
                     </td>
                   </tr>
                 ))}
                 {linhasPorTalhao.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-3 py-4 text-center text-xs text-slate-400">
-                      Nenhum ponto para criar.
+                      Nenhum ponto para importar.
                     </td>
                   </tr>
                 )}
@@ -190,11 +190,14 @@ export default function ImportarPontos() {
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {gravando && progresso && `Criando ${progresso.feito} de ${progresso.total}…`}
-            </span>
+            {gravando && progresso ? (
+              <p role="status" aria-live="polite" className="text-xs text-slate-500 dark:text-slate-400">
+                Importando {progresso.feito} de {progresso.total} pontos…
+              </p>
+            ) : <span />}
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setPontos(null)}
                 disabled={gravando}
                 className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
@@ -202,14 +205,24 @@ export default function ImportarPontos() {
                 Cancelar
               </button>
               <button
-                onClick={gravar}
-                disabled={gravando || totalDentro === 0}
+                type="button"
+                onClick={() => void gravar()}
+                disabled={gravando || totalAImportar === 0}
+                aria-busy={gravando}
                 className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600"
               >
-                {gravando ? 'Criando…' : totalDentro === 0 ? 'Nada para criar' : `Criar ${totalDentro} glebas`}
+                {gravando ? 'Importando…' : totalAImportar === 0 ? 'Nada para importar' : `Importar ${totalAImportar} pontos`}
               </button>
             </div>
           </div>
+          {erro && (
+            <p
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300"
+            >
+              {erro}
+            </p>
+          )}
         </>
       )}
     </div>

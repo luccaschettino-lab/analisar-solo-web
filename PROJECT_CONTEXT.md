@@ -19,7 +19,8 @@ Tudo no modelo de dados existe para resolver isso.
 ## Modelo conceitual
 
 ```
-Fazenda  →  Talhão  →  Gleba  →  Análise (por ano-safra e profundidade)
+Fazenda  →  Talhão  →  Análise (por ano-safra e profundidade)
+                    ↳ Pontos de coleta importados (referências espaciais independentes)
 ```
 
 | Entidade | O que é | Equivalente na planilha do laboratório |
@@ -27,12 +28,19 @@ Fazenda  →  Talhão  →  Gleba  →  Análise (por ano-safra e profundidade)
 | **Fazenda** | Propriedade rural, pertence a um usuário | — |
 | **Talhão** | Subdivisão da fazenda, com polígono no mapa | coluna `Lote` |
 | **Gleba** | Ponto ou micro-área onde a amostra é coletada | coluna `Amostra` |
-| **Análise** | Um laudo, para uma gleba, num ano-safra e profundidade | uma linha do laudo |
+| **Análise** | Um laudo vinculado ao talhão, com ponto de coleta, safra e profundidade | uma linha do laudo |
+| **Ponto de coleta importado** | Localização importada, vinculada ao talhão e opcionalmente a uma gleba, sem criar análise | ponto do shapefile/GeoJSON |
 
 ### Regra crítica
 
 > O número da amostra do laboratório **NÃO** é a identidade da gleba.
 > Ele é apenas um atributo do laudo daquele ano.
+
+Os pontos importados de shapefile/GeoJSON são registros espaciais independentes:
+ficam associados a um talhão, mas não criam glebas nem análises. No mapa, o
+usuário pode desenhar um contorno ao redor de pontos ainda não usados para criar
+uma gleba com aquela geometria; os pontos incluídos ficam vinculados à gleba e
+marcados como usados, sem serem apagados.
 
 A gleba é uma entidade cadastral **permanente**, com nome e geometria próprios,
 criada pelo usuário. A comparação entre anos se apoia em `gleba_id`, nunca no
@@ -57,6 +65,12 @@ Modelar isso errado faz o produto inteiro perder a razão de existir.
 | Geometria | turf granular: `@turf/area`, `@turf/boolean-within`, `@turf/boolean-point-in-polygon`, `@turf/difference`, `@turf/helpers` |
 
 | Gráficos | Chart.js 4.5 + `react-chartjs-2` 5.3 |
+
+A tela Monitoramento consulta as cenas CBERS-4A MUX que cruzam a geometria real
+do talhão, com linha do tempo, cobertura de nuvens e prévia da cena orbital. A
+prévia é da cena completa, não um recorte do talhão. A geração dos mapas NDVI,
+EVI, SAVI e NDWI a partir dos GeoTIFFs originais ainda depende de processamento
+no servidor.
 
 **Turf granular, não `@turf/turf`.** O pacote completo arrasta dezenas de
 módulos para usarmos três funções. Os pacotes avulsos entregam o mesmo.
@@ -115,7 +129,8 @@ Projeto Supabase: **`analise-solo`**, ref `ekjaiwidaypvxtallhmu`, região `us-we
 Postgres 17.6.
 
 Migrações em `supabase/migrations/`, aplicadas em ordem de timestamp.
-**Todas aplicadas em 2026-08-14.**
+As migrações iniciais foram aplicadas em 2026-08-14. Aplique as novas
+migrações antes de depender das tabelas ou mudanças que introduzem.
 
 | Arquivo | Conteúdo |
 |---|---|
@@ -124,6 +139,9 @@ Migrações em `supabase/migrations/`, aplicadas em ordem de timestamp.
 | `20260814133243_triggers.sql` | perfil no cadastro, criador vira proprietário |
 | `20260814133412_revogar_execute_dos_triggers.sql` | fecha as funções de trigger ao `/rest/v1/rpc/` |
 | `20260814135859_perfis_policy_insert.sql` | usuário pode recriar o próprio perfil |
+| `20261013190000_pontos_coleta_independentes.sql` | pontos importados em tabela própria, sem criar glebas |
+| `20261013233000_vincular_pontos_coleta_a_glebas.sql` | vínculo dos pontos usados e criação atômica de gleba agrupada |
+| `20261013234000_conceder_acesso_pontos_coleta.sql` | permissões autenticadas para operar sobre pontos importados |
 
 > **Regra: o nome do arquivo tem que ser igual ao `version` gravado em
 > `supabase_migrations.schema_migrations`.** As quatro primeiras foram aplicadas
@@ -137,7 +155,7 @@ Migrações em `supabase/migrations/`, aplicadas em ordem de timestamp.
 > arquivo local com ele.
 
 Tabelas: `perfis`, `fazendas`, `fazenda_membros`, `talhoes`, `glebas`,
-`analises`, `criterios`.
+`analises`, `criterios`, `pontos_coleta`.
 
 **Storage:** um bucket, `fotos`, **privado**, com a foto do solo de cada gleba
 (uma por gleba, em `glebas.foto_path`). O caminho é

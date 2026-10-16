@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs && node testes/geo.mjs && node testes/kml.mjs && node testes/senha.mjs"
+    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs && node testes/geo.mjs && node testes/kml.mjs && node testes/senha.mjs && node testes/cbers.mjs && node testes/pontosDeColeta.mjs"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,7 @@
     "@geoman-io/leaflet-geoman-free": "^2.20.0",
     "@supabase/supabase-js": "^2.112.3",
     "@turf/area": "^7.4.0",
+    "@turf/boolean-intersects": "^7.4.0",
     "@turf/boolean-point-in-polygon": "^7.4.0",
     "@turf/boolean-within": "^7.4.0",
     "@turf/difference": "^7.4.0",

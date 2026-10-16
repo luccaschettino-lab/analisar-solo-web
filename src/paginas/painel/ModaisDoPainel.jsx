@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import FormFazenda from './FormFazenda.jsx'
 import FormTalhao from './FormTalhao.jsx'
 import FormGleba from './FormGleba.jsx'
@@ -8,6 +9,9 @@ import MesclarTalhoes from './MesclarTalhoes.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
 import Modal from '../../componentes/Modal.jsx'
 import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
+import { pontosNaGleba } from '../../lib/pontosDeColeta.js'
+import { usePontosColeta } from './usePontosColeta.js'
+import PontosColetaNoMapa from './PontosColetaNoMapa.jsx'
 
 /**
  * Todos os diálogos do painel. Ficam juntos porque nenhum deles tem estado
@@ -39,6 +43,25 @@ export default function ModaisDoPainel({
   mesclandoTalhoes,
   aoFecharMesclarTalhoes,
 }) {
+  const talhaoPontosId =
+    criacao.talhaoDaEscolha?.id ??
+    (criacao.desenhando?.tipo === 'gleba-pontos' ||
+    criacao.pendente?.tipo === 'gleba-pontos'
+      ? criacao.desenhando?.talhaoId ?? criacao.pendente?.talhaoId
+      : null)
+  const {
+    pontos: pontosColeta,
+    carregando: carregandoPontosColeta,
+    erro: erroPontosColeta,
+  } = usePontosColeta(talhaoPontosId)
+  const pontosAgrupados = useMemo(
+    () =>
+      criacao.pendente?.tipo === 'gleba-pontos'
+        ? pontosNaGleba(pontosColeta, criacao.pendente.geometria)
+        : [],
+    [pontosColeta, criacao.pendente],
+  )
+
   return (
     <>
       {formFazenda && (
@@ -56,8 +79,28 @@ export default function ModaisDoPainel({
       {criacao.talhaoDaEscolha && (
         <EscolherTipoGleba
           talhao={criacao.talhaoDaEscolha}
+          pontosDisponiveis={pontosColeta.filter((ponto) => !ponto.gleba_id).length}
+          carregandoPontos={carregandoPontosColeta}
+          erroPontos={erroPontosColeta}
           aoEscolher={criacao.escolherForma}
           aoFechar={criacao.fecharEscolha}
+        />
+      )}
+
+      {(criacao.desenhando?.tipo === 'gleba-pontos' ||
+        criacao.pendente?.tipo === 'gleba-pontos') && (
+        <PontosColetaNoMapa
+          mapa={mapa}
+          pontos={pontosColeta}
+          pontosAgrupados={pontosAgrupados}
+          carregando={carregandoPontosColeta}
+          erro={erroPontosColeta}
+          desenhando={criacao.desenhando?.tipo === 'gleba-pontos'}
+          aoCancelar={
+            criacao.desenhando?.tipo === 'gleba-pontos'
+              ? criacao.abortar
+              : criacao.fecharPendente
+          }
         />
       )}
 
@@ -129,6 +172,25 @@ export default function ModaisDoPainel({
             criacao.fecharPendente()
             item.selecionar({ tipo: 'gleba', id: gleba.id })
             mostrarAviso(`Gleba ${gleba.codigo} criada.`)
+          }}
+        />
+      )}
+
+      {criacao.pendente?.tipo === 'gleba-pontos' && criacao.talhaoPendente && (
+        <FormGleba
+          talhao={criacao.talhaoPendente}
+          geometria={criacao.pendente.geometria}
+          pontosColetaIds={pontosAgrupados.map((ponto) => ponto.id)}
+          carregandoPontosColeta={carregandoPontosColeta}
+          erroPontosColeta={erroPontosColeta}
+          aoFechar={criacao.fecharPendente}
+          aoSalvar={(gleba) => {
+            aplicarGleba(gleba)
+            criacao.fecharPendente()
+            item.selecionar({ tipo: 'gleba', id: gleba.id })
+            mostrarAviso(
+              `Gleba ${gleba.codigo} criada com ${pontosAgrupados.length} ponto(s) de amostra.`,
+            )
           }}
         />
       )}
