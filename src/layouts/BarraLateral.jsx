@@ -9,6 +9,24 @@ const ITEM = `flex w-full items-center gap-2 rounded px-2 py-2 text-left text-sm
 const ATIVO = 'bg-solo-50 text-solo-800 dark:bg-solo-500/15 dark:text-solo-300'
 const INATIVO = 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'
 
+function IconeAlternar({ compacta, ...props }) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      {compacta ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
+    </svg>
+  )
+}
+
+function IconeFazenda(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M3 21h18" />
+      <path d="M5 21V7l7-4 7 4v14" />
+      <path d="M9 21v-6h6v6" />
+    </svg>
+  )
+}
+
 function Seta({ aberto }) {
   return (
     <span aria-hidden="true" className="w-3 shrink-0 text-xs text-slate-400 dark:text-slate-500">
@@ -95,15 +113,19 @@ function IconeCriterios(props) {
 }
 
 /** Ícone + rótulo, na mesma linha — o padrão de todo item da barra. */
-function ItemNav({ to, Icone, rotulo, onClick }) {
+function ItemNav({ to, Icone, rotulo, onClick, compacta = false }) {
   return (
     <NavLink
       to={to}
       onClick={onClick}
-      className={({ isActive }) => `${ITEM} font-medium ${isActive ? ATIVO : INATIVO}`}
+      title={compacta ? rotulo : undefined}
+      aria-label={rotulo}
+      className={({ isActive }) =>
+        `${ITEM} font-medium ${compacta ? 'justify-center px-0' : ''} ${isActive ? ATIVO : INATIVO}`
+      }
     >
       <Icone aria-hidden="true" className="h-4 w-4 shrink-0" />
-      {rotulo}
+      {!compacta && rotulo}
     </NavLink>
   )
 }
@@ -120,7 +142,7 @@ function ItemNav({ to, Icone, rotulo, onClick }) {
  * do mapa de calor, só aparece na árvore e no mapa como subdivisão, e leva
  * para análises e foto na própria gleba (`/#/glebas/:id`).
  */
-export default function BarraLateral({ aoNavegar }) {
+export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }) {
   const {
     fazendas, carregandoFazendas, erroFazendas,
     fazendaSelecionada, selecionarFazenda, editor,
@@ -205,7 +227,33 @@ export default function BarraLateral({ aoNavegar }) {
 
   return (
     <nav aria-label="Navegação" className="flex h-full flex-col overflow-y-auto">
-      <div className="border-b border-slate-200 px-3 py-3 dark:border-white/10">
+      <div className={`border-b border-slate-200 dark:border-white/10 ${compacta ? 'px-2 py-2' : 'px-3 py-3'}`}>
+        {compacta ? (
+          <button
+            type="button"
+            onClick={aoAlternar}
+            aria-label="Expandir barra lateral"
+            aria-expanded="false"
+            title={fazendaSelecionada ? `Expandir menu · ${fazendaSelecionada.nome}` : 'Expandir barra lateral'}
+            className={`flex min-h-10 w-full items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10 ${FOCO}`}
+          >
+            <IconeFazenda aria-hidden="true" className="h-5 w-5" />
+          </button>
+        ) : (
+          <div className="mb-2 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={aoAlternar}
+              aria-label="Recolher barra lateral"
+              aria-expanded="true"
+              title="Recolher barra lateral"
+              className={`flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100 ${FOCO}`}
+            >
+              <IconeAlternar compacta={compacta} aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {!compacta && <>
         <label htmlFor="barra-fazenda" className="block text-xs font-medium text-slate-500 dark:text-slate-400">
           Fazenda
         </label>
@@ -285,10 +333,11 @@ export default function BarraLateral({ aoNavegar }) {
         >
           + Nova fazenda
         </button>
+        </>}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        <div className="flex items-stretch">
+        {!compacta && <div className="flex items-stretch">
           {fazendaSelecionada && (
             <button
               onClick={() => setArvoreAberta((a) => !a)}
@@ -300,10 +349,10 @@ export default function BarraLateral({ aoNavegar }) {
             </button>
           )}
           <ItemNav to="/" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
-        </div>
+        </div>}
 
         <div className="mt-0.5 flex flex-col gap-0.5">
-          {fazendaSelecionada && arvoreAberta && (
+          {!compacta && fazendaSelecionada && arvoreAberta && (
             <div>
               {carregandoHierarquia ? (
                 <p className="px-2 py-2 text-xs text-slate-400 dark:text-slate-500">carregando talhões…</p>
@@ -406,15 +455,16 @@ export default function BarraLateral({ aoNavegar }) {
             </div>
           )}
 
-          <ItemNav to="/filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} />
-          <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} />
+          {compacta && <ItemNav to="/" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} compacta />}
+          <ItemNav to="/filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} compacta={compacta} />
 
           <div className="my-1 border-t border-slate-200 dark:border-white/10" />
 
-          <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} />
+          <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta={compacta} />
           {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —
               não de "Critérios", onde estavam por engano. */}
-          <ul className="ml-6 space-y-0.5 border-l border-slate-200 pl-1 dark:border-white/10">
+          {!compacta && <ul className="ml-6 space-y-0.5 border-l border-slate-200 pl-1 dark:border-white/10">
             <li>
               <button onClick={() => irPara('/dados')} className={`${ITEM} text-xs ${INATIVO}`}>
                 Entrada manual
@@ -430,14 +480,14 @@ export default function BarraLateral({ aoNavegar }) {
                 Importar pontos de coleta
               </button>
             </li>
-          </ul>
+          </ul>}
 
-          <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} />
+          <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
 
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
-          <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} />
+          <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
         </div>
       </div>
     </nav>

@@ -10,10 +10,28 @@ export default function LayoutApp() {
   const { usuario, sair } = useAuth()
   const [saindo, setSaindo] = useState(false)
   const [erro, setErro] = useState('')
-  // Só no celular: em tela larga a barra é fixa e não recolhe.
   const [gavetaAberta, setGavetaAberta] = useState(false)
+  const [barraCompacta, setBarraCompacta] = useState(() => {
+    try {
+      return localStorage.getItem('moinho-barra-compacta') !== 'false'
+    } catch {
+      return true
+    }
+  })
 
   const identificacao = usuario?.user_metadata?.nome || usuario?.email
+
+  function alternarBarra() {
+    setBarraCompacta((compacta) => {
+      const proxima = !compacta
+      try {
+        localStorage.setItem('moinho-barra-compacta', String(proxima))
+      } catch {
+        // A preferência é opcional; a barra continua funcionando sem storage.
+      }
+      return proxima
+    })
+  }
 
   async function aoSair() {
     setErro('')
@@ -72,9 +90,13 @@ export default function LayoutApp() {
         </header>
 
         <div className="flex min-h-0 flex-1">
-          {/* Coluna fixa a partir de md. */}
-          <aside className="hidden w-56 shrink-0 border-r border-slate-200 dark:border-white/10 dark:bg-noite-900 md:block">
-            <BarraLateral />
+          {/* Barra lateral expansível a partir de md. */}
+          <aside
+            className={`hidden shrink-0 overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-200 ease-out dark:border-white/10 dark:bg-noite-900 motion-reduce:transition-none md:block ${
+              barraCompacta ? 'w-16' : 'w-56'
+            }`}
+          >
+            <BarraLateral compacta={barraCompacta} aoAlternar={alternarBarra} />
           </aside>
 
           {/* Gaveta no celular. */}
