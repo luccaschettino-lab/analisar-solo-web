@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { exigirUsuario } from "../_shared/exigirUsuario.ts";
 
 // Lista as cenas PlanetScope mais recentes cobrindo um ponto (a gleba ou o
 // talhao selecionado no Monitoramento).
@@ -8,6 +9,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // - data e nuvem de cada cena, sem imagem nenhuma. Quando a permissao vier,
 // o passo seguinte e pedir o tile de cada `id` que isto devolve.
 Deno.serve(async (req: Request) => {
+  const negado = await exigirUsuario(req);
+  if (negado) return negado;
+
   const apiKey = Deno.env.get("PLANET_API_KEY");
   if (!apiKey) {
     return new Response(JSON.stringify({ erro: "PLANET_API_KEY não configurada no projeto." }), {

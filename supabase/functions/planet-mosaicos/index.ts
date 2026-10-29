@@ -1,11 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { exigirUsuario } from "../_shared/exigirUsuario.ts";
 
 // Diagnostico: confere o que a conta do Planet enxerga - se a chave e valida,
 // e se o plano inclui Mosaics (produto pago a parte, que e o que permite
 // pedir tiles de indice pronto - NDVI, NDWI etc. - sem baixar e processar a
 // cena bruta). Nao e chamado pelo site; existe pra testar a conta pelo
-// terminal sempre que o plano do Planet mudar.
-Deno.serve(async (_req: Request) => {
+// terminal sempre que o plano do Planet mudar. Exige o token de um usuario
+// logado (Authorization: Bearer <access_token>), nao so a chave publishable.
+Deno.serve(async (req: Request) => {
+  const negado = await exigirUsuario(req);
+  if (negado) return negado;
+
   const apiKey = Deno.env.get("PLANET_API_KEY");
   if (!apiKey) {
     return new Response(
