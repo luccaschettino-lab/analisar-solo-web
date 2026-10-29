@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { validarSenha } from '../lib/senha.js'
-import { Campo, BotaoPrincipal, Aviso } from '../componentes/formulario.jsx'
+import { Campo, BotaoPrincipal, Aviso, CabecalhoEntrada } from '../componentes/formulario.jsx'
+import { IconeUsuario, IconeEmail, IconeCadeado, IconeSeta } from '../componentes/icones.jsx'
 
 export default function Cadastro() {
   const { cadastrar } = useAuth()
@@ -47,13 +48,13 @@ export default function Cadastro() {
 
   if (aguardandoConfirmacao) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Confirme seu e-mail</h1>
+      <div className="space-y-6">
+        <CabecalhoEntrada rotulo="Quase lá" titulo="Confirme seu e-mail" />
         <Aviso tipo="sucesso">
           Enviamos um link de confirmação para <strong>{email}</strong>. Abra o link para ativar a
           conta e depois faça login.
         </Aviso>
-        <Link to="/login" className="block text-center text-sm font-medium text-solo-700 hover:underline dark:text-solo-400">
+        <Link to="/login" className="block text-center text-sm font-semibold text-solo-300 hover:underline">
           Ir para o login
         </Link>
       </div>
@@ -61,16 +62,15 @@ export default function Cadastro() {
   }
 
   return (
-    <form onSubmit={aoEnviar} className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Criar conta</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Cadastre-se para gerenciar suas fazendas.</p>
-      </header>
+    <form onSubmit={aoEnviar} className="space-y-5">
+      <CabecalhoEntrada rotulo="Comece agora" titulo="Crie sua conta" apoio="Cadastre-se para gerenciar suas fazendas." />
 
       <Aviso>{erro}</Aviso>
 
       <Campo
         id="nome"
+        icone={<IconeUsuario />}
+        grande
         rotulo="Nome"
         type="text"
         value={nome}
@@ -81,6 +81,8 @@ export default function Cadastro() {
       />
       <Campo
         id="email"
+        icone={<IconeEmail />}
+        grande
         rotulo="E-mail"
         type="email"
         value={email}
@@ -91,6 +93,8 @@ export default function Cadastro() {
       />
       <Campo
         id="senha"
+        icone={<IconeCadeado />}
+        grande
         rotulo="Senha"
         type="password"
         value={senha}
@@ -100,11 +104,13 @@ export default function Cadastro() {
         required
         disabled={enviando}
       />
-      <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
+      <p className="-mt-2 text-xs text-slate-400">
         Mínimo de 8 caracteres, com letras e números.
       </p>
       <Campo
         id="confirmacao"
+        icone={<IconeCadeado />}
+        grande
         rotulo="Confirmar senha"
         type="password"
         value={confirmacao}
@@ -114,16 +120,16 @@ export default function Cadastro() {
         disabled={enviando}
       />
 
-      <BotaoPrincipal type="submit" disabled={enviando}>
-        {enviando ? 'Criando conta…' : 'Criar conta'}
+      <BotaoPrincipal type="submit" tom="folha" grande disabled={enviando}>
+        {enviando ? (
+          'Criando conta…'
+        ) : (
+          <>
+            Criar conta <IconeSeta />
+          </>
+        )}
       </BotaoPrincipal>
 
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-        Já tem conta?{' '}
-        <Link to="/login" className="font-medium text-solo-700 hover:underline dark:text-solo-400">
-          Entrar
-        </Link>
-      </p>
     </form>
   )
 }

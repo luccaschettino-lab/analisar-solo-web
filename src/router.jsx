@@ -4,6 +4,7 @@ import LayoutPublico from './layouts/LayoutPublico.jsx'
 import LayoutApp from './layouts/LayoutApp.jsx'
 import Login from './paginas/Login.jsx'
 import Cadastro from './paginas/Cadastro.jsx'
+import EsqueciSenha from './paginas/EsqueciSenha.jsx'
 import Painel from './paginas/Painel.jsx'
 import Filtros from './paginas/Filtros.jsx'
 import Dados from './paginas/Dados.jsx'
@@ -24,6 +25,7 @@ export const router = createHashRouter([
         children: [
           { path: '/login', element: <Login /> },
           { path: '/cadastro', element: <Cadastro /> },
+          { path: '/esqueci-senha', element: <EsqueciSenha /> },
         ],
       },
     ],

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { IconeEmail } from '../componentes/icones.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Campo, BotaoPrincipal, Aviso } from '../componentes/formulario.jsx'
+import { Campo, BotaoPrincipal, Aviso, CabecalhoEntrada } from '../componentes/formulario.jsx'
 
 export default function EsqueciSenha() {
   const { pedirRecuperacaoDeSenha } = useAuth()
@@ -26,15 +27,15 @@ export default function EsqueciSenha() {
 
   if (enviado) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Verifique seu e-mail</h1>
+      <div className="space-y-6">
+        <CabecalhoEntrada rotulo="Quase lá" titulo="Verifique seu e-mail" />
         {/* Mesma resposta exista a conta ou não: dizer "e-mail não cadastrado"
             deixaria qualquer um descobrir quem tem conta. */}
         <Aviso tipo="sucesso">
           Se existir uma conta para <strong>{email}</strong>, enviamos um link para criar uma nova senha. Ele vale por
           1 hora.
         </Aviso>
-        <Link to="/login" className="block text-center text-sm font-medium text-solo-700 hover:underline dark:text-solo-400">
+        <Link to="/login" className="block text-center text-sm font-semibold text-solo-300 hover:underline">
           Voltar ao login
         </Link>
       </div>
@@ -42,18 +43,19 @@ export default function EsqueciSenha() {
   }
 
   return (
-    <form onSubmit={aoEnviar} className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Esqueci minha senha</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha.
-        </p>
-      </header>
+    <form onSubmit={aoEnviar} className="space-y-6">
+      <CabecalhoEntrada
+        rotulo="Recuperar acesso"
+        titulo="Esqueci minha senha"
+        apoio="Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha."
+      />
 
       <Aviso>{erro}</Aviso>
 
       <Campo
         id="email"
+        icone={<IconeEmail />}
+        grande
         rotulo="E-mail"
         type="email"
         value={email}
@@ -67,8 +69,8 @@ export default function EsqueciSenha() {
         {enviando ? 'Enviando…' : 'Enviar link'}
       </BotaoPrincipal>
 
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-        <Link to="/login" className="font-medium text-solo-700 hover:underline dark:text-solo-400">
+      <p className="text-center text-sm">
+        <Link to="/login" className="font-semibold text-solo-300 hover:underline">
           Voltar ao login
         </Link>
       </p>

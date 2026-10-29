@@ -28,6 +28,14 @@ export default {
           800: '#12456a',
           900: '#0c2f49',
         },
+        // Verde de folha: só nas telas de entrada (botão e filetes), vindo do
+        // verde da base da logo. Não é a cor de ação do app — essa é `solo`.
+        folha: {
+          300: '#8fd37a',
+          500: '#4a9a3c',
+          700: '#2e7d32',
+          800: '#256628',
+        },
         // Azul-noite do chrome do app: header, barra lateral e painéis
         // flutuantes sobre o mapa. Já nasceu na família de azul da marca —
         // não precisou mudar com a troca de identidade.

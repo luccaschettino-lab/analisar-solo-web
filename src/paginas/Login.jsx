@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Campo, BotaoPrincipal, Aviso } from '../componentes/formulario.jsx'
+import { Campo, BotaoPrincipal, Aviso, CabecalhoEntrada } from '../componentes/formulario.jsx'
+import { IconeEmail, IconeCadeado, IconeSeta } from '../componentes/icones.jsx'
 
 export default function Login() {
   const { entrar } = useAuth()
@@ -28,11 +29,12 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={aoEnviar} className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Entrar</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Acesse suas análises de solo.</p>
-      </header>
+    <form onSubmit={aoEnviar} className="space-y-6">
+      <CabecalhoEntrada
+        rotulo="Bem-vindo de volta"
+        titulo="Acesse sua conta"
+        apoio="Suas fazendas, glebas e análises em um só lugar."
+      />
 
       <Aviso>{erro}</Aviso>
 
@@ -40,6 +42,9 @@ export default function Login() {
         id="email"
         rotulo="E-mail"
         type="email"
+        icone={<IconeEmail />}
+        grande
+        placeholder="voce@fazenda.com.br"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
@@ -50,6 +55,14 @@ export default function Login() {
         id="senha"
         rotulo="Senha"
         type="password"
+        icone={<IconeCadeado />}
+        grande
+        placeholder="Sua senha"
+        acao={
+          <Link to="/esqueci-senha" className="text-sm font-semibold text-solo-300 hover:underline">
+            Esqueceu a senha?
+          </Link>
+        }
         value={senha}
         onChange={(e) => setSenha(e.target.value)}
         autoComplete="current-password"
@@ -57,16 +70,15 @@ export default function Login() {
         disabled={enviando}
       />
 
-      <BotaoPrincipal type="submit" disabled={enviando}>
-        {enviando ? 'Entrando…' : 'Entrar'}
+      <BotaoPrincipal type="submit" tom="folha" grande disabled={enviando}>
+        {enviando ? (
+          'Entrando…'
+        ) : (
+          <>
+            Entrar <IconeSeta />
+          </>
+        )}
       </BotaoPrincipal>
-
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-        Não tem conta?{' '}
-        <Link to="/cadastro" className="font-medium text-solo-700 hover:underline dark:text-solo-400">
-          Cadastre-se
-        </Link>
-      </p>
     </form>
   )
 }
