@@ -4,13 +4,13 @@ const ThemeContext = createContext(null)
 const CHAVE_ARMAZENAMENTO = 'analisar-solo:tema'
 
 /**
- * Tema padrão é escuro — é o visual técnico que o app usa desde a Fase 8.
- * O claro existe para quem prefere, não o contrário.
+ * Tema padrão é claro. Quem já escolheu um tema antes mantém a escolha
+ * (guardada em localStorage); o escuro continua a um clique no alternador.
  */
 function lerTemaSalvo() {
-  if (typeof window === 'undefined') return 'escuro'
+  if (typeof window === 'undefined') return 'claro'
   const salvo = window.localStorage.getItem(CHAVE_ARMAZENAMENTO)
-  return salvo === 'claro' || salvo === 'escuro' ? salvo : 'escuro'
+  return salvo === 'claro' || salvo === 'escuro' ? salvo : 'claro'
 }
 
 /**
