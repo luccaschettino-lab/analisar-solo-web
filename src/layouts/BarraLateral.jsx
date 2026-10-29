@@ -440,7 +440,13 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
                     onClick={() => pedirAcao('importar-arquivo')}
                     className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
                   >
-                    Importar
+                    Importar talhões
+                  </button>
+                  <button
+                    onClick={() => irPara('/dados?aba=pontos')}
+                    className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                  >
+                    Importar pontos de amostra
                   </button>
                   {talhoes.length >= 2 && (
                     <button
@@ -473,11 +479,6 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             <li>
               <button onClick={() => irPara('/dados?aba=pdf')} className={`${ITEM} text-xs ${INATIVO}`}>
                 Importar laudo PDF
-              </button>
-            </li>
-            <li>
-              <button onClick={() => irPara('/dados?aba=pontos')} className={`${ITEM} text-xs ${INATIVO}`}>
-                Importar pontos de amostra
               </button>
             </li>
           </ul>}
