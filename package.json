@@ -19,6 +19,7 @@
   "homepage": "https://github.com/luccaschettino-lab/analisar-solo-web#readme",
   "private": true,
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
     "@geoman-io/leaflet-geoman-free": "^2.20.0",
     "@supabase/supabase-js": "^2.112.3",
     "@turf/area": "^7.4.0",

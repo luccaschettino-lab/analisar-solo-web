@@ -4,6 +4,7 @@ import App from './App.jsx'
 import ErrorBoundary from './componentes/ErrorBoundary.jsx'
 import ErroFatal from './componentes/ErroFatal.jsx'
 import { erroConfiguracao } from './lib/supabase.js'
+import '@fontsource-variable/manrope'
 import './index.css'
 
 // Configuracao ausente e checada antes de montar o App: sem cliente Supabase

@@ -9,7 +9,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Manrope', ...defaultTheme.fontFamily.sans],
+        // 'Manrope Variable' é o nome que o pacote @fontsource registra (fonte
+        // servida pelo próprio site, não pelo Google Fonts).
+        sans: ['Manrope Variable', 'Manrope', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         // Azul da marca (Moinho) — calibrado a partir dos tons reais do
