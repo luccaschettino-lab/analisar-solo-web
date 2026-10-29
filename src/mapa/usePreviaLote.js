@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import { COR_GLEBA } from '../config/mapa.js'
+import { escapar } from './tooltipGleba.js'
 
 /**
  * Desenha os pontos do lote como prévia, antes de gravar.
@@ -30,7 +31,7 @@ export function usePreviaLote(mapa, itens) {
         interactive: false,
         dashArray: '3 3',
       })
-        .bindTooltip(item.codigo, { permanent: true, direction: 'top', offset: [0, -6] })
+        .bindTooltip(escapar(item.codigo), { permanent: true, direction: 'top', offset: [0, -6] })
         .addTo(grupo)
     }
 

@@ -4,7 +4,7 @@ import { paraFeature, ehPonto, pontoRotulo } from '../lib/geo.js'
 import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipTalhao } from './tooltipTalhao.js'
-import { conteudoTooltipGleba } from './tooltipGleba.js'
+import { conteudoTooltipGleba, escapar } from './tooltipGleba.js'
 import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
 import { criarCamadaCalor, criarMarcadoresDeAmostra, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
 import { posicaoDoNivel } from '../lib/coloracao.js'
@@ -211,7 +211,7 @@ export function useGeometrias(
       })
       // Conteúdo inicial simples; o efeito de estilo reescreve com o valor do
       // parâmetro assim que houver filtro.
-      camada.bindTooltip(rotulo(talhao), { sticky: true })
+      camada.bindTooltip(escapar(rotulo(talhao)), { sticky: true })
       camada.on('click', (e) => {
         // Enquanto o Geoman está desenhando, o clique é o vértice que está
         // sendo colocado, não uma seleção. Parar a propagação aqui fazia esse
