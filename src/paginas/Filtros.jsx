@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import { useGeometrias } from '../mapa/useGeometrias.js'
-import { focarGeometria } from '../mapa/enquadrar.js'
+import { enquadrarGeometrias, focarGeometria } from '../mapa/enquadrar.js'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
 import { usePontosAmostraDaFazenda } from '../hooks/usePontosAmostraDaFazenda.js'
+
+// Valor do seletor para "todos os talhões de uma vez". Não é um id de talhão
+// (uuid), então nunca colide com um.
+const TODA_A_FAZENDA = '__fazenda__'
 
 // Mesma classe dos campos de dentro de `FiltrosMapa` — o seletor de talhão
 // mora bem em cima do de ano-safra, e os dois precisam ler como parte do
@@ -17,7 +21,9 @@ const SELECT =
  * Um talhão por vez, em close — a tela existe para isso. O mapa geral mostra
  * a fazenda inteira, e é ótimo pra ver o conjunto; aqui é o oposto: escolhe
  * um talhão, ajusta o filtro, e o mapa mostra só ele, enquadrado, com o mapa
- * de calor por cima. É o que sobrou do antigo botão "Filtro" que flutuava em
+ * de calor por cima. "Fazenda toda" é a exceção pedida: todos os talhões
+ * juntos, com o mesmo filtro e o mapa de calor, para comparar a fazenda de
+ * ponta a ponta. É o que sobrou do antigo botão "Filtro" que flutuava em
  * cima do mapa geral — o filtro merecia uma tela própria, não um painel que
  * cobria o que se estava tentando ver.
  *
@@ -47,8 +53,13 @@ export default function Filtros() {
     carregando: carregandoPontosAmostra,
     erro: erroPontosAmostra,
   } = usePontosAmostraDaFazenda(fazendaSelecionada?.id, mostrarPontosAmostra)
-  const talhao = talhoes.find((t) => t.id === talhaoId) ?? null
-  const pontosAmostraDoTalhao = pontosAmostra.filter((ponto) => ponto.talhao_id === talhaoId)
+  const fazendaToda = talhaoId === TODA_A_FAZENDA
+  const talhao = fazendaToda ? null : (talhoes.find((t) => t.id === talhaoId) ?? null)
+  // Há algo para mostrar: um talhão escolhido, ou a fazenda inteira.
+  const emFoco = fazendaToda || Boolean(talhao)
+  const pontosAmostraEmFoco = fazendaToda
+    ? pontosAmostra
+    : pontosAmostra.filter((ponto) => ponto.talhao_id === talhaoId)
 
   // Fazenda com um talhão só: escolhe ele sozinho, sem exigir clique.
   useEffect(() => {
@@ -67,8 +78,11 @@ export default function Filtros() {
 
   // `useGeometrias` desenha o que estiver em `talhoes` — passar só o talhão
   // escolhido é o que faz "ver um de cada vez" funcionar sem precisar de uma
-  // variante própria do hook.
-  const talhoesParaDesenhar = useMemo(() => (talhao ? [talhao] : []), [talhao])
+  // variante própria do hook. Com "Fazenda toda", passa todos.
+  const talhoesParaDesenhar = useMemo(
+    () => (fazendaToda ? talhoes : talhao ? [talhao] : []),
+    [fazendaToda, talhoes, talhao],
+  )
 
   useGeometrias(mapa, {
     talhoes: talhoesParaDesenhar,
@@ -82,9 +96,14 @@ export default function Filtros() {
   })
 
   useEffect(() => {
-    if (!mapa || !talhao?.geometria) return
+    if (!mapa) return
+    if (fazendaToda) {
+      enquadrarGeometrias(mapa, talhoes.map((t) => t.geometria).filter(Boolean))
+      return
+    }
+    if (!talhao?.geometria) return
     focarGeometria(mapa, talhao.geometria)
-  }, [mapa, talhao])
+  }, [mapa, talhao, fazendaToda, talhoes])
 
   return (
     <div className="flex h-full flex-col">
@@ -120,6 +139,7 @@ export default function Filtros() {
                       ? 'nenhum talhão'
                       : 'selecione…'}
                 </option>
+                {talhoes.length > 1 && <option value={TODA_A_FAZENDA}>Fazenda toda</option>}
                 {talhoes.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.nome ? `${t.codigo} · ${t.nome}` : t.codigo}
@@ -152,11 +172,11 @@ export default function Filtros() {
             )}
             {!carregandoPontosAmostra && !erroPontosAmostra && mostrarPontosAmostra && (
               <p className="px-4 pb-2 text-xs text-slate-500 dark:text-slate-400">
-                {!talhao
-                  ? 'Selecione um talhão para ver os pontos de amostra.'
-                  : pontosAmostraDoTalhao.length === 0
-                    ? 'Nenhum ponto de amostra cadastrado neste talhão.'
-                    : `${pontosAmostraDoTalhao.length} pontos de amostra neste talhão.`}
+                {!emFoco
+                  ? 'Selecione um talhão ou a fazenda toda para ver os pontos de amostra.'
+                  : pontosAmostraEmFoco.length === 0
+                    ? `Nenhum ponto de amostra cadastrado ${fazendaToda ? 'nesta fazenda' : 'neste talhão'}.`
+                    : `${pontosAmostraEmFoco.length} pontos de amostra ${fazendaToda ? 'na fazenda' : 'neste talhão'}.`}
               </p>
             )}
             {erroPontosAmostra && (
@@ -169,7 +189,7 @@ export default function Filtros() {
           <div className="relative min-h-0">
             <Mapa aoCriarMapa={aoCriarMapa} />
 
-            {coloracao && talhao && (
+            {coloracao && emFoco && (
               <LegendaMapa
                 chaveParametro={filtro.chaveParametro}
                 anoSafra={filtro.anoSafra}
@@ -179,10 +199,10 @@ export default function Filtros() {
               />
             )}
 
-            {!talhao && (
+            {!emFoco && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
                 <p className="vidro-forte pointer-events-auto rounded-lg border border-slate-200 px-4 py-3 text-center text-sm text-slate-600 shadow-painel dark:border-white/15 dark:text-slate-300">
-                  Escolha um talhão acima para ver o mapa de calor dele.
+                  Escolha um talhão, ou a fazenda toda, acima para ver o mapa de calor.
                 </p>
               </div>
             )}
