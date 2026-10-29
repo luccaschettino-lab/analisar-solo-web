@@ -15,6 +15,7 @@ import { useAviso } from '../hooks/useAviso.js'
 import { useMapaDaFazenda } from '../mapa/useMapaDaFazenda.js'
 import { useCriacaoDeGeometria } from './painel/useCriacaoDeGeometria.js'
 import { useItemSelecionado } from './painel/useItemSelecionado.js'
+import { usePontosAmostraDaFazenda } from '../hooks/usePontosAmostraDaFazenda.js'
 import { excluirFazenda, resumoCascataFazenda } from '../dados/fazendas.js'
 
 /**
@@ -41,10 +42,12 @@ export default function Painel() {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
   const [mostrarCor, setMostrarCor] = useState(true)
-  // Desligado por padrão: os quadradinhos numerados ajudam a achar o ponto de
-  // coleta, mas competem com o mapa de calor por atenção — quem quer os dois
-  // juntos liga aqui.
-  const [mostrarAmostras, setMostrarAmostras] = useState(false)
+  const [mostrarPontosAmostra, setMostrarPontosAmostra] = useState(false)
+  const {
+    pontos: pontosAmostra,
+    carregando: carregandoPontosAmostra,
+    erro: erroPontosAmostra,
+  } = usePontosAmostraDaFazenda(fazendaSelecionada?.id, mostrarPontosAmostra)
   const [mostrarCoordenadas, setMostrarCoordenadas] = useState(() => {
     try {
       return localStorage.getItem('mostrarCoordenadas') === '1'
@@ -72,10 +75,11 @@ export default function Painel() {
     removerTalhao,
     removerGleba,
     mostrarAviso,
+    pontosAmostra,
     coloracao,
     filtro,
     mostrarCor,
-    mostrarAmostras,
+    mostrarPontosAmostra,
     selecionado,
     setSelecionado,
   })
@@ -292,15 +296,32 @@ export default function Painel() {
             <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
-                checked={mostrarAmostras}
-                onChange={(e) => setMostrarAmostras(e.target.checked)}
+                checked={mostrarPontosAmostra}
+                onChange={(e) => setMostrarPontosAmostra(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
               />
               Pontos de amostra
             </label>
             <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
-              Quadradinho numerado onde cada análise foi coletada.
+              Mostrar ou ocultar os pontos de amostra importados no mapa.
             </p>
+            {carregandoPontosAmostra && (
+              <p role="status" className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                Carregando pontos de amostra…
+              </p>
+            )}
+            {!carregandoPontosAmostra && !erroPontosAmostra && (
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {pontosAmostra.length === 0
+                  ? 'Nenhum ponto de amostra cadastrado nesta fazenda.'
+                  : `${pontosAmostra.length} pontos de amostra no mapa.`}
+              </p>
+            )}
+            {erroPontosAmostra && (
+              <p role="alert" className="mt-1.5 text-xs text-red-700 dark:text-red-400">
+                {erroPontosAmostra}
+              </p>
+            )}
               </>
             )}
           </div>

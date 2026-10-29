@@ -24,10 +24,11 @@ export function useItemSelecionado({
   removerTalhao,
   removerGleba,
   mostrarAviso,
+  pontosAmostra = [],
   coloracao = null,
   filtro = null,
   mostrarCor = true,
-  mostrarAmostras = false,
+  mostrarPontosAmostra = false,
   // Vêm do FazendaContext: a barra lateral também seleciona, e dois estados
   // separados fariam clicar na árvore não destacar a geometria.
   selecionado,
@@ -50,10 +51,11 @@ export function useItemSelecionado({
     selecionado,
     aoSelecionar,
     revisao,
+    pontosAmostra,
     coloracao,
     filtro,
     mostrarCor,
-    mostrarAmostras,
+    mostrarPontosAmostra,
   })
 
   const chaveSelecionada = selecionado ? `${selecionado.tipo}:${selecionado.id}` : null

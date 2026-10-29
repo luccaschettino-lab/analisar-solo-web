@@ -11,6 +11,7 @@ export default function LayoutApp() {
   const [saindo, setSaindo] = useState(false)
   const [erro, setErro] = useState('')
   const [gavetaAberta, setGavetaAberta] = useState(false)
+  const [barraEmHover, setBarraEmHover] = useState(false)
   const [barraCompacta, setBarraCompacta] = useState(() => {
     try {
       return localStorage.getItem('moinho-barra-compacta') !== 'false'
@@ -20,6 +21,7 @@ export default function LayoutApp() {
   })
 
   const identificacao = usuario?.user_metadata?.nome || usuario?.email
+  const barraRecolhida = barraCompacta && !barraEmHover
 
   function alternarBarra() {
     setBarraCompacta((compacta) => {
@@ -92,11 +94,13 @@ export default function LayoutApp() {
         <div className="flex min-h-0 flex-1">
           {/* Barra lateral expansível a partir de md. */}
           <aside
+            onMouseEnter={() => setBarraEmHover(true)}
+            onMouseLeave={() => setBarraEmHover(false)}
             className={`hidden shrink-0 overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-200 ease-out dark:border-white/10 dark:bg-noite-900 motion-reduce:transition-none md:block ${
-              barraCompacta ? 'w-16' : 'w-56'
+              barraRecolhida ? 'w-16' : 'w-56'
             }`}
           >
-            <BarraLateral compacta={barraCompacta} aoAlternar={alternarBarra} />
+            <BarraLateral compacta={barraRecolhida} aoAlternar={alternarBarra} />
           </aside>
 
           {/* Gaveta no celular. */}

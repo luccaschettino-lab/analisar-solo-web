@@ -5,6 +5,7 @@ import { focarGeometria } from '../mapa/enquadrar.js'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
+import { usePontosAmostraDaFazenda } from '../hooks/usePontosAmostraDaFazenda.js'
 
 // Mesma classe dos campos de dentro de `FiltrosMapa` — o seletor de talhão
 // mora bem em cima do de ano-safra, e os dois precisam ler como parte do
@@ -40,8 +41,14 @@ export default function Filtros() {
   } = useFazendaAtual()
 
   const [talhaoId, setTalhaoId] = useState('')
-  const [mostrarAmostras, setMostrarAmostras] = useState(true)
+  const [mostrarPontosAmostra, setMostrarPontosAmostra] = useState(true)
+  const {
+    pontos: pontosAmostra,
+    carregando: carregandoPontosAmostra,
+    erro: erroPontosAmostra,
+  } = usePontosAmostraDaFazenda(fazendaSelecionada?.id, mostrarPontosAmostra)
   const talhao = talhoes.find((t) => t.id === talhaoId) ?? null
+  const pontosAmostraDoTalhao = pontosAmostra.filter((ponto) => ponto.talhao_id === talhaoId)
 
   // Fazenda com um talhão só: escolhe ele sozinho, sem exigir clique.
   useEffect(() => {
@@ -67,10 +74,11 @@ export default function Filtros() {
     talhoes: talhoesParaDesenhar,
     selecionado: null,
     aoSelecionar,
+    pontosAmostra,
     coloracao,
     filtro,
     mostrarCor: true,
-    mostrarAmostras,
+    mostrarPontosAmostra,
   })
 
   useEffect(() => {
@@ -131,12 +139,31 @@ export default function Filtros() {
             <label className="flex items-center gap-2 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
-                checked={mostrarAmostras}
-                onChange={(e) => setMostrarAmostras(e.target.checked)}
+                checked={mostrarPontosAmostra}
+                onChange={(e) => setMostrarPontosAmostra(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
               />
               Pontos de amostra
             </label>
+            {carregandoPontosAmostra && (
+              <p role="status" className="px-4 pb-2 text-xs text-slate-500 dark:text-slate-400">
+                Carregando pontos de amostra…
+              </p>
+            )}
+            {!carregandoPontosAmostra && !erroPontosAmostra && mostrarPontosAmostra && (
+              <p className="px-4 pb-2 text-xs text-slate-500 dark:text-slate-400">
+                {!talhao
+                  ? 'Selecione um talhão para ver os pontos de amostra.'
+                  : pontosAmostraDoTalhao.length === 0
+                    ? 'Nenhum ponto de amostra cadastrado neste talhão.'
+                    : `${pontosAmostraDoTalhao.length} pontos de amostra neste talhão.`}
+              </p>
+            )}
+            {erroPontosAmostra && (
+              <p role="alert" className="mx-4 mb-3 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                {erroPontosAmostra}
+              </p>
+            )}
           </div>
 
           <div className="relative min-h-0">

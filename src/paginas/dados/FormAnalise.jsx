@@ -115,7 +115,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
       {selecao.talhao && (
         <div>
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Ponto de coleta
+            Ponto de amostra
           </span>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Clique no mapa pra marcar onde a amostra foi coletada dentro do talhão. Alimenta

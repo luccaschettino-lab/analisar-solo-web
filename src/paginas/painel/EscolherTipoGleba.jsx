@@ -21,7 +21,7 @@ export default function EscolherTipoGleba({
           onClick={() => aoEscolher('ponto')}
           className="w-full rounded-lg border border-slate-300 p-3 text-left transition hover:border-solo-600 hover:bg-solo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-600 dark:border-white/15 dark:hover:bg-solo-500/10"
         >
-          <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">Ponto de coleta</span>
+          <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">Ponto de amostra</span>
           <span className="block text-sm text-slate-500 dark:text-slate-400">
             Um clique marca onde a amostra foi tirada. Sem área.
           </span>

@@ -1,12 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import L from 'leaflet'
 import { latLngDoPonto } from '../../lib/geo.js'
-
-function rotuloDoPonto(ponto, indice) {
-  const propriedades = ponto.propriedades ?? {}
-  const valor = propriedades.amostra ?? propriedades.Amostra ?? propriedades.id ?? propriedades.ID
-  return valor == null || typeof valor === 'object' ? `Ponto ${indice + 1}` : String(valor)
-}
+import { escapar } from '../../mapa/tooltipGleba.js'
+import { rotuloPontoColeta } from '../../lib/pontosDeColeta.js'
 
 export default function PontosColetaNoMapa({
   mapa,
@@ -36,7 +32,15 @@ export default function PontosColetaNoMapa({
         fillOpacity: 0.95,
         interactive: false,
       })
-        .bindTooltip(usado ? 'Ponto já associado a uma gleba' : 'Ponto de coleta importado')
+        // O rótulo vem das propriedades do arquivo importado; o tooltip do
+        // Leaflet aceita HTML, então escapa.
+        .bindTooltip(
+          escapar(
+            usado
+              ? `${rotuloPontoColeta(ponto, indice)} · ponto de amostra já associado a uma gleba`
+              : `${rotuloPontoColeta(ponto, indice)} · ponto de amostra`,
+          ),
+        )
         .addTo(camada)
     })
 
@@ -48,7 +52,7 @@ export default function PontosColetaNoMapa({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Gleba a partir dos pontos
+            Gleba a partir dos pontos de amostra
           </h2>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             {desenhando
@@ -68,7 +72,7 @@ export default function PontosColetaNoMapa({
 
       {carregando && (
         <p role="status" className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-          Carregando pontos de coleta…
+          Carregando pontos de amostra…
         </p>
       )}
       {erro && (
@@ -89,7 +93,7 @@ export default function PontosColetaNoMapa({
           {pontosAgrupados.length > 0 && (
             <ul className="mt-1 max-h-36 overflow-auto text-xs text-slate-600 dark:text-slate-400">
               {pontosAgrupados.map((ponto) => (
-                <li key={ponto.id}>{rotuloDoPonto(ponto, pontos.indexOf(ponto))}</li>
+                <li key={ponto.id}>{rotuloPontoColeta(ponto, pontos.indexOf(ponto))}</li>
               ))}
             </ul>
           )}

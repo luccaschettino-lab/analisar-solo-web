@@ -14,7 +14,7 @@ import { excluirAnalise } from '../dados/analises.js'
 const ABAS = [
   { chave: 'manual', rotulo: 'Entrada manual' },
   { chave: 'pdf', rotulo: 'Importar laudo PDF' },
-  { chave: 'pontos', rotulo: 'Importar pontos de coleta' },
+  { chave: 'pontos', rotulo: 'Importar pontos de amostra' },
 ]
 
 export default function Dados() {

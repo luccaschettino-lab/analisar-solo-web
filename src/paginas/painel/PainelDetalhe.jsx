@@ -61,7 +61,7 @@ export default function PainelDetalhe({
         <div className="flex justify-between">
           <dt>Área</dt>
           <dd className="font-medium text-slate-800 dark:text-slate-200">
-            {ponto ? 'ponto de coleta' : (area ?? 'sem geometria')}
+            {ponto ? 'ponto de amostra' : (area ?? 'sem geometria')}
           </dd>
         </div>
         {tipo === 'talhao' && (

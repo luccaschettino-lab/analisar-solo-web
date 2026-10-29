@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
-import { paraFeature, ehPonto, pontoRotulo } from '../lib/geo.js'
+import { paraFeature, ehPonto, pontoRotulo, latLngDoPonto } from '../lib/geo.js'
 import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipTalhao } from './tooltipTalhao.js'
-import { conteudoTooltipGleba, escapar } from './tooltipGleba.js'
+import { conteudoTooltipGleba } from './tooltipGleba.js'
 import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
-import { criarCamadaCalor, criarMarcadoresDeAmostra, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
+import { criarCamadaCalor, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
 import { posicaoDoNivel } from '../lib/coloracao.js'
+import { rotuloPontoColeta } from '../lib/pontosDeColeta.js'
 import {
   ZOOM_MINIMO_ROTULO,
   ZOOM_MINIMO_ROTULO_GLEBA,
@@ -37,6 +38,16 @@ const Z_GLEBA = 430
 
 function rotulo(talhao) {
   return talhao.nome ? `${talhao.codigo} — ${talhao.nome}` : talhao.codigo
+}
+
+function escaparRotulo(texto) {
+  return texto.replace(/[&<>"']/g, (caractere) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[caractere])
 }
 
 /**
@@ -70,9 +81,10 @@ export function useGeometrias(
     revisao = 0,
     coloracao = null,
     filtro = null,
+    pontosAmostra = [],
     conteudoTooltip = null,
     mostrarCor = true,
-    mostrarAmostras = false,
+    mostrarPontosAmostra = false,
   },
 ) {
   const grupoTalhoes = useRef(null)
@@ -80,7 +92,7 @@ export function useGeometrias(
   const grupoGlebas = useRef(null)
   const grupoRotulosGleba = useRef(null)
   const camadaCalor = useRef(null)
-  const marcadoresAmostra = useRef(null)
+  const marcadoresPontoAmostra = useRef(null)
   const porId = useRef(new Map())
   const porIdGleba = useRef(new Map())
 
@@ -155,13 +167,13 @@ export function useGeometrias(
       grupoRotulosGleba.current?.remove()
       grupoContornoTalhao.current?.remove()
       camadaCalor.current?.remove()
-      marcadoresAmostra.current?.remove()
+      marcadoresPontoAmostra.current?.remove()
       grupoTalhoes.current = null
       grupoGlebas.current = null
       grupoRotulosGleba.current = null
       grupoContornoTalhao.current = null
       camadaCalor.current = null
-      marcadoresAmostra.current = null
+      marcadoresPontoAmostra.current = null
       porId.current.clear()
       porIdGleba.current.clear()
     }
@@ -211,7 +223,7 @@ export function useGeometrias(
       })
       // Conteúdo inicial simples; o efeito de estilo reescreve com o valor do
       // parâmetro assim que houver filtro.
-      camada.bindTooltip(escapar(rotulo(talhao)), { sticky: true })
+      camada.bindTooltip(escaparRotulo(rotulo(talhao)), { sticky: true })
       camada.on('click', (e) => {
         // Enquanto o Geoman está desenhando, o clique é o vértice que está
         // sendo colocado, não uma seleção. Parar a propagação aqui fazia esse
@@ -418,42 +430,74 @@ export function useGeometrias(
 
     camadaCalor.current?.remove()
     camadaCalor.current = null
-    marcadoresAmostra.current?.remove()
-    marcadoresAmostra.current = null
 
-    if (!mostrarCor || !coloracao) return
+    if (mostrarCor && coloracao) {
+      const talhoesComDado = []
+      for (const talhao of talhoes) {
+        const info = coloracao(talhao.id)
+        // A coloração de variação não tem pontos individuais; nesses casos,
+        // somente o preenchimento do talhão representa os dados comparados.
+        if (!info || info.hachurado || !info.pontos?.length) continue
+        const geometry = paraFeature(talhao.geometria)?.geometry
+        if (!geometry) continue
+        talhoesComDado.push({
+          geometry,
+          pontos: info.pontos
+            .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
+            .filter((p) => p.lat != null && p.lng != null && p.valor != null),
+        })
+      }
 
-    const talhoesComDado = []
-    for (const talhao of talhoes) {
-      const info = coloracao(talhao.id)
-      // `info.pontos` só existe na coloração por classificação (Fase 4). A
-      // coloração de variação (tela de comparação) usa a mesma `coloracao`
-      // genérica mas não tem pontos por amostra — nesse caso não há raster
-      // nem marcador nenhum, e o preenchimento do talhão já basta.
-      if (!info || info.hachurado || !info.pontos?.length) continue
-      const geometry = paraFeature(talhao.geometria)?.geometry
-      if (!geometry) continue
-      talhoesComDado.push({
-        geometry,
-        pontos: info.pontos
-          .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
-          .filter((p) => p.lat != null && p.lng != null && p.valor != null),
-      })
-    }
-
-    const raster = criarCamadaCalor(talhoesComDado)
-    if (raster) {
-      camadaCalor.current = raster.addTo(mapa)
-      if (mostrarAmostras) marcadoresAmostra.current = criarMarcadoresDeAmostra(talhoesComDado).addTo(mapa)
+      const raster = criarCamadaCalor(talhoesComDado)
+      if (raster) camadaCalor.current = raster.addTo(mapa)
     }
 
     return () => {
       camadaCalor.current?.remove()
       camadaCalor.current = null
-      marcadoresAmostra.current?.remove()
-      marcadoresAmostra.current = null
     }
-  }, [mapa, talhoes, coloracao, mostrarCor, mostrarAmostras])
+  }, [mapa, talhoes, coloracao, mostrarCor])
+
+  useEffect(() => {
+    if (!mapa) return
+
+    marcadoresPontoAmostra.current?.remove()
+    marcadoresPontoAmostra.current = null
+
+    if (!mostrarPontosAmostra) return
+
+    const codigoPorTalhao = new Map(talhoes.map((talhao) => [talhao.id, talhao.codigo]))
+    const camada = L.layerGroup()
+    pontosAmostra.forEach((ponto, indice) => {
+      const codigoTalhao = codigoPorTalhao.get(ponto.talhao_id)
+      if (codigoTalhao == null) return
+      const coordenadas = latLngDoPonto(ponto.geometria)
+      if (!coordenadas) return
+
+      L.circleMarker(coordenadas, {
+        pane: 'markerPane',
+        radius: 7,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: ponto.gleba_id ? '#64748b' : '#16a34a',
+        fillOpacity: 0.95,
+        interactive: false,
+      })
+        .bindTooltip(escaparRotulo(rotuloPontoColeta(ponto, indice, codigoTalhao)), {
+          permanent: true,
+          direction: 'center',
+          className: 'rotulo-ponto-amostra',
+          opacity: 1,
+        })
+        .addTo(camada)
+    })
+    marcadoresPontoAmostra.current = camada.addTo(mapa)
+
+    return () => {
+      marcadoresPontoAmostra.current?.remove()
+      marcadoresPontoAmostra.current = null
+    }
+  }, [mapa, talhoes, pontosAmostra, mostrarPontosAmostra])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.

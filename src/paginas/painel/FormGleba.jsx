@@ -47,7 +47,7 @@ export default function FormGleba({
       return
     }
     if (pontosColetaIds && pontosColetaIds.length === 0) {
-      setErro('O contorno precisa incluir pelo menos um ponto de coleta ainda não usado.')
+      setErro('O contorno precisa incluir pelo menos um ponto de amostra ainda não usado.')
       return
     }
 
@@ -96,12 +96,12 @@ export default function FormGleba({
         {pontosColetaIds && (
           <p className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-sm text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
             {carregandoPontosColeta
-              ? 'Conferindo os pontos de coleta deste grupo…'
+              ? 'Conferindo os pontos de amostra deste grupo…'
               : erroPontosColeta
                 ? 'Não foi possível confirmar os pontos. Recarregue e tente novamente.'
                 : pontosColetaIds.length > 0
-                  ? `Esta gleba agrupará ${pontosColetaIds.length} ponto(s) importado(s), que serão marcados como usados ao salvar.`
-                  : 'O contorno não inclui pontos de coleta disponíveis. Feche a janela e desenhe outro contorno.'}
+                  ? `Esta gleba agrupará ${pontosColetaIds.length} ponto(s) de amostra importado(s), que serão marcados como usados ao salvar.`
+                  : 'O contorno não inclui pontos de amostra disponíveis. Feche a janela e desenhe outro contorno.'}
           </p>
         )}
         {erroPontosColeta && <Aviso>{erroPontosColeta}</Aviso>}
@@ -153,7 +153,7 @@ export default function FormGleba({
 
         <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-400">
           {ponto ? (
-            <>Registrada como <strong className="text-slate-900 dark:text-slate-100">ponto de coleta</strong>, sem área.</>
+            <>Registrada como <strong className="text-slate-900 dark:text-slate-100">ponto de amostra</strong>, sem área.</>
           ) : (
             <>
               Área desenhada:{' '}

@@ -195,27 +195,3 @@ export function criarCamadaCalor(talhoesComDado, opacidade = 0.92) {
     pane: PANE_CALOR,
   })
 }
-
-/**
- * Um quadradinho numerado por ponto de amostra — a mesma linguagem visual de
- * relatório de fertilidade que motivou o pedido do mapa de calor contínuo.
- * A numeração é só a ordem de listagem por talhão, não um código do laudo:
- * existe para localizar o ponto no mapa, não para identificá-lo de outro
- * lugar.
- */
-export function criarMarcadoresDeAmostra(talhoesComDado) {
-  const grupo = L.layerGroup()
-  for (const { pontos } of talhoesComDado) {
-    pontos.forEach((p, i) => {
-      if (p.lat == null || p.lng == null) return
-      const icone = L.divIcon({
-        className: 'marcador-amostra',
-        html: `<span>${i + 1}</span>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-      })
-      L.marker([p.lat, p.lng], { icon: icone, interactive: false, keyboard: false }).addTo(grupo)
-    })
-  }
-  return grupo
-}

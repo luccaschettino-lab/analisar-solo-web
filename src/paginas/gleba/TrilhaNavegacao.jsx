@@ -17,7 +17,7 @@ function Separador() {
 
 export default function TrilhaNavegacao({ fazenda, talhao, gleba }) {
   const areaTalhao = area(talhao.area_ha)
-  const areaGleba = ehPonto(gleba.geometria) ? 'ponto de coleta' : area(gleba.area_ha)
+  const areaGleba = ehPonto(gleba.geometria) ? 'ponto de amostra' : area(gleba.area_ha)
   const local = [fazenda.municipio, fazenda.uf].filter(Boolean).join('/')
 
   return (

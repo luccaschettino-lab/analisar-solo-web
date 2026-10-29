@@ -477,7 +477,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             </li>
             <li>
               <button onClick={() => irPara('/dados?aba=pontos')} className={`${ITEM} text-xs ${INATIVO}`}>
-                Importar pontos de coleta
+                Importar pontos de amostra
               </button>
             </li>
           </ul>}

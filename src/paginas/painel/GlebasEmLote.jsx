@@ -68,7 +68,7 @@ export default function GlebasEmLote({ talhao, glebasExistentes, mapa, aoSalvar,
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Glebas em lote · talhão {talhao.codigo}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Uma gleba por linha, como ponto de coleta.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Uma gleba por linha, como ponto de amostra.</p>
         </div>
         <button
           onClick={aoFechar}
