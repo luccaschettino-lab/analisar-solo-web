@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { distribuirPontos, pontosNaGleba, rotuloPontoColeta, agruparPontosEmGlebas } from '../src/lib/pontosDeColeta.js'
-import { pontoFeature } from '../src/lib/geo.js'
+import { distribuirPontos, pontosNaGleba, rotuloPontoColeta, agruparPontosEmGlebas, recalcularGlebasDosPontos } from '../src/lib/pontosDeColeta.js'
+import { pontoFeature, areaEmHectares } from '../src/lib/geo.js'
 
 const talhoes = [
   {
@@ -87,3 +87,69 @@ assert.equal(agrupadas.find((g) => g.codigo === '8-3').geometria.geometry.type, 
 assert.deepEqual(agrupadas.find((g) => g.codigo === '8-1').pontoIds, ['h'])
 assert.equal(agrupadas.reduce((n, g) => n + g.pontoIds.length, 0), entrada.length - 1, 'nenhum ponto some nem se repete')
 console.log('pontos de coleta: glebas automáticas por código OK')
+
+// --- Glebas preenchem o talhão: a soma das partes é o talhão ---
+const quadrado = (x0, y0, x1, y1) => ({
+  type: 'Feature',
+  properties: {},
+  geometry: { type: 'Polygon', coordinates: [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]] },
+})
+// ~ 1,1 km x 1,1 km perto do equador de longitude -49, latitude -10
+const talhaoGrande = { id: 'tg', codigo: '9', geometria: quadrado(-49.01, -10.01, -49.0, -10.0) }
+const grade = []
+let n = 0
+for (const [lng, lat, id] of [
+  [-49.008, -10.002, 1], [-49.006, -10.003, 1],
+  [-49.003, -10.002, 2], [-49.001, -10.004, 2],
+  [-49.008, -10.007, 3], [-49.005, -10.008, 3],
+  [-49.002, -10.008, 4], [-49.0035, -10.006, 4],
+]) {
+  grade.push({ id: `g${n++}`, talhao_id: 'tg', geometria: pontoFeature(lat, lng), propriedades: { id } })
+}
+const preenchido = agruparPontosEmGlebas(grade, [talhaoGrande])
+assert.equal(preenchido.glebas.length, 4)
+const areaTalhao = areaEmHectares(talhaoGrande.geometria)
+const somaAreas = preenchido.glebas.reduce((t, g) => t + g.areaHa, 0)
+assert.ok(Math.abs(somaAreas - areaTalhao) / areaTalhao < 0.005, `soma ${somaAreas} deveria ser ~${areaTalhao}`)
+assert.ok(preenchido.glebas.every((g) => g.areaHa > 0 && g.geometria.geometry.type.endsWith('Polygon')))
+
+// nenhum ponto pode cair na gleba de outro código: cada gleba contém os seus pontos
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+for (const g of preenchido.glebas) {
+  for (const id of g.pontoIds) {
+    const ponto = grade.find((x) => x.id === id).geometria
+    assert.ok(booleanPointInPolygon(ponto, g.geometria), `ponto ${id} deve estar na gleba ${g.codigo}`)
+  }
+}
+
+// um único código preenche o talhão todo
+const unico = agruparPontosEmGlebas(grade.filter((p) => p.propriedades.id === 1), [talhaoGrande])
+assert.equal(unico.glebas.length, 1)
+assert.ok(Math.abs(unico.glebas[0].areaHa - areaTalhao) / areaTalhao < 0.005)
+
+// Recalcular glebas que já existiam (criadas pelo contorno dos pontos)
+const glebasAntigas = preenchido.glebas.map((g, i) => ({
+  id: `gl${i}`,
+  talhao_id: 'tg',
+  codigo: g.codigo,
+  geometria: pontoFeature(-10, -49),
+}))
+const pontosLigados = grade.map((p) => ({
+  ...p,
+  gleba_id: glebasAntigas.find((g) => g.codigo === `9-${p.propriedades.id}`).id,
+}))
+const refeito = recalcularGlebasDosPontos(pontosLigados, glebasAntigas, [talhaoGrande])
+assert.equal(refeito.atualizacoes.length, 4)
+assert.deepEqual(refeito.talhoesIgnorados, [])
+const somaRefeita = refeito.atualizacoes.reduce((t, a) => t + a.areaHa, 0)
+assert.ok(Math.abs(somaRefeita - areaTalhao) / areaTalhao < 0.005)
+
+// talhão com uma gleba desenhada à mão (sem pontos ligados) não é tocado
+const comManual = recalcularGlebasDosPontos(
+  pontosLigados,
+  [...glebasAntigas, { id: 'manual', talhao_id: 'tg', codigo: 'X', geometria: quadrado(-49.005, -10.005, -49.004, -10.004) }],
+  [talhaoGrande],
+)
+assert.equal(comManual.atualizacoes.length, 0)
+assert.deepEqual(comManual.talhoesIgnorados, ['9'])
+console.log('pontos de coleta: glebas preenchem o talhão, sem vão, e recálculo respeita glebas manuais OK')

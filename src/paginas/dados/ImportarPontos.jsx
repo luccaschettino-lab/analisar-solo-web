@@ -3,6 +3,7 @@ import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { pontosDoArquivo, distribuirPontos, agruparPontosEmGlebas } from '../../lib/pontosDeColeta.js'
 import { pontoFeature } from '../../lib/geo.js'
 import { criarPontosColetaEmLote, criarGlebaComPontosColeta } from '../../dados/pontosColeta.js'
+import RecalcularGlebas from './RecalcularGlebas.jsx'
 
 /**
  * Importa pontos de coleta sem transformá-los em glebas ou análises.
@@ -66,7 +67,13 @@ export default function ImportarPontos() {
     const { glebas: grupos, semCodigo } = agruparPontosEmGlebas(importados, talhoes)
     const existentes = new Set(glebas.map((g) => JSON.stringify([g.talhao_id, g.codigo])))
     const novas = grupos.filter((g) => !existentes.has(JSON.stringify([g.talhaoId, g.codigo])))
-    return { novas, jaExistem: grupos.length - novas.length, semCodigo, totalPontos: importados.length }
+    return {
+      novas,
+      jaExistem: grupos.length - novas.length,
+      semCodigo,
+      emPedacos: novas.filter((g) => g.pedacos > 1).length,
+      totalPontos: importados.length,
+    }
   }, [importados, talhoes, glebas])
 
   async function criarGlebasAutomaticas() {
@@ -190,8 +197,8 @@ export default function ImportarPontos() {
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
               Os pontos que têm o mesmo código no arquivo são coletas da mesma amostra. Posso ler os {plano.totalPontos} pontos
               importados e criar uma gleba para cada código, no talhão onde eles estão (talhão 7, código 12 → gleba{' '}
-              <span className="font-mono">7-12</span>). A gleba é o contorno dos pontos; com menos de 3 pontos, ou todos em linha,
-              ela fica como um ponto.
+              <span className="font-mono">7-12</span>). As glebas dividem o talhão entre si: cada parte do talhão fica com a gleba
+              do ponto mais próximo, então juntas elas preenchem o talhão inteiro, sem vão.
             </p>
           </div>
 
@@ -200,6 +207,12 @@ export default function ImportarPontos() {
               <strong className="font-medium text-slate-800 dark:text-slate-200">{plano.novas.length}</strong>{' '}
               {plano.novas.length === 1 ? 'gleba será criada' : 'glebas serão criadas'}
             </li>
+            {plano.emPedacos > 0 && (
+              <li>
+                {plano.emPedacos} {plano.emPedacos === 1 ? 'gleba fica' : 'glebas ficam'} em mais de um pedaço, porque os pontos
+                dela se alternam com os de outras
+              </li>
+            )}
             {plano.jaExistem > 0 && (
               <li>
                 {plano.jaExistem} {plano.jaExistem === 1 ? 'código já tem gleba' : 'códigos já têm gleba'} no talhão e{' '}
@@ -350,6 +363,8 @@ export default function ImportarPontos() {
           )}
         </>
       )}
+
+      <RecalcularGlebas />
     </div>
   )
 }

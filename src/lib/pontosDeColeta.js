@@ -1,5 +1,6 @@
 import shp from 'shpjs'
 import { pontoFeature, glebaDentroDoTalhao, areaEmHectares } from './geo.js'
+import { dividirTalhaoPorPontos } from './divisaoPorPontos.js'
 
 // O que o arquivo diz que é o ponto: `amostra` ou `id`. Vazio, ou um objeto
 // (propriedade aninhada), não identifica nada.
@@ -55,13 +56,17 @@ function cascoConvexo(pontos) {
  * coletas de uma mesma amostra composta têm o mesmo número. O código da gleba
  * segue a convenção do rótulo: "talhão-número".
  *
- * A gleba é o polígono que envolve os pontos do grupo. Com menos de três
- * pontos (ou todos alinhados) não existe polígono: vira um ponto no centro,
- * que também é uma gleba válida. Ponto sem código no arquivo não tem como ser
- * agrupado e fica de fora, contado em `semCodigo`.
+ * As glebas de um talhão dividem o talhão inteiro entre si: cada pedaço do
+ * talhão vai para a gleba cujo ponto está mais perto (ver `dividirTalhaoPorPontos`),
+ * então a soma das glebas é o talhão, sem vão nem sobreposição. A gleba que
+ * sai em mais de um pedaço é contada em `emPedacos`. Se o talhão não tem
+ * polígono, ou a divisão falha para um grupo, o grupo cai no contorno dos seus
+ * próprios pontos; com menos de três pontos (ou todos alinhados) vira um
+ * ponto no centro. Ponto sem código no arquivo não tem como ser agrupado e
+ * fica de fora, contado em `semCodigo`.
  */
 export function agruparPontosEmGlebas(pontos, talhoes) {
-  const codigoDoTalhao = new Map(talhoes.map((t) => [t.id, t.codigo]))
+  const talhaoPorId = new Map(talhoes.map((t) => [t.id, t]))
   const grupos = new Map()
   let semCodigo = 0
 
@@ -72,15 +77,30 @@ export function agruparPontosEmGlebas(pontos, talhoes) {
       semCodigo++
       continue
     }
-    const codigo = comTalhao(bruto, codigoDoTalhao.get(ponto.talhao_id) ?? '')
+    const codigo = comTalhao(bruto, talhaoPorId.get(ponto.talhao_id)?.codigo ?? '')
     const chave = JSON.stringify([ponto.talhao_id, codigo])
-    if (!grupos.has(chave)) grupos.set(chave, { talhaoId: ponto.talhao_id, codigo, ids: [], coordenadas: [] })
+    if (!grupos.has(chave)) grupos.set(chave, { chave, talhaoId: ponto.talhao_id, codigo, ids: [], coordenadas: [] })
     const grupo = grupos.get(chave)
     grupo.ids.push(ponto.id)
     grupo.coordenadas.push([coordenadas[0], coordenadas[1]])
   }
 
-  const glebas = [...grupos.values()].map(({ talhaoId, codigo, ids, coordenadas }) => {
+  // Divisão do talhão, uma vez por talhão, com os pontos de todos os seus grupos.
+  const divisaoPorTalhao = new Map()
+  for (const talhaoId of new Set([...grupos.values()].map((g) => g.talhaoId))) {
+    const doTalhao = [...grupos.values()].filter((g) => g.talhaoId === talhaoId)
+    const divisao = dividirTalhaoPorPontos(
+      talhaoPorId.get(talhaoId)?.geometria,
+      doTalhao.flatMap((g) => g.coordenadas.map(([lng, lat]) => ({ chave: g.chave, lng, lat }))),
+    )
+    if (divisao) divisaoPorTalhao.set(talhaoId, divisao)
+  }
+
+  const glebas = [...grupos.values()].map(({ chave, talhaoId, codigo, ids, coordenadas }) => {
+    const dividida = divisaoPorTalhao.get(talhaoId)?.get(chave)
+    if (dividida) {
+      return { talhaoId, codigo, geometria: dividida.geometria, areaHa: dividida.areaHa, pedacos: dividida.pedacos, pontoIds: ids }
+    }
     const casco = cascoConvexo(coordenadas)
     if (casco.length >= 3) {
       const geometria = {
@@ -88,19 +108,77 @@ export function agruparPontosEmGlebas(pontos, talhoes) {
         properties: {},
         geometry: { type: 'Polygon', coordinates: [[...casco, casco[0]]] },
       }
-      return { talhaoId, codigo, geometria, areaHa: areaEmHectares(geometria), pontoIds: ids }
+      return { talhaoId, codigo, geometria, areaHa: areaEmHectares(geometria), pedacos: 1, pontoIds: ids }
     }
     const lng = coordenadas.reduce((soma, c) => soma + c[0], 0) / coordenadas.length
     const lat = coordenadas.reduce((soma, c) => soma + c[1], 0) / coordenadas.length
-    return { talhaoId, codigo, geometria: pontoFeature(lat, lng), areaHa: null, pontoIds: ids }
+    return { talhaoId, codigo, geometria: pontoFeature(lat, lng), areaHa: null, pedacos: 1, pontoIds: ids }
   })
 
+  const codigoDoTalhao = (id) => String(talhaoPorId.get(id)?.codigo)
   glebas.sort(
     (a, b) =>
-      String(codigoDoTalhao.get(a.talhaoId)).localeCompare(String(codigoDoTalhao.get(b.talhaoId)), 'pt-BR', { numeric: true }) ||
+      codigoDoTalhao(a.talhaoId).localeCompare(codigoDoTalhao(b.talhaoId), 'pt-BR', { numeric: true }) ||
       a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
   )
-  return { glebas, semCodigo }
+  return { glebas, semCodigo, emPedacos: glebas.filter((g) => g.pedacos > 1).length }
+}
+
+/**
+ * Refaz a geometria das glebas que já foram criadas a partir dos pontos, para
+ * que preencham o talhão (a primeira versão usava só o contorno dos pontos).
+ *
+ * Só mexe numa gleba que veio dos pontos: todos os pontos ligados a ela têm o
+ * código dela. E só refaz um talhão quando TODAS as glebas dele são assim —
+ * uma gleba desenhada à mão ficaria sobreposta pelas novas, então o talhão
+ * inteiro é deixado como está e listado em `talhoesIgnorados`.
+ *
+ * `pontos` vêm do banco (com `gleba_id`); `glebas` e `talhoes`, do contexto.
+ */
+export function recalcularGlebasDosPontos(pontos, glebas, talhoes) {
+  const talhaoPorId = new Map(talhoes.map((t) => [t.id, t]))
+  const pontosDaGleba = new Map()
+  for (const ponto of pontos) {
+    if (!ponto.gleba_id) continue
+    if (!pontosDaGleba.has(ponto.gleba_id)) pontosDaGleba.set(ponto.gleba_id, [])
+    pontosDaGleba.get(ponto.gleba_id).push(ponto)
+  }
+
+  const veioDosPontos = (gleba) => {
+    const lista = pontosDaGleba.get(gleba.id)
+    if (!lista?.length) return false
+    const codigoTalhao = talhaoPorId.get(gleba.talhao_id)?.codigo ?? ''
+    return lista.every((p) => {
+      const bruto = rotuloDoArquivo(p)
+      return bruto !== null && comTalhao(bruto, codigoTalhao) === gleba.codigo
+    })
+  }
+
+  const atualizacoes = []
+  const talhoesIgnorados = []
+  for (const talhao of talhoes) {
+    const doTalhao = glebas.filter((g) => g.talhao_id === talhao.id)
+    if (doTalhao.length === 0) continue
+    if (!doTalhao.every(veioDosPontos)) {
+      if (doTalhao.some(veioDosPontos)) talhoesIgnorados.push(talhao.codigo)
+      continue
+    }
+    const divisao = dividirTalhaoPorPontos(
+      talhao.geometria,
+      doTalhao.flatMap((g) =>
+        pontosDaGleba.get(g.id).flatMap((p) => {
+          const c = p.geometria?.geometry?.coordinates
+          return Array.isArray(c) ? [{ chave: g.id, lng: c[0], lat: c[1] }] : []
+        }),
+      ),
+    )
+    if (!divisao) continue
+    for (const gleba of doTalhao) {
+      const nova = divisao.get(gleba.id)
+      if (nova) atualizacoes.push({ glebaId: gleba.id, codigo: gleba.codigo, geometria: nova.geometria, areaHa: nova.areaHa, pedacos: nova.pedacos })
+    }
+  }
+  return { atualizacoes, talhoesIgnorados, emPedacos: atualizacoes.filter((a) => a.pedacos > 1).length }
 }
 
 /**
