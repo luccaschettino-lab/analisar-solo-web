@@ -1,5 +1,107 @@
 import shp from 'shpjs'
-import { pontoFeature, glebaDentroDoTalhao } from './geo.js'
+import { pontoFeature, glebaDentroDoTalhao, areaEmHectares } from './geo.js'
+
+// O que o arquivo diz que é o ponto: `amostra` ou `id`. Vazio, ou um objeto
+// (propriedade aninhada), não identifica nada.
+function rotuloDoArquivo(ponto) {
+  const propriedades = ponto.propriedades ?? {}
+  const valor =
+    propriedades.amostra ??
+    propriedades.Amostra ??
+    propriedades.id ??
+    propriedades.ID
+
+  if (valor == null || typeof valor === 'object' || String(valor).trim() === '') return null
+  return String(valor).trim()
+}
+
+// Número puro vira "talhão-número"; quem já vem com hífen (ex. "7-58") fica como está.
+function comTalhao(rotulo, codigoTalhao) {
+  return codigoTalhao && /^\d+$/.test(rotulo) ? `${codigoTalhao}-${rotulo}` : rotulo
+}
+
+export function rotuloPontoColeta(ponto, indice = 0, codigoTalhao = '') {
+  const rotulo = rotuloDoArquivo(ponto)
+  return rotulo === null ? `Ponto ${indice + 1}` : comTalhao(rotulo, codigoTalhao)
+}
+
+/**
+ * Casca convexa (monotone chain) de pontos [lng, lat], sem repetir o primeiro
+ * no fim. Devolve menos de 3 vértices quando os pontos são um só, dois, ou
+ * ficam todos na mesma reta — não há polígono nesses casos.
+ */
+function cascoConvexo(pontos) {
+  const unicos = [...new Map(pontos.map((p) => [`${p[0]},${p[1]}`, p])).values()]
+  if (unicos.length < 3) return unicos
+  unicos.sort((a, b) => a[0] - b[0] || a[1] - b[1])
+
+  const cruz = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const montar = (lista) => {
+    const meia = []
+    for (const p of lista) {
+      while (meia.length >= 2 && cruz(meia[meia.length - 2], meia[meia.length - 1], p) <= 0) meia.pop()
+      meia.push(p)
+    }
+    meia.pop()
+    return meia
+  }
+  return [...montar(unicos), ...montar([...unicos].reverse())]
+}
+
+/**
+ * Agrupa pontos de coleta já gravados em glebas: um grupo por talhão + código.
+ *
+ * O código vem do arquivo (`id`/`amostra`) e é o que une os pontos — as dez
+ * coletas de uma mesma amostra composta têm o mesmo número. O código da gleba
+ * segue a convenção do rótulo: "talhão-número".
+ *
+ * A gleba é o polígono que envolve os pontos do grupo. Com menos de três
+ * pontos (ou todos alinhados) não existe polígono: vira um ponto no centro,
+ * que também é uma gleba válida. Ponto sem código no arquivo não tem como ser
+ * agrupado e fica de fora, contado em `semCodigo`.
+ */
+export function agruparPontosEmGlebas(pontos, talhoes) {
+  const codigoDoTalhao = new Map(talhoes.map((t) => [t.id, t.codigo]))
+  const grupos = new Map()
+  let semCodigo = 0
+
+  for (const ponto of pontos) {
+    const bruto = rotuloDoArquivo(ponto)
+    const coordenadas = ponto.geometria?.geometry?.coordinates
+    if (bruto === null || !Array.isArray(coordenadas)) {
+      semCodigo++
+      continue
+    }
+    const codigo = comTalhao(bruto, codigoDoTalhao.get(ponto.talhao_id) ?? '')
+    const chave = JSON.stringify([ponto.talhao_id, codigo])
+    if (!grupos.has(chave)) grupos.set(chave, { talhaoId: ponto.talhao_id, codigo, ids: [], coordenadas: [] })
+    const grupo = grupos.get(chave)
+    grupo.ids.push(ponto.id)
+    grupo.coordenadas.push([coordenadas[0], coordenadas[1]])
+  }
+
+  const glebas = [...grupos.values()].map(({ talhaoId, codigo, ids, coordenadas }) => {
+    const casco = cascoConvexo(coordenadas)
+    if (casco.length >= 3) {
+      const geometria = {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'Polygon', coordinates: [[...casco, casco[0]]] },
+      }
+      return { talhaoId, codigo, geometria, areaHa: areaEmHectares(geometria), pontoIds: ids }
+    }
+    const lng = coordenadas.reduce((soma, c) => soma + c[0], 0) / coordenadas.length
+    const lat = coordenadas.reduce((soma, c) => soma + c[1], 0) / coordenadas.length
+    return { talhaoId, codigo, geometria: pontoFeature(lat, lng), areaHa: null, pontoIds: ids }
+  })
+
+  glebas.sort(
+    (a, b) =>
+      String(codigoDoTalhao.get(a.talhaoId)).localeCompare(String(codigoDoTalhao.get(b.talhaoId)), 'pt-BR', { numeric: true }) ||
+      a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
+  )
+  return { glebas, semCodigo }
+}
 
 /**
  * Pontos de coleta vindos de um arquivo (shapefile zipado ou GeoJSON).
