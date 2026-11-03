@@ -8,8 +8,9 @@ import { conteudoTooltipGleba } from './tooltipGleba.js'
 import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
 import { criarCamadaCalor, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
 import { posicaoDoNivel } from '../lib/coloracao.js'
-import { rotuloPontoColeta } from '../lib/pontosDeColeta.js'
+import { rotuloPontoColeta, criarCorDosPontos } from '../lib/pontosDeColeta.js'
 import {
+  CINZA_HACHURA,
   ZOOM_MINIMO_ROTULO,
   ZOOM_MINIMO_ROTULO_GLEBA,
   ESTILO_TALHAO,
@@ -467,6 +468,10 @@ export function useGeometrias(
     if (!mostrarPontosAmostra) return
 
     const codigoPorTalhao = new Map(talhoes.map((talhao) => [talhao.id, talhao.codigo]))
+    // Com o filtro completo, a bolinha ganha a cor da amostra dela; sem filtro,
+    // fica como sempre foi (verde = ainda sem gleba, cinza = já numa gleba).
+    const corPeloFiltro =
+      mostrarCor && coloracao ? criarCorDosPontos(pontosAmostra, coloracao, CINZA_HACHURA) : null
     const camada = L.layerGroup()
     pontosAmostra.forEach((ponto, indice) => {
       const codigoTalhao = codigoPorTalhao.get(ponto.talhao_id)
@@ -479,7 +484,7 @@ export function useGeometrias(
         radius: 7,
         color: '#ffffff',
         weight: 2,
-        fillColor: ponto.gleba_id ? '#64748b' : '#16a34a',
+        fillColor: corPeloFiltro ? corPeloFiltro(ponto) : ponto.gleba_id ? '#64748b' : '#16a34a',
         fillOpacity: 0.95,
         interactive: false,
       })
@@ -497,7 +502,7 @@ export function useGeometrias(
       marcadoresPontoAmostra.current?.remove()
       marcadoresPontoAmostra.current = null
     }
-  }, [mapa, talhoes, pontosAmostra, mostrarPontosAmostra])
+  }, [mapa, talhoes, pontosAmostra, mostrarPontosAmostra, coloracao, mostrarCor])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.

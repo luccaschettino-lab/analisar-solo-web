@@ -153,3 +153,26 @@ const comManual = recalcularGlebasDosPontos(
 assert.equal(comManual.atualizacoes.length, 0)
 assert.deepEqual(comManual.talhoesIgnorados, ['9'])
 console.log('pontos de coleta: glebas preenchem o talhão, sem vão, e recálculo respeita glebas manuais OK')
+
+// --- Cor dos pontos de coleta segundo o filtro ---
+import { criarCorDosPontos } from '../src/lib/pontosDeColeta.js'
+const ptc = (id, talhao, gleba, lat, lng) => ({ id, talhao_id: talhao, gleba_id: gleba, geometria: pontoFeature(lat, lng) })
+const pontosCor = [
+  ptc('a1', 't1', 'gA', -9.0, -49.0), ptc('a2', 't1', 'gA', -9.2, -49.2), // gleba A: média (-9.1, -49.1)
+  ptc('b1', 't1', 'gB', -9.5, -49.5), // gleba B: média (-9.5, -49.5), sem análise no filtro
+  ptc('s1', 't1', null, -9.9, -49.9), // sem gleba
+  ptc('c1', 't2', 'gC', -8.0, -48.0), // gleba C no talhão t2
+]
+const estadoPorTalhao = {
+  t1: { pontos: [{ lat: -9.1, lng: -49.1, cor: '#ff0000' }, { lat: -1, lng: -1, cor: '#00ff00' }] },
+  t2: { pontos: [{ lat: -8.0000000001, lng: -48.0, cor: '#0000ff' }] }, // dentro da tolerância
+}
+let chamadas = 0
+const corDe = criarCorDosPontos(pontosCor, (talhao) => { chamadas++; return estadoPorTalhao[talhao] ?? null }, '#cccccc')
+assert.equal(corDe(pontosCor[0]), '#ff0000', 'ponto herda a cor da amostra da gleba dele')
+assert.equal(corDe(pontosCor[1]), '#ff0000', 'todos os pontos da gleba têm a mesma cor')
+assert.equal(corDe(pontosCor[2]), '#cccccc', 'gleba sem análise no filtro: sem dado')
+assert.equal(corDe(pontosCor[3]), '#cccccc', 'ponto sem gleba: sem dado')
+assert.equal(corDe(pontosCor[4]), '#0000ff', 'tolerância de ~10 cm na posição da amostra')
+assert.equal(chamadas, 2, 'a coloração é calculada uma vez por talhão, não uma por ponto')
+console.log('pontos de coleta: cor segundo o filtro OK')

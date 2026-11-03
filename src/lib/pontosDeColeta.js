@@ -1,5 +1,5 @@
 import shp from 'shpjs'
-import { pontoFeature, glebaDentroDoTalhao, areaEmHectares } from './geo.js'
+import { pontoFeature, glebaDentroDoTalhao, areaEmHectares, latLngDoPonto } from './geo.js'
 import { dividirTalhaoPorPontos } from './divisaoPorPontos.js'
 
 // O que o arquivo diz que é o ponto: `amostra` ou `id`. Vazio, ou um objeto
@@ -122,6 +122,60 @@ export function agruparPontosEmGlebas(pontos, talhoes) {
       a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
   )
   return { glebas, semCodigo, emPedacos: glebas.filter((g) => g.pedacos > 1).length }
+}
+
+// ~10 cm. A posição da análise é a média dos pontos da gleba, calculada no
+// banco; aqui a média é refeita em JS, e as duas coincidem a menos de um
+// arredondamento de ponto flutuante.
+const TOLERANCIA_AMOSTRA_GRAUS = 1e-6
+
+/**
+ * Cor de cada ponto de coleta segundo o filtro do mapa.
+ *
+ * Os pontos de uma gleba são as coletas de UMA amostra composta, e a análise
+ * (o laudo) é uma só, posicionada na média desses pontos. Então cada ponto
+ * herda a cor da análise da sua gleba: acha-se a amostra do talhão que está
+ * na média dos pontos da gleba do ponto. Ponto sem gleba, ou cuja gleba não
+ * tem análise no filtro, recebe `corSemDado` — com o filtro ligado, manter a
+ * cor de antes passaria a impressão de ter um valor.
+ *
+ * `coloracao` é a função de `criarColoracao` (talhão -> estado com `pontos`).
+ * Devolve `(ponto) => cor`.
+ */
+export function criarCorDosPontos(pontos, coloracao, corSemDado) {
+  const somas = new Map() // gleba_id -> { lat, lng, n }
+  for (const ponto of pontos) {
+    if (!ponto.gleba_id) continue
+    const posicao = latLngDoPonto(ponto.geometria)
+    if (!posicao) continue
+    const soma = somas.get(ponto.gleba_id) ?? { lat: 0, lng: 0, n: 0 }
+    soma.lat += posicao[0]
+    soma.lng += posicao[1]
+    soma.n += 1
+    somas.set(ponto.gleba_id, soma)
+  }
+
+  // coloracao(talhao) refaz o cálculo a cada chamada; uma vez por talhão basta.
+  const amostrasPorTalhao = new Map()
+  const amostrasDoTalhao = (talhaoId) => {
+    if (!amostrasPorTalhao.has(talhaoId)) amostrasPorTalhao.set(talhaoId, coloracao(talhaoId)?.pontos ?? [])
+    return amostrasPorTalhao.get(talhaoId)
+  }
+
+  return (ponto) => {
+    const soma = ponto.gleba_id ? somas.get(ponto.gleba_id) : null
+    if (!soma) return corSemDado
+    const lat = soma.lat / soma.n
+    const lng = soma.lng / soma.n
+    const amostra = amostrasDoTalhao(ponto.talhao_id).find(
+      (a) =>
+        a.lat != null &&
+        a.lng != null &&
+        Math.abs(a.lat - lat) < TOLERANCIA_AMOSTRA_GRAUS &&
+        Math.abs(a.lng - lng) < TOLERANCIA_AMOSTRA_GRAUS,
+    )
+    return amostra?.cor ?? corSemDado
+  }
 }
 
 /**
