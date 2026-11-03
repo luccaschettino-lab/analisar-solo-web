@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Mapa from '../mapa/Mapa.jsx'
 import { useGeometrias } from '../mapa/useGeometrias.js'
 import { enquadrarGeometrias, focarGeometria } from '../mapa/enquadrar.js'
+import { useEnquadramentoDaFazenda } from '../mapa/useEnquadramentoDaFazenda.js'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import FiltrosMapa from './painel/FiltrosMapa.jsx'
 import LegendaMapa from './painel/LegendaMapa.jsx'
@@ -75,6 +76,16 @@ export default function Filtros() {
   const [mapa, setMapa] = useState(null)
   const aoCriarMapa = useCallback((instancia) => setMapa(instancia), [])
   const aoSelecionar = useCallback(() => {}, [])
+
+  // Sem isto o mapa desta tela nascia no centro padrão do app (longe da
+  // fazenda) e só se movia ao escolher um talhão. Agora abre onde o mapa
+  // estava na tela anterior, ou na fazenda/sede se for a primeira vez.
+  useEnquadramentoDaFazenda({
+    mapa,
+    fazendaSelecionada,
+    talhoes,
+    carregandoHierarquia,
+  })
 
   // `useGeometrias` desenha o que estiver em `talhoes` — passar só o talhão
   // escolhido é o que faz "ver um de cada vez" funcionar sem precisar de uma
