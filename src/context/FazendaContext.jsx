@@ -38,6 +38,7 @@ export function FazendaProvider({ children }) {
     analises: analisesDaFazenda,
     carregando: carregandoAnalises,
     erro: erroAnalises,
+    recarregar: recarregarAnalises,
   } = useAnalisesDaFazenda(fazendaSelecionada?.id ?? null)
 
   /**
@@ -120,6 +121,7 @@ export function FazendaProvider({ children }) {
       analisesDaFazenda,
       carregandoAnalises,
       erroAnalises,
+      recarregarAnalises,
       anos,
 
       criterio,
@@ -144,7 +146,7 @@ export function FazendaProvider({ children }) {
     [
       fazendas, carregandoFazendas, erroFazendas, aplicarFazenda, removerFazenda,
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
-      analisesDaFazenda, carregandoAnalises, erroAnalises, anos,
+      analisesDaFazenda, carregandoAnalises, erroAnalises, recarregarAnalises, anos,
       criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
       filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda, pedidoDeAcao,
     ],

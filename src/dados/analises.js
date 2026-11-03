@@ -1,6 +1,5 @@
 import { supabase, checar } from './cliente.js'
 import { CHAVES_PARAMETROS } from '../config/parametros.js'
-import { paraNumeroOuNulo } from '../lib/numeros.js'
 
 const CAMPOS_BASE =
   'id, talhao_id, geometria, ano_safra, data_coleta, profundidade, laboratorio, numero_amostra_lab, observacoes, origem, criado_em'
@@ -55,42 +54,9 @@ export async function listarAnalisesDaFazenda(fazendaId) {
   return (linhas ?? []).map(({ talhoes, ...analise }) => analise)
 }
 
-/**
- * Monta o payload a partir dos valores do formulário.
- *
- * Todo parâmetro ausente entra como `null` explícito, não como campo omitido:
- * numa edição, omitir a chave deixaria o valor antigo no banco, e apagar um
- * número digitado por engano ficaria impossível.
- */
-export function montarPayload({
-  talhaoId,
-  geometria,
-  anoSafra,
-  profundidade,
-  dataColeta,
-  laboratorio,
-  numeroAmostraLab,
-  observacoes,
-  valores = {},
-}) {
-  const payload = {
-    talhao_id: talhaoId,
-    geometria,
-    ano_safra: anoSafra.trim(),
-    profundidade,
-    data_coleta: dataColeta || null,
-    laboratorio: laboratorio?.trim() || null,
-    numero_amostra_lab: numeroAmostraLab?.trim() || null,
-    observacoes: observacoes?.trim() || null,
-    origem: 'manual',
-  }
-
-  for (const chave of CHAVES_PARAMETROS) {
-    payload[chave] = paraNumeroOuNulo(valores[chave])
-  }
-
-  return payload
-}
+// Mora em lib/ para poder ser usado sem carregar o cliente do Supabase; segue
+// exportado daqui porque é por aqui que as telas sempre importaram.
+export { montarPayload } from '../lib/payloadAnalise.js'
 
 export async function criarAnalise(payload) {
   return checar(
@@ -108,4 +74,40 @@ export async function atualizarAnalise(id, payload) {
 
 export async function excluirAnalise(id) {
   checar(await supabase.from('analises').delete().eq('id', id), 'Falha ao excluir análise')
+}
+
+/**
+ * Grava várias análises de uma vez (importação de laudo). Em blocos, para o
+ * progresso aparecer e uma falha não perder o que já entrou; cada bloco é
+ * atômico. Devolve quantas foram gravadas.
+ */
+export async function criarAnalisesEmLote(payloads, aoProgredir) {
+  const TAMANHO_DO_BLOCO = 40
+  let gravadas = 0
+  for (let i = 0; i < payloads.length; i += TAMANHO_DO_BLOCO) {
+    const bloco = payloads.slice(i, i + TAMANHO_DO_BLOCO)
+    const linhas = checar(
+      await supabase.from('analises').insert(bloco).select('id, talhao_id, geometria, ano_safra, profundidade'),
+      'Falha ao salvar as análises do laudo',
+    )
+    gravadas += linhas?.length ?? 0
+    aoProgredir?.(gravadas, payloads.length)
+  }
+  return gravadas
+}
+
+/**
+ * O suficiente de cada análise da fazenda para reconhecer uma já gravada
+ * (talhão, safra, profundidade e nº do laboratório). A listagem do mapa não
+ * traz o nº do laboratório, então a importação busca isto à parte.
+ */
+export async function listarIdentidadesDaFazenda(fazendaId) {
+  const linhas = checar(
+    await supabase
+      .from('analises')
+      .select('talhao_id, ano_safra, profundidade, numero_amostra_lab, talhoes!inner(fazenda_id)')
+      .eq('talhoes.fazenda_id', fazendaId),
+    'Falha ao conferir as análises já gravadas',
+  )
+  return (linhas ?? []).map(({ talhoes, ...analise }) => analise)
 }

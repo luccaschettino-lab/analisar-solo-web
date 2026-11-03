@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { listarAnalisesDaFazenda } from '../dados/analises.js'
 
 /**
@@ -16,7 +16,7 @@ export function useAnalisesDaFazenda(fazendaId) {
   // Descarta resposta de uma fazenda que não é mais a selecionada.
   const requisicaoAtual = useRef(0)
 
-  useEffect(() => {
+  const carregar = useCallback(() => {
     if (!fazendaId) {
       setAnalises([])
       setErro('')
@@ -43,5 +43,11 @@ export function useAnalisesDaFazenda(fazendaId) {
       })
   }, [fazendaId])
 
-  return { analises, carregando, erro }
+  useEffect(() => {
+    carregar()
+  }, [carregar])
+
+  // `recarregar` serve para quem grava análises por fora do formulário (a
+  // importação de laudo): o mapa pinta com o que está em memória aqui.
+  return { analises, carregando, erro, recarregar: carregar }
 }

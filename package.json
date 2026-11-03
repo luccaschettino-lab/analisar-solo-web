@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs && node testes/geo.mjs && node testes/kml.mjs && node testes/senha.mjs && node testes/cbers.mjs && node testes/pontosDeColeta.mjs"
+    "testar": "node testes/coloracao.mjs && node testes/busca.mjs && node testes/variacao.mjs && node testes/criterios.mjs && node testes/imagem.mjs && node testes/geo.mjs && node testes/kml.mjs && node testes/senha.mjs && node testes/cbers.mjs && node testes/pontosDeColeta.mjs && node testes/laudoUfv.mjs"
   },
   "repository": {
     "type": "git",
@@ -35,6 +35,7 @@
     "chart.js": "^4.5.1",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
+    "pdfjs-dist": "^6.5.438",
     "react": "^19.2.8",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.8",
