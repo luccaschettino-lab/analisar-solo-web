@@ -21,8 +21,8 @@ const CRITERIO = {
   ph_h2o: {
     faixas: [
       { ate: 5.0, nivel: 'baixo', rotulo: 'Acido' },
-      { ate: 6.5, nivel: 'bom', rotulo: 'Ideal' },
-      { ate: null, nivel: 'medio', rotulo: 'Alcalino' },
+      { ate: 6.5, nivel: 'medio', rotulo: 'Ideal' },
+      { ate: null, nivel: 'alto', rotulo: 'Alcalino' },
     ],
   },
   ca: { faixas: null },
@@ -78,29 +78,29 @@ ok('null', criterioTemAlgo(null) === false)
 console.log('\n=== REGRA CRITICA: a ultima faixa tem que ser aberta ===')
 // Sem isso, um valor acima do ultimo teto nao casa com faixa nenhuma e a
 // gleba sai sem classificacao — sem erro, sem aviso, sem ninguem perceber.
-const fechada = validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: 2, nivel: 'bom' }])
+const fechada = validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: 2, nivel: 'alto' }])
 ok('ultima fechada e erro', fechada.erros.length === 1, fechada.erros[0])
-const abertaNoMeio = validarFaixas('ca', [{ ate: null, nivel: 'baixo' }, { ate: null, nivel: 'bom' }])
+const abertaNoMeio = validarFaixas('ca', [{ ate: null, nivel: 'baixo' }, { ate: null, nivel: 'alto' }])
 ok('aberta no meio e erro', abertaNoMeio.erros.length > 0, abertaNoMeio.erros[0])
-const boa = validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: null, nivel: 'bom' }])
+const boa = validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: null, nivel: 'alto' }])
 ok('duas faixas, ultima aberta, passa', boa.erros.length === 0, JSON.stringify(boa.erros))
-ok('uma faixa aberta so tambem passa', validarFaixas('ca', [{ ate: null, nivel: 'bom' }]).erros.length === 0)
+ok('uma faixa aberta so tambem passa', validarFaixas('ca', [{ ate: null, nivel: 'alto' }]).erros.length === 0)
 
 console.log('\n=== validacao das faixas ===')
 ok('nivel inexistente reprova',
    validarFaixas('ca', [{ ate: null, nivel: 'otimo' }]).erros.some((e) => e.includes('otimo')))
 ok('limite fora de ordem reprova',
-   validarFaixas('ca', [{ ate: 3, nivel: 'baixo' }, { ate: 1, nivel: 'medio' }, { ate: null, nivel: 'bom' }])
+   validarFaixas('ca', [{ ate: 3, nivel: 'baixo' }, { ate: 1, nivel: 'medio' }, { ate: null, nivel: 'alto' }])
      .erros.some((e) => e.includes('maior que')))
 ok('limite igual ao anterior reprova',
-   validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: 1, nivel: 'medio' }, { ate: null, nivel: 'bom' }])
+   validarFaixas('ca', [{ ate: 1, nivel: 'baixo' }, { ate: 1, nivel: 'medio' }, { ate: null, nivel: 'alto' }])
      .erros.length > 0)
 ok('limite nao numerico reprova',
-   validarFaixas('ca', [{ ate: 'muito', nivel: 'baixo' }, { ate: null, nivel: 'bom' }]).erros.length > 0)
+   validarFaixas('ca', [{ ate: 'muito', nivel: 'baixo' }, { ate: null, nivel: 'alto' }]).erros.length > 0)
 ok('lista vazia reprova', validarFaixas('ca', []).erros.length === 1)
 ok('nao-lista reprova', validarFaixas('ca', { ate: 1 }).erros.length === 1)
 ok('rotulo nao-texto reprova',
-   validarFaixas('ca', [{ ate: null, nivel: 'bom', rotulo: 7 }]).erros.length > 0)
+   validarFaixas('ca', [{ ate: null, nivel: 'alto', rotulo: 7 }]).erros.length > 0)
 ok('null e valido (sem classificacao)', validarFaixas('ca', null).erros.length === 0)
 ok('undefined e valido (nao declarado)', validarFaixas('ca', undefined).erros.length === 0)
 
@@ -109,7 +109,7 @@ console.log('\n=== avisos: nao impedem salvar ===')
 // significando acido demais e alcalino demais.
 const repetido = validarFaixas('ph_h2o', [
   { ate: 5, nivel: 'baixo' },
-  { ate: 6, nivel: 'bom' },
+  { ate: 6, nivel: 'alto' },
   { ate: null, nivel: 'baixo' },
 ])
 ok('rotulo repetido e aviso, nao erro', repetido.erros.length === 0 && repetido.avisos.length > 0,
@@ -117,21 +117,21 @@ ok('rotulo repetido e aviso, nao erro', repetido.erros.length === 0 && repetido.
 ok('rotulo proprio resolve o aviso',
    validarFaixas('ph_h2o', [
      { ate: 5, nivel: 'baixo', rotulo: 'Acido' },
-     { ate: 6, nivel: 'bom', rotulo: 'Ideal' },
+     { ate: 6, nivel: 'alto', rotulo: 'Ideal' },
      { ate: null, nivel: 'baixo', rotulo: 'Alcalino' },
    ]).avisos.length === 0)
 
-const implausivel = validarFaixas('ph_h2o', [{ ate: 99, nivel: 'baixo' }, { ate: null, nivel: 'bom' }])
+const implausivel = validarFaixas('ph_h2o', [{ ate: 99, nivel: 'baixo' }, { ate: null, nivel: 'alto' }])
 ok('limite fora do plausivel e aviso', implausivel.erros.length === 0 && implausivel.avisos.some((a) => a.includes('plausível')),
    implausivel.avisos.join(' | '))
 
 // O config deixou o fosforo sem faixa de proposito, e a nota diz por que.
-const fosforo = validarFaixas('p', [{ ate: 10, nivel: 'baixo' }, { ate: null, nivel: 'bom' }])
+const fosforo = validarFaixas('p', [{ ate: 10, nivel: 'baixo' }, { ate: null, nivel: 'alto' }])
 ok('definir faixa para P avisa o motivo registrado',
    fosforo.erros.length === 0 && fosforo.avisos.some((a) => a.includes('P-Rem')),
    fosforo.avisos.find((a) => a.includes('P-Rem'))?.slice(0, 60))
 ok('parametro que tem faixa no config nao gera esse aviso',
-   !validarFaixas('ca', [{ ate: null, nivel: 'bom' }]).avisos.some((a) => a.includes('de propósito')))
+   !validarFaixas('ca', [{ ate: null, nivel: 'alto' }]).avisos.some((a) => a.includes('de propósito')))
 
 console.log('\n=== delta_minimo: validacao ===')
 ok('numero positivo passa', validarDeltaMinimo(0.2).erros.length === 0)
@@ -149,13 +149,13 @@ ok('parametro inexistente reprova', desconhecido.valido === false)
 ok('e diz qual', desconhecido.porParametro.nitrogenio.erros[0].includes('nitrogenio'))
 const misto = validarCriterio({
   ca: { faixas: [{ ate: 1, nivel: 'baixo' }] }, // ultima fechada: erro
-  mg: { faixas: [{ ate: null, nivel: 'bom' }] }, // ok
+  mg: { faixas: [{ ate: null, nivel: 'alto' }] }, // ok
 })
 ok('um parametro ruim invalida o conjunto', misto.valido === false)
 ok('o parametro bom nao entra na lista de problemas', misto.porParametro.mg === undefined)
 ok('nao-objeto reprova com erro geral', validarCriterio(null).valido === false)
 ok('so avisos nao invalidam',
-   validarCriterio({ p: { faixas: [{ ate: 10, nivel: 'baixo' }, { ate: null, nivel: 'bom' }] } }).valido === true)
+   validarCriterio({ p: { faixas: [{ ate: 10, nivel: 'baixo' }, { ate: null, nivel: 'alto' }] } }).valido === true)
 
 console.log('\n=== faixasIniciais: copia, nao referencia ===')
 const copia = faixasIniciais('ca')
@@ -177,16 +177,17 @@ ok('todos os niveis do config existem em NIVEIS',
 
 
 console.log('\n=== integracao: o criterio muda a COR do mapa ===')
-// pH 6,2. No config cai em "medio" (ate 7,0); no criterio cai em "bom"
-// (ate 6,5). Se a cor nao mudar, o conjunto nao esta chegando ao mapa.
+// pH 6,2. No config cai em "alto" (ate 7,0, "Pouco acido", laranja); no criterio
+// cai em "medio" (ate 6,5, "Ideal", verde). Se a cor nao mudar, o conjunto nao
+// esta chegando ao mapa.
 const analisesPh = [{ talhao_id: 't1', ano_safra: '25-26', profundidade: '0-20', ph_h2o: 6.2 }]
 const filtroPh = { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'ph_h2o' }
 
 const semCriterio = criarColoracao(analisesPh, filtroPh)('t1')
 const comCriterio = criarColoracao(analisesPh, filtroPh, CRITERIO)('t1')
 
-ok('sem criterio, pH 6,2 classifica pelo config', semCriterio.nivel === 'medio', semCriterio.rotuloNivel)
-ok('com criterio, o MESMO valor classifica diferente', comCriterio.nivel === 'bom', comCriterio.rotuloNivel)
+ok('sem criterio, pH 6,2 classifica pelo config', semCriterio.nivel === 'alto', semCriterio.rotuloNivel)
+ok('com criterio, o MESMO valor classifica diferente', comCriterio.nivel === 'medio', comCriterio.rotuloNivel)
 ok('e a cor acompanha', semCriterio.cor !== comCriterio.cor, `${semCriterio.cor} -> ${comCriterio.cor}`)
 ok('as duas sao COM_COR', semCriterio.estado === ESTADO.COM_COR && comCriterio.estado === ESTADO.COM_COR)
 

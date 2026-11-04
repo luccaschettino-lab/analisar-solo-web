@@ -1,4 +1,4 @@
-import { NIVEIS, CHAVES_PARAMETROS } from '../config/parametros.js'
+import { NIVEIS, NIVEL_LEGADO, CHAVES_PARAMETROS } from '../config/parametros.js'
 import { parametro } from './parametros.js'
 
 /**
@@ -72,8 +72,16 @@ export function origemDasFaixas(chave, criterio) {
  */
 export function faixasEfetivas(chave, criterio) {
   const entrada = entradaDe(criterio, chave)
-  if (declarouFaixas(entrada)) return entrada.faixas
+  // `faixas: null` é uma declaração: "este parâmetro não se classifica".
+  if (declarouFaixas(entrada)) return entrada.faixas === null ? null : entrada.faixas.map(comNivelAtual)
   return parametro(chave)?.faixas ?? null
+}
+
+// Critério salvo antes da escala "o ideal é o do meio" fala em `bom` e
+// `muito_bom`; esses viraram `alto` e `muito_alto` (mesma posição na escala).
+function comNivelAtual(faixa) {
+  const nivel = NIVEL_LEGADO[faixa?.nivel]
+  return nivel ? { ...faixa, nivel } : faixa
 }
 
 /**

@@ -47,9 +47,24 @@ export function ndwi(green, nir) {
 }
 
 /**
- * Faixas de leitura do NDVI/EVI/SAVI, pensadas pra vigor de lavoura.
- * As mesmas cinco cores de `NIVEIS` (config/parametros.js) — um produtor que
- * já lê o mapa de solo por essa escala não aprende uma segunda.
+ * Cores do vigor: do pior ao melhor, verde só em cima.
+ *
+ * Fica aqui, e não em `NIVEIS` (config/parametros.js), porque a escala do solo
+ * passou a ter o ideal no meio e o "demais" também ruim. Vigor é o contrário:
+ * quanto maior o NDVI, melhor, e um NDVI altíssimo não é problema. Quem
+ * desenhar índice de vegetação usa estas cores, não as de `NIVEIS`.
+ */
+export const NIVEIS_VIGOR = {
+  muito_baixo: { rotulo: 'Muito baixo', cor: '#b91c1c' },
+  baixo: { rotulo: 'Baixo', cor: '#ea580c' },
+  medio: { rotulo: 'Médio', cor: '#eab308' },
+  bom: { rotulo: 'Bom', cor: '#65a30d' },
+  muito_bom: { rotulo: 'Muito bom', cor: '#15803d' },
+}
+
+/**
+ * Faixas de leitura do NDVI/EVI/SAVI, pensadas pra vigor de lavoura, com as
+ * cores de `NIVEIS_VIGOR`.
  */
 export const FAIXAS_VIGOR = [
   { ate: 0.2, nivel: 'muito_baixo', rotulo: 'Muito baixo' },

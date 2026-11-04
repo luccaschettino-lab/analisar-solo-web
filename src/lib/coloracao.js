@@ -36,10 +36,10 @@ export const ESTADO = {
 // de onde ela vem.
 export { CINZA_NEUTRO, CINZA_HACHURA }
 
-// Ordem fixa dos cinco níveis — a mesma ordem de `NIVEIS` no config, do pior
-// pro melhor. O mapa de calor precisa de uma posição numérica (0 a 1) por
-// nível pra interpolar cor entre pontos; isto é o que traduz "bom" em "0.75"
-// sem duplicar a lista em outro lugar.
+// Ordem fixa dos cinco níveis — a mesma ordem de `NIVEIS` no config, do menos
+// ao mais (o ideal é o do meio, em 0.5). O mapa de calor precisa de uma posição
+// numérica (0 a 1) por nível pra interpolar cor entre pontos; isto é o que
+// traduz "alto" em "0.75" sem duplicar a lista em outro lugar.
 const ORDEM_NIVEIS = Object.keys(NIVEIS)
 
 /** Posição do nível na escala, de 0 (muito baixo) a 1 (muito bom), ou `null`. */
@@ -48,13 +48,26 @@ export function posicaoDoNivel(nivel) {
   return i === -1 ? null : i / (ORDEM_NIVEIS.length - 1)
 }
 
+// Misturar laranja com verde dá um marrom-oliva que não existe na legenda e
+// suja o mapa de calor. Passando por amarelo, a transição lê como "quase
+// ideal". Só o degradê usa isto; a legenda e as cores por talhão continuam
+// sendo exatamente as cinco de `NIVEIS`.
+const AMARELO_DE_PASSAGEM = '#eab308'
+
 /** As cores de `NIVEIS`, na mesma ordem, como paradas de gradiente 0..1 —
- * o formato que `camadaCalor.js` interpola para colorir o mapa de calor. */
+ * o formato que `camadaCalor.js` interpola para colorir o mapa de calor.
+ * Entre cada vizinho do ideal e o ideal entra um amarelo de passagem. */
 export function gradienteDeNiveis() {
   const gradiente = {}
+  const passos = ORDEM_NIVEIS.length - 1
   ORDEM_NIVEIS.forEach((nivel, i) => {
-    gradiente[i / (ORDEM_NIVEIS.length - 1)] = NIVEIS[nivel].cor
+    gradiente[i / passos] = NIVEIS[nivel].cor
   })
+  const ideal = ORDEM_NIVEIS.indexOf('medio')
+  if (ideal > 0 && ideal < passos) {
+    gradiente[(ideal - 0.5) / passos] = AMARELO_DE_PASSAGEM
+    gradiente[(ideal + 0.5) / passos] = AMARELO_DE_PASSAGEM
+  }
   return gradiente
 }
 

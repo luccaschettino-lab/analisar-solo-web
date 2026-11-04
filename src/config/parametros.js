@@ -19,14 +19,36 @@
  * └────────────────────────────────────────────────────────────────────────┘
  */
 
-// Níveis de interpretação, do mais pobre ao mais rico.
+/**
+ * Níveis de interpretação, do MENOS ao MAIS: a posição na escala é a quantidade,
+ * e a cor diz se aquela quantidade serve.
+ *
+ * O ideal é o do meio. Pouco demais e muito demais são ruins — por isso as
+ * pontas têm a mesma cor, e a cor dos dois lados afasta do verde conforme se
+ * afasta do ideal: vermelho nas pontas, laranja ao lado do ideal. Antes a
+ * escala era "pobre → rico", verde só em cima, e nada podia ser "demais".
+ *
+ * Só a cor não diz de que lado do ideal está o valor (laranja pode ser pouco
+ * ou muito): quem diz é o rótulo, que a legenda e as dicas do mapa mostram.
+ *
+ * Escalas onde menos é sempre melhor (Al, m) usam estas mesmas cores com
+ * rótulo próprio em cada faixa, ver abaixo.
+ */
 export const NIVEIS = {
   muito_baixo: { rotulo: 'Muito baixo', cor: '#b91c1c' },
   baixo: { rotulo: 'Baixo', cor: '#ea580c' },
-  medio: { rotulo: 'Médio', cor: '#eab308' },
-  bom: { rotulo: 'Bom', cor: '#65a30d' },
-  muito_bom: { rotulo: 'Muito bom', cor: '#15803d' },
+  medio: { rotulo: 'Médio (ideal)', cor: '#15803d' },
+  alto: { rotulo: 'Alto', cor: '#ea580c' },
+  muito_alto: { rotulo: 'Muito alto', cor: '#b91c1c' },
 }
+
+/**
+ * Nomes que os níveis de cima tinham quando a escala era "pobre → rico".
+ * Critérios salvos antes da mudança ainda trazem `bom` e `muito_bom`; sem esta
+ * tradução o mapa procuraria uma cor que não existe. A posição na escala é a
+ * mesma (4º e 5º nível), só o sentido mudou: agora são "alto" e "muito alto".
+ */
+export const NIVEL_LEGADO = { bom: 'alto', muito_bom: 'muito_alto' }
 
 export const GRUPOS = [
   { chave: 'granulometria', rotulo: 'Granulometria' },
@@ -95,29 +117,31 @@ export const PARAMETROS = [
   {
     chave: 'ph_h2o', rotulo: 'pH em água', unidade: '', casas: 1,
     grupo: 'acidez', plausivel: { min: 3, max: 9 },
-    // Única escala não-monotônica do conjunto: o ideal fica no meio, e os dois
-    // extremos pontuam mal. Por isso cada faixa traz rótulo próprio — sem ele,
-    // a legenda mostraria "Baixo" para solo ácido e "Baixo" para alcalino.
+    // O ideal fica no meio e os dois extremos pontuam mal — agora como em todos
+    // os parâmetros. Cada faixa traz rótulo próprio porque "Baixo"/"Alto" não
+    // dizem nada num pH: o que se lê é "Muito ácido" e "Alcalino".
     faixas: [
       { ate: 4.5, nivel: 'muito_baixo', rotulo: 'Muito ácido' },
       { ate: 5.4, nivel: 'baixo', rotulo: 'Ácido' },
-      { ate: 6.0, nivel: 'bom', rotulo: 'Ideal' },
-      { ate: 7.0, nivel: 'medio', rotulo: 'Pouco ácido' },
-      { ate: null, nivel: 'baixo', rotulo: 'Alcalino' },
+      { ate: 6.0, nivel: 'medio', rotulo: 'Ideal' },
+      { ate: 7.0, nivel: 'alto', rotulo: 'Pouco ácido' },
+      { ate: null, nivel: 'muito_alto', rotulo: 'Alcalino' },
     ],
     nota: 'Faixa ideal para a maioria das culturas fica entre 5,5 e 6,5; por isso os extremos, ácido e alcalino, pontuam mal.',
   },
   {
     chave: 'al', rotulo: 'Al³⁺', unidade: 'cmolc/dm³', casas: 2,
     grupo: 'acidez', plausivel: { min: 0, max: 15 },
+    // Quanto menos, melhor: aqui pouco NÃO é ruim. O rótulo diz a quantidade e a
+    // cor diz o que ela vale (verde no pouco, vermelho no muito).
     faixas: [
-      { ate: 0.2, nivel: 'muito_bom' },
-      { ate: 0.5, nivel: 'bom' },
-      { ate: 1.0, nivel: 'medio' },
-      { ate: 2.0, nivel: 'baixo' },
-      { ate: null, nivel: 'muito_baixo' },
+      { ate: 0.2, nivel: 'medio', rotulo: 'Muito baixo' },
+      { ate: 0.5, nivel: 'medio', rotulo: 'Baixo' },
+      { ate: 1.0, nivel: 'alto', rotulo: 'Médio' },
+      { ate: 2.0, nivel: 'muito_alto', rotulo: 'Alto' },
+      { ate: null, nivel: 'muito_alto', rotulo: 'Muito alto' },
     ],
-    nota: 'Alumínio trocável: quanto menor, melhor. A escala está invertida de propósito.',
+    nota: 'Alumínio trocável: quanto menor, melhor. Por isso o pouco é verde e só o muito é ruim, ao contrário dos nutrientes.',
   },
   {
     chave: 'h_al', rotulo: 'H+Al', unidade: 'cmolc/dm³', casas: 2,
@@ -138,8 +162,8 @@ export const PARAMETROS = [
       { ate: 15, nivel: 'muito_baixo' },
       { ate: 40, nivel: 'baixo' },
       { ate: 70, nivel: 'medio' },
-      { ate: 120, nivel: 'bom' },
-      { ate: null, nivel: 'muito_bom' },
+      { ate: 120, nivel: 'alto' },
+      { ate: null, nivel: 'muito_alto' },
     ],
   },
   {
@@ -149,8 +173,8 @@ export const PARAMETROS = [
       { ate: 0.4, nivel: 'muito_baixo' },
       { ate: 1.2, nivel: 'baixo' },
       { ate: 2.4, nivel: 'medio' },
-      { ate: 4.0, nivel: 'bom' },
-      { ate: null, nivel: 'muito_bom' },
+      { ate: 4.0, nivel: 'alto' },
+      { ate: null, nivel: 'muito_alto' },
     ],
   },
   {
@@ -160,8 +184,8 @@ export const PARAMETROS = [
       { ate: 0.15, nivel: 'muito_baixo' },
       { ate: 0.45, nivel: 'baixo' },
       { ate: 0.9, nivel: 'medio' },
-      { ate: 1.5, nivel: 'bom' },
-      { ate: null, nivel: 'muito_bom' },
+      { ate: 1.5, nivel: 'alto' },
+      { ate: null, nivel: 'muito_alto' },
     ],
   },
   {
@@ -171,7 +195,7 @@ export const PARAMETROS = [
       { ate: 3, nivel: 'muito_baixo' },
       { ate: 5, nivel: 'baixo' },
       { ate: 10, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
   {
@@ -203,21 +227,21 @@ export const PARAMETROS = [
       { ate: 20, nivel: 'muito_baixo' },
       { ate: 40, nivel: 'baixo' },
       { ate: 60, nivel: 'medio' },
-      { ate: 80, nivel: 'bom' },
-      { ate: null, nivel: 'muito_bom' },
+      { ate: 80, nivel: 'alto' },
+      { ate: null, nivel: 'muito_alto' },
     ],
   },
   {
     chave: 'm', rotulo: 'm (saturação por alumínio)', unidade: '%', casas: 1,
     grupo: 'indices', plausivel: { min: 0, max: 100 },
     faixas: [
-      { ate: 15, nivel: 'muito_bom' },
-      { ate: 30, nivel: 'bom' },
-      { ate: 50, nivel: 'medio' },
-      { ate: 75, nivel: 'baixo' },
-      { ate: null, nivel: 'muito_baixo' },
+      { ate: 15, nivel: 'medio', rotulo: 'Muito baixo' },
+      { ate: 30, nivel: 'medio', rotulo: 'Baixo' },
+      { ate: 50, nivel: 'alto', rotulo: 'Médio' },
+      { ate: 75, nivel: 'muito_alto', rotulo: 'Alto' },
+      { ate: null, nivel: 'muito_alto', rotulo: 'Muito alto' },
     ],
-    nota: 'Quanto menor, melhor: escala invertida, como o Al.',
+    nota: 'Quanto menor, melhor: pouco é verde e só o muito é ruim, como no Al.',
   },
 
   // ---- Matéria orgânica ----
@@ -228,8 +252,8 @@ export const PARAMETROS = [
       { ate: 0.7, nivel: 'muito_baixo' },
       { ate: 2.0, nivel: 'baixo' },
       { ate: 4.0, nivel: 'medio' },
-      { ate: 7.0, nivel: 'bom' },
-      { ate: null, nivel: 'muito_bom' },
+      { ate: 7.0, nivel: 'alto' },
+      { ate: null, nivel: 'muito_alto' },
     ],
   },
 
@@ -241,7 +265,7 @@ export const PARAMETROS = [
       { ate: 0.15, nivel: 'muito_baixo' },
       { ate: 0.35, nivel: 'baixo' },
       { ate: 0.6, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
   {
@@ -251,7 +275,7 @@ export const PARAMETROS = [
       { ate: 0.3, nivel: 'muito_baixo' },
       { ate: 0.7, nivel: 'baixo' },
       { ate: 1.2, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
   {
@@ -261,7 +285,7 @@ export const PARAMETROS = [
       { ate: 2, nivel: 'muito_baixo' },
       { ate: 5, nivel: 'baixo' },
       { ate: 8, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
   {
@@ -271,7 +295,7 @@ export const PARAMETROS = [
       { ate: 8, nivel: 'muito_baixo' },
       { ate: 18, nivel: 'baixo' },
       { ate: 30, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
   {
@@ -281,7 +305,7 @@ export const PARAMETROS = [
       { ate: 0.4, nivel: 'muito_baixo' },
       { ate: 1.0, nivel: 'baixo' },
       { ate: 2.2, nivel: 'medio' },
-      { ate: null, nivel: 'bom' },
+      { ate: null, nivel: 'alto' },
     ],
   },
 ]

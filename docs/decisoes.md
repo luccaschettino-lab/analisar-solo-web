@@ -544,3 +544,18 @@ calor continuam por talhão, sem reverter o resto daquela mudança.
 | **Coordenada do cursor (lat/lon) durante o desenho**, pedido à parte. | Ajuda a conferir a posição de um vértice contra uma referência externa (GPS de campo, planilha) sem sair do mapa. Só liga durante o desenho (`useCoordenadasCursor`) — fora disso é um `mousemove` sem utilidade, custando um re-render por pixel à toa. |
 | **Mesclar talhões voltou a mover as glebas do talhão apagado para o talhão base antes de excluir.** | `glebas.talhao_id` é `on delete cascade` — sem mover primeiro, mesclar dois talhões com gleba cadastrada apagaria as glebas em silêncio. Isso não foi pedido explicitamente, mas é consequência direta de reativar a criação: o risco de perda silenciosa só existe porque agora há gleba de verdade para perder. |
 | **Importação de arquivo (KML/KMZ/GeoJSON/shapefile) continua só criando talhão.** | Não fazia parte do pedido, e o parser (`lib/kml.js`, `testes/kml.mjs`) não foi alterado. Quem importa um arquivo com sub-áreas ainda cadastra a gleba à mão depois. |
+
+### Escala de interpretação: o ideal é o do meio
+
+A legenda deixou de ser "pobre → rico" (verde só em cima) e passou a ter o ideal
+no nível do meio: pouco demais e muito demais são ruins.
+
+| Decisão | Motivo |
+|---|---|
+| **Cinco níveis do menos ao mais: Muito baixo, Baixo, Médio (ideal), Alto, Muito alto.** Vermelho nas pontas, laranja ao lado do ideal, verde só no meio. | A escala anterior não conseguia dizer "demais": para K, Ca, Mg, V e MO as duas faixas de cima eram as melhores. Pedido do responsável. |
+| **Os limites numéricos não mudaram.** O ideal passou a ser a faixa que se chamava "Médio"; "Bom" e "Muito bom" viraram "Alto" e "Muito alto". | Mudança de apresentação primeiro; os números continuam "pontos de partida que precisam de validação agronômica" e se ajustam em Critérios. **Consequência a revisar:** K entre 70 e 120 mg/dm³, que era "Bom", agora aparece como "Alto". |
+| **Al e m ficam "menos é melhor"**: pouco é verde e só o muito é ruim, com rótulo por faixa ("Muito baixo"…"Muito alto"). | Alumínio baixo não é problema. Usam as mesmas cores com rótulo próprio, como o pH já fazia. |
+| **pH: o ideal ("Ideal") foi para o nível do meio**; ácido e "pouco ácido" são os vizinhos, "muito ácido" e "alcalino" as pontas. | Já era a única escala de dois lados; agora é igual a todas. |
+| **A cor não diz de que lado do ideal o valor está** (laranja pode ser pouco ou muito). | Quem diz é o rótulo, na legenda e na dica do mapa. Diferenciar por matiz entre "pouco" e "muito" fica para depois, se fizer falta. |
+| **`bom` e `muito_bom` ainda são lidos, como `alto` e `muito_alto`** (`NIVEL_LEGADO`). | Critérios salvos antes da mudança trazem os nomes antigos. Havia 2 critérios, nenhuma fazenda os usava. |
+| **O NDVI/EVI/SAVI tem paleta própria (`NIVEIS_VIGOR`)**, com a escala "quanto maior, melhor". | Vigor alto não é problema. Ainda não há tela que use esses índices. |

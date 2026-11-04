@@ -91,7 +91,9 @@ console.log('\n=== REGRA: zero e dado, nao ausencia ===')
 const corAl = criarColoracao(analises, { anoSafra: '25-26', profundidade: '0-20', chaveParametro: 'al' })
 const al2 = corAl('t2')
 ok('al = 0 nao vira SEM_MEDICAO', al2.estado === ESTADO.COM_COR, `estado=${al2.estado}`)
-ok('al = 0 recebe cor', al2.cor === NIVEIS['muito_bom'].cor, `${al2.valorFormatado} / ${al2.rotuloNivel}`)
+// Al: menos é melhor, então Al = 0 é verde (o ideal), não vermelho — e o texto diz "Muito baixo".
+ok('al = 0 recebe cor', al2.cor === NIVEIS.medio.cor, `${al2.valorFormatado} / ${al2.rotuloNivel}`)
+ok('al = 0 lê "Muito baixo", sem virar problema', al2.rotuloNivel === 'Muito baixo' && al2.nivel === 'medio')
 ok('al = 0 tem media 0', al2.media === 0)
 
 console.log('\n=== REGRA: sem dado nao vira zero nem faixa vizinha ===')
@@ -124,7 +126,12 @@ ok('rotulos da legenda sao unicos', new Set(legPh.map((f) => f.rotulo)).size ===
    legPh.map((f) => f.rotulo).join(' / '))
 ok('extremo acido tem rotulo proprio', legPh[1].rotulo === 'Ácido')
 ok('extremo alcalino tem rotulo proprio', legPh[4].rotulo === 'Alcalino')
-ok('acido e alcalino compartilham o nivel', legPh[1].nivel === legPh[4].nivel && legPh[1].cor === legPh[4].cor)
+// O ideal e o do meio (verde) e os dois lados se afastam dele igualmente:
+// as pontas tem a mesma cor, os vizinhos do ideal tem a mesma cor.
+ok('o ideal e o do meio, em verde', legPh[2].rotulo === 'Ideal' && legPh[2].nivel === 'medio' && legPh[2].cor === NIVEIS.medio.cor)
+ok('as duas pontas (muito acido e alcalino) tem a mesma cor, ruim', legPh[0].cor === legPh[4].cor && legPh[0].cor !== legPh[2].cor)
+ok('os vizinhos do ideal (acido e pouco acido) tem a mesma cor', legPh[1].cor === legPh[3].cor && legPh[1].cor !== legPh[2].cor)
+ok('o ideal e o unico verde da escala', Object.entries(NIVEIS).filter(([, n]) => n.cor === NIVEIS.medio.cor).length === 1)
 ok('parametro sem rotulo proprio usa o do nivel', faixasParaLegenda('v')[0].rotulo === NIVEIS['muito_baixo'].rotulo)
 ok('p nao tem legenda', faixasParaLegenda('p').length === 0)
 ok('temFaixas(ph)', temFaixas('ph_h2o') === true)

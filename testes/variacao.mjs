@@ -191,7 +191,8 @@ ok('classificacao: t4 (sem valor em B) afunda', porClasse[porClasse.length - 1].
 ok('ordenar nao muta a lista original', comp.linhas[0].talhaoId === 't1')
 
 console.log('\n=== classificacao mostrada e a do ano B ===')
-ok('t1 classifica 3,0 e nao 2,0', por.t1.rotuloNivelB === 'Bom', `${por.t1.b.valor} -> ${por.t1.rotuloNivelB}`)
+// 3,0 fica acima do ideal (2,4): "Alto". O ideal agora é o nível do meio, e o de cima é excesso.
+ok('t1 classifica 3,0 e nao 2,0', por.t1.rotuloNivelB === 'Alto', `${por.t1.b.valor} -> ${por.t1.rotuloNivelB}`)
 ok('t4 sem ano B nao tem classificacao', por.t4.nivelB === null && por.t4.rotuloNivelB === null)
 
 console.log('\n=== parametro sem faixa: limiar zero, nada e estavel a esmo ===')

@@ -19,9 +19,9 @@ export const COLUNAS = {
   MODULO: 'modulo',
 }
 
-// Ordem de riqueza dos níveis, do mais pobre ao mais rico, como declarada no
-// config. Ordena a coluna de classificação por significado e não pelo
-// alfabeto — "Bom" antes de "Muito baixo" seria leitura errada.
+// Ordem dos níveis, do menos ao mais, como declarada no config. Ordena a coluna
+// de classificação por significado e não pelo alfabeto — "Alto" antes de "Muito
+// baixo" seria leitura errada. É ordem de QUANTIDADE: o ideal fica no meio.
 const ORDEM_NIVEL = Object.fromEntries(Object.keys(NIVEIS).map((nivel, i) => [nivel, i]))
 
 /**
