@@ -559,3 +559,18 @@ no nível do meio: pouco demais e muito demais são ruins.
 | **A cor não diz de que lado do ideal o valor está** (laranja pode ser pouco ou muito). | Quem diz é o rótulo, na legenda e na dica do mapa. Diferenciar por matiz entre "pouco" e "muito" fica para depois, se fizer falta. |
 | **`bom` e `muito_bom` ainda são lidos, como `alto` e `muito_alto`** (`NIVEL_LEGADO`). | Critérios salvos antes da mudança trazem os nomes antigos. Havia 2 critérios, nenhuma fazenda os usava. |
 | **O NDVI/EVI/SAVI tem paleta própria (`NIVEIS_VIGOR`)**, com a escala "quanto maior, melhor". | Vigor alto não é problema. Ainda não há tela que use esses índices. |
+
+### Ajuste de gleba no mapa: o que travava a edição
+
+Revisão da edição de vértices, testada no Painel real com o talhão 8 (4 glebas, 2 delas em vários pedaços).
+
+| Decisão | Motivo |
+|---|---|
+| **A edição passa `snapDistance` (8 px) ao Geoman, e há a chave "Encaixar nas divisas".** | O padrão do Geoman é 20 px. Numa gleba dividida todo vértice coincide com um da vizinha ou do talhão, então qualquer arrasto de até ~22 px era desfeito (o vértice voltava) e só andava passando de ~26 px. Com 8 px a zona morta cai para ~6 px; desligada, não existe. Reabre-se a edição ao trocar a chave: `pm.setOptions` não muda o encaixe de uma edição aberta. |
+| **Clicar em outro item com vértices arrastados e não gravados pergunta antes de descartar** ("Continuar editando" / "Descartar e ir"). Sem alteração, troca direto. | Numa divisão de terra, um clique que cai na vizinha bastava para apagar o trabalho em silêncio. A seleção volta para o item em edição enquanto o diálogo está aberto. O "mexeu?" compara a geometria da camada com a salva na mesma precisão do mapa (6 casas, `mesmaGeometria`). |
+| **Gravar a geometria de uma gleba exige que ela fique dentro do talhão** (mesma tolerância de 1% da criação). | Era possível gravar fora e depois nem o nome da gleba podia ser editado, porque "Editar dados" aplica a regra. Recusa mantém a pessoa editando, com o motivo e a área fora. |
+| **Aviso quando o vértice faria a linha cruzar a si mesma** (no máximo a cada 4 s). | O Geoman recusa em silêncio e o vértice parecia travado. |
+| **O texto do painel diz "Botão direito num vértice para removê-lo".** | O Geoman remove só com o botão direito (`contextmenu`); o texto prometia "clique". Em tela de toque não há botão direito: não testado. |
+| **A divisão do talhão descarta pedaços abaixo de 100 m².** | Deixava fiapos de 1 a 40 m² ligados às glebas (a 8-9 tinha dois), com alças amontoadas, impossíveis de pegar. O menor pedaço real tinha 1.904 m². Vale para glebas já criadas depois de rodar "Ajustar glebas já criadas ao talhão" (Dados > Importar pontos). |
+
+**Ainda em aberto:** mover uma divisa compartilhada mexe só na gleba editada; a vizinha não acompanha e abre buraco (0,26 ha ao mover um vértice ~35 px). Exige editar a divisa nas duas glebas de uma vez.

@@ -24,6 +24,23 @@ export function primeiraFeature(geoJson) {
   return paraFeature(geoJson)
 }
 
+/**
+ * As duas geometrias são a mesma, no nível de precisão que o mapa grava?
+ *
+ * O Leaflet arredonda para 6 casas (~11 cm) ao gerar o GeoJSON de uma camada,
+ * então uma geometria lida do banco (15 casas) nunca é `===` à mesma camada
+ * relida do mapa. Comparar com a mesma régua é o que permite saber se a pessoa
+ * mexeu em algo ou só abriu a edição.
+ */
+export function mesmaGeometria(a, b, casas = 6) {
+  const fa = paraFeature(a)?.geometry
+  const fb = paraFeature(b)?.geometry
+  if (!fa || !fb || fa.type !== fb.type) return false
+  const fator = 10 ** casas
+  const arredondar = (c) => (Array.isArray(c) ? c.map(arredondar) : Math.round(c * fator) / fator)
+  return JSON.stringify(arredondar(fa.coordinates)) === JSON.stringify(arredondar(fb.coordinates))
+}
+
 export function tipoDaGeometria(geoJson) {
   const f = paraFeature(geoJson)
   return f?.geometry?.type ?? null

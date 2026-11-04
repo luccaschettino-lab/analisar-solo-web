@@ -343,6 +343,8 @@ export default function Painel() {
               editor={editor}
               editandoGeometria={item.editandoGeometria}
               gravandoGeometria={item.gravandoGeometria}
+              encaixar={item.encaixar}
+              aoAlternarEncaixe={item.alternarEncaixe}
               carregandoExclusao={item.carregandoExclusao}
               aoEditarDados={item.abrirEdicaoDados}
               aoEditarGeometria={item.iniciarEdicaoGeometria}

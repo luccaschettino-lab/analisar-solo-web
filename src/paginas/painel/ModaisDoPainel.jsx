@@ -264,6 +264,32 @@ export default function ModaisDoPainel({
         />
       )}
 
+      {item.descartePendente && (
+        <Modal titulo="Descartar o que você mexeu?" aoFechar={item.continuarEditando}>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Você arrastou vértices da {item.descartePendente.rotulo} e ainda não gravou. Se for para
+              outro item, essas alterações são perdidas.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={item.descartarEIr}
+                className="rounded-md px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                Descartar e ir
+              </button>
+              <button
+                onClick={item.continuarEditando}
+                autoFocus
+                className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 dark:bg-solo-600 dark:hover:bg-solo-700"
+              >
+                Continuar editando
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {item.confirmandoItem && item.itemSelecionado && (
         <ConfirmarExclusao
           titulo={`Excluir ${item.selecionado.tipo === 'talhao' ? 'talhão' : 'gleba'} ${item.itemSelecionado.codigo}?`}

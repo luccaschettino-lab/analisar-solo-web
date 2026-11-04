@@ -1,3 +1,5 @@
+import { mesmaGeometria } from '../src/lib/geo.js'
+import { descartarPedacosMinusculos, AREA_MINIMA_DO_PEDACO_M2 } from '../src/lib/divisaoPorPontos.js'
 import {
   CONTENCAO, TOLERANCIA_FORA,
   avaliarContencao, glebaDentroDoTalhao, pontoFeature, areaEmHectares,
@@ -111,6 +113,43 @@ ok('achata um MultiPolygon de entrada em vez de aninhar',
 
 ok('lista vazia devolve null', combinarGeometrias([]) === null)
 ok('só geometria nula/sem área devolve null', combinarGeometrias([null, undefined]) === null)
+
+console.log('\n=== mesmaGeometria: a régua do mapa (6 casas) ===')
+{
+  const f = (coords) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [coords] } })
+  const original = f([[-49.57507584109174, -9.335281629308161], [-49.5749, -9.3355], [-49.5748, -9.3353], [-49.57507584109174, -9.335281629308161]])
+  // o mesmo desenho depois de passar pelo mapa (arredondado a 6 casas)
+  const doMapa = f([[-49.575076, -9.335282], [-49.5749, -9.3355], [-49.5748, -9.3353], [-49.575076, -9.335282]])
+  ok('a geometria relida do mapa (arredondada) é a mesma', mesmaGeometria(original, doMapa))
+  const mexida = f([[-49.575076, -9.335282], [-49.5749, -9.3355], [-49.5747, -9.3353], [-49.575076, -9.335282]])
+  ok('um vértice movido é detectado', !mesmaGeometria(original, mexida))
+  ok('tipos diferentes são diferentes', !mesmaGeometria(original, { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [0, 0] } }))
+  ok('ausente nunca é igual', !mesmaGeometria(original, null) && !mesmaGeometria(null, null))
+  const abaixoDe6 = f([[-49.5750758, -9.3352816], [-49.5749, -9.3355], [-49.5748, -9.3353], [-49.5750758, -9.3352816]])
+  ok('diferença abaixo de 6 casas não conta como mexida', mesmaGeometria(original, abaixoDe6))
+}
+
+console.log('\n=== descartarPedacosMinusculos: fiapos da divisão do talhão ===')
+{
+  const quadrado = (x, y, lado) => [[[x, y], [x + lado, y], [x + lado, y + lado], [x, y + lado], [x, y]]]
+  const feature = (poligonos) => ({ type: 'Feature', properties: {}, geometry: { type: 'MultiPolygon', coordinates: poligonos } })
+  // 0,01 grau = ~1,1 km (grande); 0,00002 grau = ~2 m (fiapo de ~5 m²); 0,0005 grau = ~55 m (~3.000 m²)
+  const grande = quadrado(-49.58, -9.34, 0.01)
+  const fiapo = quadrado(-49.5, -9.3, 0.00002)
+  const real = quadrado(-49.57, -9.33, 0.0005)
+
+  const r1 = descartarPedacosMinusculos(feature([grande, fiapo]))
+  ok('tira o fiapo e o que sobra num pedaço só vira Polygon', r1.geometry.type === 'Polygon' && r1.geometry.coordinates === grande)
+  const r2 = descartarPedacosMinusculos(feature([grande, real, fiapo]))
+  ok('mantém os pedaços reais, mesmo pequenos (3.000 m²)', r2.geometry.type === 'MultiPolygon' && r2.geometry.coordinates.length === 2)
+  const original = feature([grande, real])
+  ok('nada a tirar devolve a MESMA feature (sem copiar)', descartarPedacosMinusculos(original) === original)
+  const r3 = descartarPedacosMinusculos(feature([fiapo, quadrado(-49.4, -9.2, 0.00001)]))
+  ok('se todos forem fiapos, fica com o maior (nunca devolve vazio)', r3.geometry.type === 'Polygon' && r3.geometry.coordinates === fiapo)
+  const poligono = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: grande } }
+  ok('Polygon e ponto passam direto', descartarPedacosMinusculos(poligono) === poligono)
+  ok('o limite é de 100 m²', AREA_MINIMA_DO_PEDACO_M2 === 100)
+}
 
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)
 process.exit(falhas === 0 ? 0 : 1)

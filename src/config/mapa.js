@@ -92,7 +92,10 @@ export const ZOOM_PONTO = 17
 export const ZOOM_SEDE = 15
 
 // Distancia, em pixels, dentro da qual o vertice desenhado gruda numa
-// geometria existente.
+// geometria existente. Vale tambem ao EDITAR vertices (useItemSelecionado):
+// sem passar este valor o Geoman usa 20 px, e numa gleba dividida qualquer
+// arrasto de ate ~22 px era desfeito, porque o vertice sempre tem um vertice
+// vizinho coincidente para onde voltar.
 //
 // Era 20 — a que o Geoman sugere — e reclamada como "atracao forte demais":
 // mirando dentro do talhao, o vertice pulava para a borda. Pior que o

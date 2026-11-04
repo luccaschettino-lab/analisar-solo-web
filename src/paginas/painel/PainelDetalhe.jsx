@@ -23,6 +23,8 @@ export default function PainelDetalhe({
   editor,
   editandoGeometria,
   gravandoGeometria,
+  encaixar,
+  aoAlternarEncaixe,
   carregandoExclusao,
   aoEditarDados,
   aoEditarGeometria,
@@ -92,8 +94,20 @@ export default function PainelDetalhe({
           <p className="rounded border border-solo-100 bg-solo-50 px-1.5 py-1 text-[11px] text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
             {ponto
               ? 'Arraste o ponto para a posição correta.'
-              : 'Arraste os vértices. Clique num vértice para removê-lo.'}
+              : 'Arraste os vértices. Botão direito num vértice para removê-lo.'}
           </p>
+          <label
+            className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300"
+            title="Ligado, o vértice gruda nas divisas vizinhas (8 px). Desligue para ajustar uns poucos pixels sem ele voltar ao lugar."
+          >
+            <input
+              type="checkbox"
+              checked={encaixar}
+              onChange={(e) => aoAlternarEncaixe(e.target.checked)}
+              className="h-3 w-3 rounded border-slate-300 text-solo-600 focus:ring-solo-500 dark:border-white/20"
+            />
+            Encaixar nas divisas
+          </label>
           <div className="flex gap-1.5">
             <button
               onClick={aoSalvarGeometria}

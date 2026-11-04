@@ -3,7 +3,42 @@ import intersect from '@turf/intersect'
 import union from '@turf/union'
 import voronoi from '@turf/voronoi'
 import { featureCollection, point } from '@turf/helpers'
+import area from '@turf/area'
 import { paraFeature, areaEmHectares } from './geo.js'
+
+// Pedaços menores que isto (m²) são resto do recorte, não terra: a divisa do
+// talhão tem estreitamentos, e a união das células deixa fiapos de 1 a 40 m²
+// ligados a uma gleba. Eles não servem para nada e atrapalham a edição: ficam
+// com alças amontoadas, impossíveis de pegar. O menor pedaço real que
+// apareceu tinha 1.900 m², então 100 m² separa um do outro com folga.
+export const AREA_MINIMA_DO_PEDACO_M2 = 100
+
+/**
+ * Tira de uma geometria os pedaços de área desprezível. Sempre fica com algo:
+ * se todos forem pequenos, mantém o maior. Devolve a mesma Feature (ou uma
+ * nova, sem os fiapos); um MultiPolygon que sobra com um pedaço só vira Polygon.
+ */
+export function descartarPedacosMinusculos(feature, minimoM2 = AREA_MINIMA_DO_PEDACO_M2) {
+  const g = feature?.geometry
+  if (g?.type !== 'MultiPolygon') return feature
+
+  const medidos = g.coordinates.map((coordenadas) => ({
+    coordenadas,
+    m2: area({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: coordenadas } }),
+  }))
+  let mantidos = medidos.filter((p) => p.m2 >= minimoM2)
+  if (mantidos.length === 0) mantidos = [medidos.reduce((a, b) => (b.m2 > a.m2 ? b : a))]
+  if (mantidos.length === medidos.length) return feature
+
+  const coordenadas = mantidos.map((p) => p.coordenadas)
+  return {
+    ...feature,
+    geometry:
+      coordenadas.length === 1
+        ? { type: 'Polygon', coordinates: coordenadas[0] }
+        : { type: 'MultiPolygon', coordinates: coordenadas },
+  }
+}
 
 /**
  * Divide um talhão entre grupos de pontos, de modo que a soma das partes seja
@@ -69,7 +104,7 @@ export function dividirTalhaoPorPontos(geometriaTalhao, pontos) {
       }
     }
     if (!geometria) continue
-    const feature = { type: 'Feature', properties: {}, geometry: geometria.geometry }
+    const feature = descartarPedacosMinusculos({ type: 'Feature', properties: {}, geometry: geometria.geometry })
     resultado.set(chave, {
       geometria: feature,
       areaHa: areaEmHectares(feature),
