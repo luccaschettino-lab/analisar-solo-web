@@ -3,6 +3,7 @@ import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
 import SeletorTalhao from './dados/SeletorTalhao.jsx'
 import { useSelecaoTalhao } from './dados/useSelecaoTalhao.js'
 import { useCenasCbers } from './monitoramento/useCenasCbers.js'
+import SeletorDeData from './monitoramento/SeletorDeData.jsx'
 
 const INDICES = [
   {
@@ -63,8 +64,7 @@ function AvisoNdwi() {
 function LinhaDoTempo({ cenas, cenaSelecionada, talhaoCodigo, aoSelecionar }) {
   if (cenas.length === 0) return null
 
-  const indiceSelecionado = cenas.findIndex((cena) => cena.id === cenaSelecionada?.id)
-  const cenaAtual = cenas[indiceSelecionado]
+  const cenaAtual = cenas.find((cena) => cena.id === cenaSelecionada?.id)
 
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
@@ -88,56 +88,42 @@ function LinhaDoTempo({ cenas, cenaSelecionada, talhaoCodigo, aoSelecionar }) {
       </div>
 
       <div className="mt-4">
-        <label
-          htmlFor="linha-tempo-cbers"
-          className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300"
-        >
-          <span>Data da cena</span>
-          <span>{indiceSelecionado + 1} de {cenas.length}</span>
-        </label>
-        <input
-          id="linha-tempo-cbers"
-          aria-label="Data da cena CBERS"
-          type="range"
-          min="0"
-          max={cenas.length - 1}
-          step="1"
-          value={indiceSelecionado}
-          onChange={(evento) => aoSelecionar(cenas[Number(evento.target.value)])}
-          className="mt-2 w-full accent-solo-700"
-        />
-        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-          <span>{formatarData(cenas[0].data)}</span>
-          <span>{formatarData(cenas[cenas.length - 1].data)}</span>
-        </div>
+        <SeletorDeData cenas={cenas} selecionadaId={cenaSelecionada?.id} aoSelecionar={aoSelecionar} />
       </div>
 
-      <div className="mt-4 max-h-56 overflow-auto rounded-md border border-slate-200 dark:border-white/10">
-        <ul className="divide-y divide-slate-100 dark:divide-white/10">
-          {cenas.map((cena) => {
-            const selecionada = cena.id === cenaSelecionada?.id
-            return (
-              <li key={cena.id}>
-                <button
-                  type="button"
-                  aria-pressed={selecionada}
-                  onClick={() => aoSelecionar(cena)}
-                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${
-                    selecionada
-                      ? 'bg-solo-50 text-solo-900 dark:bg-solo-500/15 dark:text-solo-200'
-                      : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <span>{formatarData(cena.data)}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Nuvens: {formatarNuvem(cena.nuvens)}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+      {/* A barra é o jeito principal de escolher a data; a lista fica para quem
+          prefere ler todas de uma vez. */}
+      <details className="mt-4 rounded-md border border-slate-200 dark:border-white/10">
+        <summary className="cursor-pointer px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
+          Ver todas as datas em lista
+        </summary>
+        <div className="max-h-56 overflow-auto border-t border-slate-200 dark:border-white/10">
+          <ul className="divide-y divide-slate-100 dark:divide-white/10">
+            {cenas.map((cena) => {
+              const selecionada = cena.id === cenaSelecionada?.id
+              return (
+                <li key={cena.id}>
+                  <button
+                    type="button"
+                    aria-pressed={selecionada}
+                    onClick={() => aoSelecionar(cena)}
+                    className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${
+                      selecionada
+                        ? 'bg-solo-50 text-solo-900 dark:bg-solo-500/15 dark:text-solo-200'
+                        : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{formatarData(cena.data)}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Nuvens: {formatarNuvem(cena.nuvens)}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </details>
     </section>
   )
 }
