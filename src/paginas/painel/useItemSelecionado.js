@@ -3,6 +3,7 @@ import { useGeometrias } from '../../mapa/useGeometrias.js'
 import { focarGeometria } from '../../mapa/enquadrar.js'
 import { primeiraFeature, areaEmHectares, avaliarContencao, CONTENCAO, mesmaGeometria } from '../../lib/geo.js'
 import { SNAP_DISTANCIA } from '../../config/mapa.js'
+import { planejarDivisa } from '../../lib/divisaCompartilhada.js'
 import { atualizarTalhao, excluirTalhao, resumoCascataTalhao } from '../../dados/talhoes.js'
 import { atualizarGleba, excluirGleba, contarAnalisesDaGleba } from '../../dados/glebas.js'
 
@@ -51,6 +52,8 @@ export function useItemSelecionado({
   // Clicaram em outro item com vértices arrastados e ainda não gravados: a
   // seleção volta para o item em edição e o diálogo pergunta o que fazer.
   const [descartePendente, setDescartePendente] = useState(null)
+  // O que a pessoa moveu também é divisa de outra gleba: pergunta se leva junto.
+  const [divisaPendente, setDivisaPendente] = useState(null)
   const ultimoAvisoDeCruzamento = useRef(0)
 
   const aoSelecionar = useCallback((alvo) => setSelecionado(alvo), [setSelecionado])
@@ -216,6 +219,46 @@ export function useItemSelecionado({
     setEditandoChave(chaveSelecionada)
   }
 
+  // Grava o que está na camada. Com `plano`, leva a divisa mexida também às
+  // glebas vizinhas que a compartilhavam.
+  async function gravarGeometria({ feature, areaHa, plano = null }) {
+    const alteradas = []
+    setGravandoGeometria(true)
+    try {
+      if (selecionado.tipo === 'talhao') {
+        aplicarTalhao(await atualizarTalhao(selecionado.id, { geometria: feature, areaHa }))
+      } else {
+        aplicarGleba(await atualizarGleba(selecionado.id, { geometria: feature, areaHa }))
+      }
+      for (const vizinha of plano?.afetadas ?? []) {
+        aplicarGleba(await atualizarGleba(vizinha.gleba.id, { geometria: vizinha.geometria, areaHa: vizinha.areaHa }))
+        alteradas.push(vizinha.gleba.codigo)
+      }
+      // Só sai do modo de edição depois de gravado. Sair antes daria a impressão
+      // de sucesso mesmo quando a gravação falha.
+      desligarEdicao(chaveSelecionada)
+      setEditandoChave(null)
+      mostrarAviso(
+        alteradas.length > 0
+          ? `Geometria gravada, e a divisa também na gleba ${alteradas.join(', ')}.`
+          : 'Geometria gravada.',
+      )
+    } catch (e) {
+      mostrarAviso(
+        alteradas.length > 0
+          ? `${e.message} A divisa já tinha sido levada para a gleba ${alteradas.join(', ')}: confira as vizinhas.`
+          : e.message,
+      )
+      // O desenho na tela não corresponde ao banco: volta ao que está salvo em
+      // vez de deixar o usuário achar que gravou.
+      desligarEdicao(chaveSelecionada)
+      setEditandoChave(null)
+      setRevisao((r) => r + 1)
+    } finally {
+      setGravandoGeometria(false)
+    }
+  }
+
   async function salvarGeometria() {
     // A guarda de reentrância é o que impede um duplo clique de disparar dois
     // UPDATE. O botão também fica desabilitado, mas dois cliques rápidos
@@ -244,29 +287,30 @@ export function useItemSelecionado({
       }
     }
 
-    setGravandoGeometria(true)
-    try {
-      if (selecionado.tipo === 'talhao') {
-        aplicarTalhao(await atualizarTalhao(selecionado.id, { geometria: feature, areaHa }))
-      } else {
-        aplicarGleba(await atualizarGleba(selecionado.id, { geometria: feature, areaHa }))
+    // Divisa compartilhada: num talhão dividido, o vértice que a pessoa moveu
+    // costuma ser também da gleba ao lado. Mexer só em uma abre buraco entre as
+    // duas, então pergunta antes de gravar.
+    if (selecionado.tipo === 'gleba' && itemSelecionado?.geometria) {
+      const vizinhas = glebas.filter((g) => g.talhao_id === itemSelecionado.talhao_id && g.id !== itemSelecionado.id)
+      const plano = planejarDivisa({ antes: itemSelecionado.geometria, depois: feature, vizinhas })
+      if (plano) {
+        setDivisaPendente({ feature, areaHa, plano })
+        return
       }
-      // Só sai do modo de edição depois de gravado. Sair antes daria a impressão
-      // de sucesso mesmo quando a gravação falha.
-      desligarEdicao(chaveSelecionada)
-      setEditandoChave(null)
-      mostrarAviso('Geometria gravada.')
-    } catch (e) {
-      mostrarAviso(e.message)
-      // O desenho na tela não corresponde ao banco: volta ao que está salvo em
-      // vez de deixar o usuário achar que gravou.
-      desligarEdicao(chaveSelecionada)
-      setEditandoChave(null)
-      setRevisao((r) => r + 1)
-    } finally {
-      setGravandoGeometria(false)
     }
+
+    await gravarGeometria({ feature, areaHa })
   }
+
+  // Resposta do diálogo da divisa: grava (levando ou não a divisa às vizinhas).
+  async function confirmarDivisa(levarNasVizinhas) {
+    if (!divisaPendente || gravandoGeometria) return
+    const { feature, areaHa, plano } = divisaPendente
+    setDivisaPendente(null)
+    await gravarGeometria({ feature, areaHa, plano: levarNasVizinhas ? plano : null })
+  }
+
+  const voltarAEditar = useCallback(() => setDivisaPendente(null), [])
 
   function cancelarGeometria() {
     desligarEdicao(chaveSelecionada)
@@ -331,6 +375,9 @@ export function useItemSelecionado({
     descartePendente,
     continuarEditando,
     descartarEIr,
+    divisaPendente,
+    confirmarDivisa,
+    voltarAEditar,
     iniciarEdicaoGeometria,
     salvarGeometria,
     cancelarGeometria,

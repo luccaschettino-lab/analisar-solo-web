@@ -264,6 +264,15 @@ export default function ModaisDoPainel({
         />
       )}
 
+      {item.divisaPendente && (
+        <DialogoDaDivisa
+          plano={item.divisaPendente.plano}
+          aoLevarJunto={() => item.confirmarDivisa(true)}
+          aoSoEsta={() => item.confirmarDivisa(false)}
+          aoVoltar={item.voltarAEditar}
+        />
+      )}
+
       {item.descartePendente && (
         <Modal titulo="Descartar o que você mexeu?" aoFechar={item.continuarEditando}>
           <div className="space-y-4">
@@ -314,5 +323,57 @@ export default function ModaisDoPainel({
         />
       )}
     </>
+  )
+}
+
+/**
+ * A divisa que a pessoa moveu também é de outras glebas. Levar junto mantém as
+ * duas coladas; gravar só esta deixa um buraco entre elas. Se alguma vizinha
+ * ficaria com a linha cruzada, não dá para levar junto, e o diálogo diz isso.
+ */
+function DialogoDaDivisa({ plano, aoLevarJunto, aoSoEsta, aoVoltar }) {
+  const codigos = (lista) => lista.map((v) => v.gleba.codigo).join(', ')
+  const impossivel = plano.invalidas.length > 0
+  const botao = 'rounded-md px-3 py-2 text-sm font-medium'
+
+  return (
+    <Modal titulo="Esta divisa é compartilhada" aoFechar={aoVoltar}>
+      <div className="space-y-4">
+        {impossivel ? (
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            O que você moveu também é divisa da gleba <strong>{codigos([...plano.afetadas, ...plano.invalidas])}</strong>, mas
+            levar a divisa para a gleba <strong>{codigos(plano.invalidas)}</strong> faria a linha dela cruzar a si mesma.
+            Mova um pouco menos, ou grave só esta gleba (isso deixa um buraco entre as duas).
+          </p>
+        ) : (
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            O que você moveu também é divisa da gleba <strong>{codigos(plano.afetadas)}</strong>. Levando a divisa junto, elas
+            continuam coladas. Gravando só esta, abre-se um buraco entre as duas.
+          </p>
+        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            onClick={aoSoEsta}
+            className={`${botao} text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10`}
+          >
+            Só nesta gleba
+          </button>
+          {impossivel ? (
+            <button onClick={aoVoltar} autoFocus className={`${botao} bg-solo-700 text-white hover:bg-solo-800 dark:bg-solo-600 dark:hover:bg-solo-700`}>
+              Voltar a editar
+            </button>
+          ) : (
+            <>
+              <button onClick={aoVoltar} className={`${botao} text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10`}>
+                Voltar a editar
+              </button>
+              <button onClick={aoLevarJunto} autoFocus className={`${botao} bg-solo-700 text-white hover:bg-solo-800 dark:bg-solo-600 dark:hover:bg-solo-700`}>
+                Mover nas vizinhas também
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </Modal>
   )
 }

@@ -573,4 +573,16 @@ Revisão da edição de vértices, testada no Painel real com o talhão 8 (4 gle
 | **O texto do painel diz "Botão direito num vértice para removê-lo".** | O Geoman remove só com o botão direito (`contextmenu`); o texto prometia "clique". Em tela de toque não há botão direito: não testado. |
 | **A divisão do talhão descarta pedaços abaixo de 100 m².** | Deixava fiapos de 1 a 40 m² ligados às glebas (a 8-9 tinha dois), com alças amontoadas, impossíveis de pegar. O menor pedaço real tinha 1.904 m². Vale para glebas já criadas depois de rodar "Ajustar glebas já criadas ao talhão" (Dados > Importar pontos). |
 
-**Ainda em aberto:** mover uma divisa compartilhada mexe só na gleba editada; a vizinha não acompanha e abre buraco (0,26 ha ao mover um vértice ~35 px). Exige editar a divisa nas duas glebas de uma vez.
+**Divisa compartilhada (fechado depois):** ver a seção seguinte.
+
+### Divisa compartilhada entre glebas
+
+Num talhão dividido, o vértice de uma gleba costuma ser também da vizinha. Editar só uma abria buraco entre as duas (0,26 ha ao mover um vértice ~35 px, no talhão 8).
+
+| Decisão | Motivo |
+|---|---|
+| **Ao gravar, se a pessoa moveu um vértice que outra gleba do mesmo talhão também tem, o app pergunta**: "Mover nas vizinhas também" / "Só nesta gleba" / "Voltar a editar". | A escolha é da pessoa: às vezes a vizinha deve ficar como está. Levar junto grava a gleba editada e cada vizinha com a MESMA coordenada, então coincidem exatamente. Testado com o vértice que 8-6, 8-7 e 8-8 dividem: o buraco foi de 0,26 ha para 0 e não houve sobreposição. |
+| **Só vértices MOVIDOS são levados** (`lib/divisaCompartilhada.js`). Se a pessoa acrescentou ou tirou vértices, nada é proposto às vizinhas. | Sem a mesma quantidade de vértices não dá para saber qual de "antes" corresponde a qual de "depois"; melhor não mexer na vizinha do que mexer no vértice errado. |
+| **Gravar sem mexer em nada não conta como divisa movida.** | O mapa devolve as coordenadas arredondadas a 6 casas; a diferença (até ~7 cm) fica abaixo da tolerância de 1e-6 grau. |
+| **Se levar a divisa fizesse a linha de uma vizinha cruzar a si mesma, o diálogo diz isso e não oferece mover nas vizinhas.** | A vizinha muda por tabela e não passa pelo filtro de cruzamento do editor. Fica "Só nesta gleba" ou "Voltar a editar". |
+| **Limite conhecido:** só vértices que coincidem (a 1e-6 grau, ~11 cm). Divisa que passa pelo meio do lado de uma vizinha, sem vértice ali, não acompanha. | Nas glebas feitas pela divisão do talhão as divisas coincidem vértice a vértice; um desenho manual pode não ser assim. |
