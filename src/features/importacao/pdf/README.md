@@ -38,6 +38,19 @@ pedindo a Entrada manual.
 6. **Não duplica:** uma análise com o mesmo talhão, ano-safra, profundidade e Nº
    do laboratório aparece como "Já importada" e não é gravada de novo.
 
+## Vários arquivos de uma vez
+
+Dá para arrastar ou escolher mais de um PDF. Todos entram na mesma tela de
+conferência, com o mesmo ano-safra (sugerido pela data de entrada do primeiro).
+
+- Arquivo que não dá para ler (não é PDF, não é laudo da UFV, sem amostras)
+  **não derruba os outros**: a tela lista quais foram ignorados e por quê. Só
+  se NENHUM der para ler aparece o erro.
+- A mesma amostra (mesmo talhão, safra, profundidade e Nº do laboratório) que
+  aparece duas vezes no envio (o mesmo laudo escolhido em dobro) fica como
+  "Repetida neste envio" e só a primeira é gravada. O que já está no banco
+  aparece como "Já importada".
+
 ## Para acrescentar outro laboratório
 
 Escrever um leitor irmão de `laudoUfv.js` (mesma saída: amostras com

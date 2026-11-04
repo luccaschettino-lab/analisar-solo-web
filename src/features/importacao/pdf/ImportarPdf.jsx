@@ -46,6 +46,9 @@ export default function ImportarPdf() {
   const [lendo, setLendo] = useState(false)
   const [arrastando, setArrastando] = useState(false)
   const [erro, setErro] = useState('')
+  // Arquivos do lote que não deram para ler (não são laudo da UFV, estão
+  // corrompidos...). Os outros seguem; este texto diz quais ficaram de fora.
+  const [ignorados, setIgnorados] = useState('')
   const [gravando, setGravando] = useState(null)
   const [resultado, setResultado] = useState('')
 
@@ -55,23 +58,30 @@ export default function ImportarPdf() {
     const arquivos = [...lista]
     if (arquivos.length === 0) return
     setErro('')
+    setIgnorados('')
     setResultado('')
     setLendo(true)
     try {
       const lidos = []
+      const falhas = []
       for (const arquivo of arquivos) {
-        if (!/\.pdf$/i.test(arquivo.name)) throw new Error(`"${arquivo.name}" não é um PDF.`)
-        if (arquivo.size > LIMITE_BYTES) throw new Error(`"${arquivo.name}" passa de 25 MB.`)
-        const paginas = await extrairLinhasPdf(await arquivo.arrayBuffer())
-        if (!ehLaudoUfv(paginas.flat())) {
-          throw new Error(
-            `"${arquivo.name}" não parece um laudo da UFV. Por enquanto só esse formato é lido; para outros laboratórios, use a Entrada manual.`,
-          )
+        // Um arquivo ruim não derruba os outros: o que der para ler segue, e a
+        // tela diz o que ficou de fora.
+        try {
+          if (!/\.pdf$/i.test(arquivo.name)) throw new Error('não é um PDF.')
+          if (arquivo.size > LIMITE_BYTES) throw new Error('passa de 25 MB.')
+          const paginas = await extrairLinhasPdf(await arquivo.arrayBuffer())
+          if (!ehLaudoUfv(paginas.flat())) {
+            throw new Error('não parece um laudo da UFV. Por enquanto só esse formato é lido; para outros laboratórios, use a Entrada manual.')
+          }
+          const laudo = lerLaudoUfv(paginas)
+          if (laudo.amostras.length === 0) throw new Error('não encontrei nenhuma amostra nele.')
+          lidos.push({ nomeArquivo: arquivo.name, laudo })
+        } catch (e) {
+          falhas.push(`"${arquivo.name}" ${e.message}`)
         }
-        const laudo = lerLaudoUfv(paginas)
-        if (laudo.amostras.length === 0) throw new Error(`Não encontrei nenhuma amostra em "${arquivo.name}".`)
-        lidos.push({ nomeArquivo: arquivo.name, laudo })
       }
+      if (lidos.length === 0) throw new Error(falhas.join(' '))
 
       // O que a conferência precisa saber da fazenda: pontos de coleta (posição
       // da amostra) e o que já foi gravado (para não duplicar).
@@ -81,6 +91,7 @@ export default function ImportarPdf() {
       ])
 
       setLaudos(lidos)
+      setIgnorados(falhas.join(' '))
       setContexto({ pontos, identidades })
       setAnoSafra(anoSafraDaData(lidos[0].laudo.entrada))
       setEscolhas({})
@@ -109,7 +120,7 @@ export default function ImportarPdf() {
 
   const linhas = useMemo(() => {
     if (!contexto) return []
-    return laudos.flatMap(({ nomeArquivo, laudo }, indiceArquivo) =>
+    const resolvidas = laudos.flatMap(({ nomeArquivo, laudo }, indiceArquivo) =>
       laudo.amostras.map((amostra) => {
         const chave = `${indiceArquivo}:${amostra.n_lab}`
         const resolvida = resolverAmostraDoLaudo(amostra, escolhas[chave], {
@@ -121,6 +132,23 @@ export default function ImportarPdf() {
         return { chave, nomeArquivo, laudo, ...resolvida }
       }),
     )
+
+    // `existentes` só conhece o que já está no banco. O mesmo laudo escolhido
+    // duas vezes (ou dois arquivos com a mesma amostra) entraria em dobro: a
+    // segunda ocorrência vira "repetida" e não é gravada.
+    const vistas = new Set()
+    return resolvidas.map((linha) => {
+      if (linha.status !== STATUS.PRONTA) return linha
+      const chave = chaveDeDuplicidade({
+        talhaoId: linha.talhaoId,
+        anoSafra,
+        profundidade: linha.profundidade,
+        numeroAmostraLab: linha.amostra.n_lab,
+      })
+      if (vistas.has(chave)) return { ...linha, status: STATUS.DUPLICADA, repetidaNoEnvio: true }
+      vistas.add(chave)
+      return linha
+    })
   }, [laudos, contexto, escolhas, glebas, anoSafra, existentes])
 
   const marcadas = linhas.filter((l) => l.status === STATUS.PRONTA && !desmarcadas.has(l.chave))
@@ -147,6 +175,7 @@ export default function ImportarPdf() {
     setEscolhas({})
     setDesmarcadas(new Set())
     setErro('')
+    setIgnorados('')
   }
 
   async function gravar() {
@@ -247,6 +276,11 @@ export default function ImportarPdf() {
 
       {contexto && (
         <>
+          {ignorados && (
+            <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+              <strong className="font-medium">Arquivos ignorados:</strong> {ignorados}
+            </p>
+          )}
           <div className="rounded-md border border-solo-100 bg-solo-50 px-3 py-2 text-sm text-solo-800 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-300">
             {laudos.map((l) => (
               <p key={l.nomeArquivo}>
@@ -280,7 +314,9 @@ export default function ImportarPdf() {
             <ul className="flex flex-wrap gap-2 text-xs">
               <Selo cor={ROTULO_STATUS[STATUS.PRONTA].cor}>{marcadas.length} para gravar</Selo>
               {contagem(STATUS.DUPLICADA) > 0 && (
-                <Selo cor={ROTULO_STATUS[STATUS.DUPLICADA].cor}>{contagem(STATUS.DUPLICADA)} já importadas</Selo>
+                <Selo cor={ROTULO_STATUS[STATUS.DUPLICADA].cor}>
+                  {contagem(STATUS.DUPLICADA)} {contagem(STATUS.DUPLICADA) === 1 ? 'repetida ou já importada' : 'repetidas ou já importadas'}
+                </Selo>
               )}
               {pendentes > 0 && (
                 <Selo cor={ROTULO_STATUS[STATUS.SEM_GLEBA].cor}>{pendentes} precisam de atenção</Selo>
@@ -313,7 +349,7 @@ export default function ImportarPdf() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/10">
                 {linhas.map((l) => {
-                  const rotulo = ROTULO_STATUS[l.status]
+                  const rotulo = l.repetidaNoEnvio ? { ...ROTULO_STATUS[l.status], texto: 'Repetida neste envio' } : ROTULO_STATUS[l.status]
                   const opcoesDeGleba = l.candidatas.length > 0 ? l.candidatas : glebas
                   const avisos = [...l.amostra.avisos, ...(l.motivo ? [l.motivo] : [])]
                   return (
