@@ -5,6 +5,7 @@ import FormGleba from './FormGleba.jsx'
 import EscolherTipoGleba from './EscolherTipoGleba.jsx'
 import GlebasEmLote from './GlebasEmLote.jsx'
 import ImportarArquivo from './ImportarArquivo.jsx'
+import ImportarGlebas from './ImportarGlebas.jsx'
 import MesclarTalhoes from './MesclarTalhoes.jsx'
 import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
 import Modal from '../../componentes/Modal.jsx'
@@ -40,6 +41,8 @@ export default function ModaisDoPainel({
   aoConfirmarExclusaoFazenda,
   importandoArquivo,
   aoFecharImportarArquivo,
+  importandoGlebas,
+  aoFecharImportarGlebas,
   mesclandoTalhoes,
   aoFecharMesclarTalhoes,
 }) {
@@ -129,6 +132,22 @@ export default function ModaisDoPainel({
             if (novosTalhoes.length) aplicarTalhoes(novosTalhoes)
             mostrarAviso(
               `${novosTalhoes.length} ${novosTalhoes.length === 1 ? 'talhão importado' : 'talhões importados'}.`,
+            )
+          }}
+        />
+      )}
+
+      {importandoGlebas && fazendaSelecionada && (
+        <ImportarGlebas
+          fazendaId={fazendaSelecionada.id}
+          talhoes={talhoes}
+          glebas={glebas}
+          aoFechar={aoFecharImportarGlebas}
+          aoImportado={({ glebas: novasGlebas, pontosLigados }) => {
+            if (novasGlebas.length) aplicarGlebas(novasGlebas)
+            mostrarAviso(
+              `${novasGlebas.length} ${novasGlebas.length === 1 ? 'gleba importada' : 'glebas importadas'}` +
+                (pontosLigados ? `, com ${pontosLigados} ${pontosLigados === 1 ? 'ponto de amostra ligado' : 'pontos de amostra ligados'}.` : '.'),
             )
           }}
         />

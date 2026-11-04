@@ -55,3 +55,22 @@ export async function criarGlebaComPontosColeta({
     'Falha ao criar gleba com pontos de amostra',
   )
 }
+
+/**
+ * Liga pontos de amostra a uma gleba que acabou de ser criada (importação de
+ * glebas). Só toca em ponto ainda sem gleba: um ponto já usado por outra não é
+ * tirado dela. Devolve quantos foram ligados.
+ */
+export async function vincularPontosColetaAGleba(glebaId, pontoIds) {
+  if (pontoIds.length === 0) return 0
+  const linhas = checar(
+    await supabase
+      .from('pontos_coleta')
+      .update({ gleba_id: glebaId })
+      .in('id', pontoIds)
+      .is('gleba_id', null)
+      .select('id'),
+    'Falha ao ligar os pontos de amostra à gleba',
+  )
+  return linhas?.length ?? 0
+}

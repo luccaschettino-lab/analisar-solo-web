@@ -74,10 +74,14 @@ function aneisDoPoligono(blocoPoligono) {
  * talhão ou gleba. Placemark de ponto ou linha (marcador, trilha) é
  * ignorado — não tem área para desenhar.
  *
+ * Com `{ pontos: true }` (importação de glebas, que também podem ser pontos),
+ * Placemarks de ponto viram candidatos do tipo Point. Sem a opção, continuam
+ * ignorados, como sempre foi para talhões.
+ *
  * Lança se o arquivo não for KML, ou se não achar nenhum polígono nele —
  * as duas situações em que não há nada a importar.
  */
-export function candidatosDoKml(textoKml) {
+export function candidatosDoKml(textoKml, { pontos = false } = {}) {
   if (typeof textoKml !== 'string' || !/<kml[\s>]/i.test(textoKml)) {
     throw new Error('Isso não parece um arquivo KML.')
   }
@@ -87,7 +91,21 @@ export function candidatosDoKml(textoKml) {
     const nomeOriginal = textoSimples(extrairTag(bloco, 'name'))
 
     const poligonos = extrairTodos(bloco, 'Polygon').map(aneisDoPoligono).filter(Boolean)
-    if (poligonos.length === 0) continue
+    if (poligonos.length === 0) {
+      if (!pontos) continue
+      // "lon,lat[,altitude]". Um Placemark com vários Point (MultiGeometry) vira
+      // um candidato por ponto, numerados para não saírem com o mesmo nome.
+      const coordenadas = extrairTodos(bloco, 'Point')
+        .map((p) => anelDeCoordenadas(extrairTag(p, 'coordinates') ?? '')[0])
+        .filter(Boolean)
+      coordenadas.forEach((coordenada, i) => {
+        candidatos.push({
+          nomeOriginal: coordenadas.length > 1 ? `${nomeOriginal} ${i + 1}`.trim() : nomeOriginal,
+          geometria: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coordenada } },
+        })
+      })
+      continue
+    }
 
     const geometry =
       poligonos.length === 1
@@ -101,7 +119,11 @@ export function candidatosDoKml(textoKml) {
   }
 
   if (candidatos.length === 0) {
-    throw new Error('Nenhum polígono encontrado neste KML — só pontos ou linhas, ou o arquivo está vazio.')
+    throw new Error(
+      pontos
+        ? 'Nenhum polígono nem ponto encontrado neste KML — só linhas, ou o arquivo está vazio.'
+        : 'Nenhum polígono encontrado neste KML — só pontos ou linhas, ou o arquivo está vazio.',
+    )
   }
   return candidatos
 }

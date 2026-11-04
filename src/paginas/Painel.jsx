@@ -56,6 +56,7 @@ export default function Painel() {
     }
   })
   const [importandoArquivo, setImportandoArquivo] = useState(false)
+  const [importandoGlebas, setImportandoGlebas] = useState(false)
   const [mesclandoTalhoes, setMesclandoTalhoes] = useState(false)
   const [camadaAtiva, setCamadaAtiva] = useState(null)
   // Ponto usado para consultar a data da imagem. Só muda quando o mapa para
@@ -203,6 +204,9 @@ export default function Painel() {
         break
       case 'importar-arquivo':
         setImportandoArquivo(true)
+        break
+      case 'importar-glebas':
+        setImportandoGlebas(true)
         break
       case 'mesclar-talhoes':
         setMesclandoTalhoes(true)
@@ -394,6 +398,8 @@ export default function Painel() {
           aoConfirmarExclusaoFazenda={confirmarExclusaoFazenda}
           importandoArquivo={importandoArquivo}
           aoFecharImportarArquivo={() => setImportandoArquivo(false)}
+          importandoGlebas={importandoGlebas}
+          aoFecharImportarGlebas={() => setImportandoGlebas(false)}
           mesclandoTalhoes={mesclandoTalhoes}
           aoFecharMesclarTalhoes={() => setMesclandoTalhoes(false)}
         />

@@ -80,7 +80,9 @@ export async function criarGlebasEmLote(talhaoId, itens) {
     codigo: String(i.codigo).trim(),
     nome: i.nome?.trim() || null,
     geometria: i.geometria,
-    area_ha: null, // lote so cria pontos, e ponto nao tem area
+    // O lote de pontos nao manda area (ponto nao tem); a importacao de glebas
+    // de arquivo manda a dos poligonos. Ausente = nulo, nunca zero.
+    area_ha: i.areaHa ?? null,
   }))
 
   return checar(

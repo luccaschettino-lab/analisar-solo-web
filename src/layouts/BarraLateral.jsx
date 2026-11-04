@@ -443,6 +443,12 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
                     Importar talhões
                   </button>
                   <button
+                    onClick={() => pedirAcao('importar-glebas')}
+                    className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
+                  >
+                    Importar glebas
+                  </button>
+                  <button
                     onClick={() => irPara('/dados?aba=pontos')}
                     className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
                   >
