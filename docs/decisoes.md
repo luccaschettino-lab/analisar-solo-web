@@ -586,3 +586,19 @@ Num talhão dividido, o vértice de uma gleba costuma ser também da vizinha. Ed
 | **Gravar sem mexer em nada não conta como divisa movida.** | O mapa devolve as coordenadas arredondadas a 6 casas; a diferença (até ~7 cm) fica abaixo da tolerância de 1e-6 grau. |
 | **Se levar a divisa fizesse a linha de uma vizinha cruzar a si mesma, o diálogo diz isso e não oferece mover nas vizinhas.** | A vizinha muda por tabela e não passa pelo filtro de cruzamento do editor. Fica "Só nesta gleba" ou "Voltar a editar". |
 | **Limite conhecido:** só vértices que coincidem (a 1e-6 grau, ~11 cm). Divisa que passa pelo meio do lado de uma vizinha, sem vértice ali, não acompanha. | Nas glebas feitas pela divisão do talhão as divisas coincidem vértice a vértice; um desenho manual pode não ser assim. |
+
+### Monitoramento: índices calculados das bandas do CBERS-4A
+
+A tela mostra só o talhão escolhido, com NDVI, EVI, SAVI e NDWI em pixels de 16 m, calculados pela função `cbers-indice` (Supabase).
+
+| Decisão | Motivo |
+|---|---|
+| **A conta roda no servidor, lendo só o recorte do talhão por `Range`** (~1 MB em vez de ~100 MB das 4 bandas). | O arquivo do INPE é TIFF com Deflate, uma linha por bloco e a tabela no fim: dá para pedir só as linhas do talhão. O recorte lido é byte a byte igual ao do `tifffile` (referência independente). |
+| **O e-mail do cadastro no INPE é o segredo `INPE_EMAIL`.** Nunca vai na resposta nem em mensagem de erro; a função só o anexa a endereços do host `www.dgi.inpe.br`. | O INPE só pede o e-mail para liberar o download. A senha não é usada nem guardada em lugar nenhum. Coberto em `testes/indicesCbers.mjs`. |
+| **Reflectância no topo da atmosfera, SEM correção atmosférica.** A tela avisa. | O INPE entrega a cena em número digital (L4_DN). Usa-se o coeficiente de calibração e a elevação do sol do XML de cada banda e a irradiância solar da tabela de calibração do CBERS-4A. Serve para acompanhar a safra; os valores absolutos ficam abaixo dos de superfície. |
+| **"Possível nuvem" = azul, verde e vermelho acima de 0,25 ao mesmo tempo.** Fica cinza no mapa e fora das estatísticas. | Heurística simples; não é máscara oficial de nuvem. Sombra de nuvem não é detectada. Na cena de 05/10/2026 (40% de nuvem) o talhão 8 saiu 100% nuvem e a tela avisa em vez de inventar índice. |
+| **Contorno: o pixel entra se o CENTRO dele está dentro do talhão**, e a conta é feita em UTM. | A cena é UTM 22S; a conversão lat/lng ↔ UTM é própria (série de Krüger, erro < 1 mm contra o pyproj). A convergência de meridiano (~0,23°) dá no máximo meio pixel de desalinhamento, aceito. |
+| **NDWI é de McFeeters (verde × NIR): água na superfície, não umidade do solo.** Escala de cores própria (seco a água), à parte da do vigor. | Já era o aviso da tela; mantido. |
+
+**Verificado de verdade:** a função rodou (via Node) contra a cena real de 04/08/2026 no talhão 8 (NDVI médio 0,38, NDWI negativo, coerente com a seca no Tocantins) e o mapa foi desenhado num Chrome de verdade, alinhado ao contorno.
+**Não verificado:** a chamada da função a partir da tela logada (precisa de sessão); o desempenho em talhões grandes (limite de 700×700 pixels, ~11 km); a comparação dos valores com um produto de reflectância de superfície.

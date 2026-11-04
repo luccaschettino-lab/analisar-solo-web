@@ -223,3 +223,8 @@ body {
 .mapa-sem-rotulos .leaflet-tooltip.rotulo-sede {
   display: none;
 }
+
+/* Mapa de índice: pixels de 16 m devem aparecer como quadrados, sem borrar. */
+.raster-pixelado {
+  image-rendering: pixelated;
+}

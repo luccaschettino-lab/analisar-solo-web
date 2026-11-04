@@ -188,6 +188,7 @@ export async function calcularIndicesDoTalhao({ cenaId, geometria, email, buscar
     Promise.all(
       Object.values(bandas).map(async ({ urlXml }) => {
         const r = await buscar(urlXml)
+        if (r.status === 400 || r.status === 401 || r.status === 403) throw falha(502, 'O INPE recusou o acesso às bandas (confira o e-mail cadastrado).')
         if (!r.ok) throw falha(502, `O INPE respondeu com erro ao ler os metadados (HTTP ${r.status}).`)
         return lerCalibracao(await r.text())
       }),

@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Abas, { PainelDeAba } from '../componentes/Abas.jsx'
 import SeletorTalhao from './dados/SeletorTalhao.jsx'
 import { useSelecaoTalhao } from './dados/useSelecaoTalhao.js'
 import { useCenasCbers } from './monitoramento/useCenasCbers.js'
+import { useIndicesCbers } from './monitoramento/useIndicesCbers.js'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
+import MapaDoTalhao from './monitoramento/MapaDoTalhao.jsx'
+import { distribuicaoPorFaixa } from '../lib/rasterIndice.js'
 
 const INDICES = [
   {
@@ -47,6 +50,8 @@ function formatarData(iso) {
 function formatarNuvem(percentual) {
   return percentual == null ? 'indisponível' : `${Math.round(percentual)}%`
 }
+
+const numero = (v) => (v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
 function AvisoNdwi() {
   return (
@@ -128,48 +133,56 @@ function LinhaDoTempo({ cenas, cenaSelecionada, talhaoCodigo, aoSelecionar }) {
   )
 }
 
-function PreviaCena({ cena }) {
-  if (!cena) return null
-
+function Legenda({ dados, indice }) {
+  const faixas = useMemo(() => distribuicaoPorFaixa(dados, indice), [dados, indice])
   return (
-    <section className="mt-4 rounded-lg border border-slate-200 p-3 dark:border-white/10">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          Prévia da cena selecionada
-        </h3>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          CBERS-4A MUX · {formatarData(cena.data)} · nuvens {formatarNuvem(cena.nuvens)}
-        </span>
-      </div>
-      <img
-        src={cena.previa}
-        alt={`Prévia CBERS-4A da cena de ${formatarData(cena.data)}`}
-        className="mt-3 max-h-80 w-full rounded bg-slate-100 object-contain dark:bg-noite-900"
-        loading="lazy"
-      />
+    <ul className="mt-3 grid gap-1 text-xs text-slate-700 dark:text-slate-300 sm:grid-cols-5">
+      {faixas.map((f) => (
+        <li key={f.rotulo} className="flex items-center gap-2">
+          <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-sm border border-black/10" style={{ background: f.cor }} />
+          <span>
+            {f.rotulo} · {Math.round(f.pct)}%
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function ResultadoDoIndice({ dados, indice, rotulo }) {
+  const est = dados.estatisticas[indice]
+  const q = dados.qualidade
+  return (
+    <div className="mt-3">
+      {est ? (
+        <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+          {[
+            ['Média', est.media],
+            ['Mínimo', est.minimo],
+            ['Máximo', est.maximo],
+            ['Desvio', est.desvio],
+          ].map(([nome, valor]) => (
+            <div key={nome} className="rounded-md bg-slate-100 px-3 py-2 dark:bg-white/10">
+              <dt className="text-xs text-slate-500 dark:text-slate-400">
+                {rotulo} · {nome.toLowerCase()}
+              </dt>
+              <dd className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{numero(valor)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+          Não há pixel limpo dentro do talhão nesta data
+          {q.possivelNuvemPct > 0 ? ` (${q.possivelNuvemPct}% parece nuvem)` : ''}. Escolha outra data na linha do tempo.
+        </p>
+      )}
+      <Legenda dados={dados} indice={indice} />
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Prévia da cena CBERS completa do catálogo do INPE — o retângulo é a cena
-        orbital, não o formato do talhão. Ainda não é um mapa de índice nem um recorte
-        georreferenciado do talhão. Fonte:{' '}
-        <a
-          href="https://www.gov.br/inpe/"
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          INPE
-        </a>
-        {' · '}
-        <a
-          href="https://creativecommons.org/licenses/by-sa/4.0/"
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          CC BY-SA 4.0
-        </a>
+        {q.validos.toLocaleString('pt-BR')} de {q.pixelsNoTalhao.toLocaleString('pt-BR')} pixels de 16 m dentro do
+        talhão entram na conta
+        {q.possivelNuvemPct > 0 ? `; ${q.possivelNuvemPct}% parece nuvem (cinza no mapa) e fica de fora` : ''}.
       </p>
-    </section>
+    </div>
   )
 }
 
@@ -177,10 +190,14 @@ export default function Monitoramento() {
   const selecao = useSelecaoTalhao()
   const [indiceAtivo, setIndiceAtivo] = useState('ndvi')
   const [cenaAtivaId, setCenaAtivaId] = useState('')
-  const indice = INDICES.find((item) => item.chave === indiceAtivo)
   const geometria = selecao.talhao?.geometria ?? null
   const { cenas, carregando, erro } = useCenasCbers(selecao.talhaoId, geometria)
   const cenaSelecionada = cenas.find((cena) => cena.id === cenaAtivaId) ?? cenas.at(-1) ?? null
+  const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(
+    selecao.talhaoId,
+    cenaSelecionada?.id,
+    geometria,
+  )
 
   useEffect(() => {
     if (cenas.length > 0 && !cenas.some((cena) => cena.id === cenaAtivaId)) {
@@ -203,8 +220,7 @@ export default function Monitoramento() {
               Monitoramento por satélite
             </h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-              Cenas CBERS-4A do catálogo do INPE. Os índices serão processados a partir
-              das bandas originais numa próxima etapa.
+              Índices calculados a partir das bandas CBERS-4A do INPE, só dentro do talhão escolhido.
             </p>
           </div>
         </div>
@@ -230,24 +246,54 @@ export default function Monitoramento() {
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{item.explicacao}</p>
               )}
               {item.chave === 'ndwi' && <AvisoNdwi />}
-              <p className="mt-3 rounded-md border border-solo-200 bg-solo-50 px-3 py-2 text-sm text-solo-900 dark:border-solo-500/30 dark:bg-solo-500/10 dark:text-solo-200">
-                {item.rotulo} selecionado. O cálculo e a camada colorida ainda dependem
-                do processamento das bandas CBERS no servidor; por enquanto, esta tela
-                mostra as cenas e suas prévias.
-              </p>
             </div>
           </PainelDeAba>
         ))}
 
-        <section className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-5 dark:border-white/15 dark:bg-white/5">
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Imagens CBERS-4A disponíveis
-          </h2>
-          {!geometria && (
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Escolha um talhão com área desenhada para consultar as cenas do INPE.
+        {!geometria && (
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            Escolha um talhão com área desenhada para ver os índices.
+          </p>
+        )}
+
+        {geometria && (
+          <section className="mt-4">
+            <div className="relative">
+              <MapaDoTalhao geometria={geometria} dados={dados} indice={indiceAtivo} />
+              {calculando && (
+                <p
+                  role="status"
+                  className="absolute left-3 top-3 z-[1000] rounded-md bg-white/95 px-3 py-1.5 text-sm text-slate-700 shadow dark:bg-noite-900/95 dark:text-slate-200"
+                >
+                  Calculando os índices desta data…
+                </p>
+              )}
+            </div>
+            {erroCalculo && (
+              <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-400">
+                {erroCalculo}
+              </p>
+            )}
+            {dados && (
+              <ResultadoDoIndice
+                dados={dados}
+                indice={indiceAtivo}
+                rotulo={INDICES.find((i) => i.chave === indiceAtivo).rotulo}
+              />
+            )}
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              Valores de reflectância no topo da atmosfera, sem correção atmosférica: servem para acompanhar a
+              lavoura ao longo da safra, mas ficam um pouco abaixo dos de reflectância de superfície. Cada
+              quadrado do mapa tem 16 m. Imagens: CBERS-4A MUX, INPE (
+              <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline">
+                CC BY-SA 4.0
+              </a>
+              ).
             </p>
-          )}
+          </section>
+        )}
+
+        <section className="mt-2">
           {geometria && carregando && (
             <p role="status" className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Consultando as datas disponíveis no catálogo do INPE…
@@ -270,7 +316,6 @@ export default function Monitoramento() {
             talhaoCodigo={selecao.talhao?.codigo}
             aoSelecionar={(cena) => setCenaAtivaId(cena.id)}
           />
-          <PreviaCena cena={cenaSelecionada} />
         </section>
       </div>
     </div>
