@@ -13,7 +13,10 @@ function traduzir(erro, contexto) {
     // unique_violation. As tres constraints do schema sao de codigo duplicado.
     if (msg.includes('talhoes')) return 'Já existe um talhão com esse código nesta fazenda.'
     if (msg.includes('glebas')) return 'Já existe uma gleba com esse código neste talhão.'
-    if (msg.includes('analises')) return 'Já existe uma análise para essa gleba, safra e profundidade.'
+    if (msg.includes('analises')) {
+      return 'Esta análise já está gravada: mesmo talhão, safra, profundidade e nº do laboratório.'
+    }
+    if (msg.includes('pontos_coleta')) return 'Já existe um ponto de coleta nesta coordenada, neste talhão.'
     return 'Esse registro já existe.'
   }
   if (codigo === '23503') return 'O registro depende de outro que não existe mais. Recarregue a página.'

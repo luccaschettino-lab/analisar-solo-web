@@ -658,3 +658,13 @@ O mapa de calor estima o talhão inteiro a partir das amostras (IDW). Em 2026-11
 | **"Tem amostra" = a posição de alguma análise do filtro cai dentro do polígono da gleba.** | A análise importada fica na média dos pontos de coleta da gleba, que está dentro dela. Não depende de os pontos estarem carregados no mapa. |
 | **O calor continua contínuo entre as glebas com amostra.** | O solo não segue a divisa do cadastro; só a área sem nenhuma medição própria deixa de receber cor. |
 | **Gleba que é só um ponto não é hachurada; a hachura não recebe clique.** | Sem área não há o que cobrir; o clique tem de chegar à gleba e ao talhão por baixo. |
+
+### Travas de duplicidade no banco (auditoria P4)
+
+| Decisão | Motivo |
+|---|---|
+| **`analises`: unique (talhão, safra, profundidade, nº do laboratório).** | É a identidade que a importação de laudo já usava (`chaveDeDuplicidade`), mas só a tela conferia. Análise lançada à mão sem nº não entra na trava: nulo nunca é igual a nulo, e um talhão tem várias amostras na mesma safra. |
+| **`pontos_coleta`: coluna gerada `coordenadas` e unique (talhão, coordenadas).** | Reimportar o mesmo arquivo dobrava os pontos. A coluna existe porque o `upsert` da API precisa de colunas, não de expressão. |
+| **A importação de pontos usa "ignorar repetidos"** e diz quantos já existiam. | Reimportar passa a ser seguro: "0 importados, 810 já existiam e foram pulados". |
+
+Migração `20261107140000`, colada à mão no SQL Editor (não está em `schema_migrations`). **Testado no banco**, como o usuário dono, num bloco desfeito no fim: análise repetida recusada; mesmo talhão, safra e profundidade com outro nº aceita; duas manuais sem nº aceitas; ponto repetido recusado; com `on conflict do nothing`, 0 gravado e sem erro. Totais conferidos depois: 113 análises, 810 pontos. **Não testado:** a importação de pontos pela tela logada.

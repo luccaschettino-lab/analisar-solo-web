@@ -29,8 +29,15 @@ export async function criarPontosColetaEmLote(talhaoId, itens) {
     propriedades: item.propriedades ?? {},
   }))
 
+  // Ponto que já existe no talhão (mesma coordenada) é pulado, não dobrado:
+  // a trava unique (talhao_id, coordenadas) do banco e o "ignorar repetidos"
+  // fazem reimportar o mesmo arquivo ser seguro. Devolve só os gravados agora;
+  // quem chama compara com o que mandou para saber quantos já existiam.
   return checar(
-    await supabase.from('pontos_coleta').insert(linhas).select(CAMPOS),
+    await supabase
+      .from('pontos_coleta')
+      .upsert(linhas, { onConflict: 'talhao_id,coordenadas', ignoreDuplicates: true })
+      .select(CAMPOS),
     'Falha ao importar pontos de amostra',
   )
 }

@@ -115,6 +115,7 @@ export default function ImportarPontos() {
     setGravando(true)
     setProgresso({ feito: 0, total: totalAImportar })
     let contagem = 0
+    let processados = 0
     const gravados = []
     try {
       for (const { talhao, itens } of linhasPorTalhao) {
@@ -126,10 +127,18 @@ export default function ImportarPontos() {
           })),
         )
         contagem += novos.length
+        processados += itens.length
         gravados.push(...novos)
-        setProgresso({ feito: contagem, total: totalAImportar })
+        setProgresso({ feito: processados, total: totalAImportar })
       }
-      setResultado(`${contagem} ${contagem === 1 ? 'ponto de amostra importado' : 'pontos de amostra importados'}.`)
+      // Os que o banco pulou já estavam gravados (mesma coordenada no talhão).
+      const jaExistiam = processados - contagem
+      setResultado(
+        `${contagem} ${contagem === 1 ? 'ponto de amostra importado' : 'pontos de amostra importados'}.` +
+          (jaExistiam > 0
+            ? ` ${jaExistiam} ${jaExistiam === 1 ? 'já existia e foi pulado' : 'já existiam e foram pulados'}.`
+            : ''),
+      )
       setResultadoGlebas('')
       setImportados(gravados)
       setPontos(null)
