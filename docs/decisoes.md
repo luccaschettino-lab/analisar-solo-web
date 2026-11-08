@@ -680,3 +680,17 @@ Migração `20261107140000`, colada à mão no SQL Editor (não está em `schema
 | **Não se aumentou o "Max rows".** | Só adiaria o corte. |
 
 **Testado:** `testes/paginar.mjs` (810, 1.000, 1.600 linhas, limite de 500, sem contagem, erro no meio) e no Chrome a tela de Filtros com 1.600 pontos simulados num servidor que entrega no máximo 1.000 por pedido: mostrou os 1.600, em 2 pedidos. **Não testado** contra o Supabase real com mais de 1.000 linhas (a fazenda tem 810).
+
+### Cadastro fechado: acesso só por convite (auditoria P8)
+
+Com o cadastro aberto, qualquer pessoa na internet criava conta e usava o armazenamento, o envio de e-mails e a conta do INPE do projeto (não via os dados dos outros: o RLS impede). Decisão do usuário em 2026-11-08: fechar e entrar só por convite.
+
+| Decisão | Motivo |
+|---|---|
+| **Sai o "Criar conta" do login; `/cadastro` vira o aviso "Acesso só por convite"; sai `cadastrar` do `AuthContext`.** | A rota fica para quem tiver o endereço salvo. |
+| **O cadastro público é desligado no Supabase** (Authentication → Sign In / Providers → "Allow new users to sign up"). | Esconder o botão não basta: a API de cadastro continuaria aberta. Isso é configuração do painel, feita pelo dono do projeto. |
+| **O app aceita o link do convite nos dois formatos:** sessão no fim do endereço (`#access_token=…&type=invite`, o que o "Invite user" do painel manda) e `?token_hash=…&type=invite` (modelo de e-mail recomendado para PKCE). | O cliente usa PKCE e recusa o primeiro formato ("Not a valid PKCE flow url"): sem isso, o convidado cairia no login sem conseguir entrar. O link é lido antes de o roteador montar, e o endereço é limpo na hora. |
+| **Quem chega por convite vai direto para "Boas-vindas! Crie sua senha"** (a mesma tela da recuperação, outro texto). | A conta nasce sem senha. Convite vencido mostra o aviso e oferece "Receber um link para criar a senha" (a conta já existe, então "Esqueci minha senha" resolve). |
+
+**Testado no Chrome** com o app inteiro e o Supabase simulado: convite pelos dois formatos (abre, cria a senha, entra), convite vencido nos dois formatos, `/cadastro` e `/login` sem "Criar conta", e os cenários de recuperação de senha de antes. **Não testado:** um convite real enviado pelo painel.
+**Depende do painel:** desligar o cadastro público e conferir o Site URL (`https://luccaschettino-lab.github.io/analisar-solo-web/`) e as Redirect URLs.

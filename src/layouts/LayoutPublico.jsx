@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
 import { IconeMapa, IconeFrasco, IconeAjustes } from '../componentes/icones.jsx'
 import logoCompleto from '../assets/marca/moinho-completo.jpg'
@@ -58,8 +58,6 @@ function Plantio() {
  * No celular só o painel do formulário aparece, com a logo no alto.
  */
 export default function LayoutPublico() {
-  const { pathname } = useLocation()
-  const noCadastro = pathname === '/cadastro'
 
   return (
     <div className="grid min-h-full lg:grid-cols-[64fr_36fr]">
@@ -98,12 +96,9 @@ export default function LayoutPublico() {
             <img src={logoCompleto} alt="Moinho Soluções Agronômicas" className="h-12 w-auto" />
           </div>
           <div className="flex items-center gap-4 text-sm text-slate-300">
-            <p>
-              {noCadastro ? 'Já tem conta? ' : 'Novo por aqui? '}
-              <Link to={noCadastro ? '/login' : '/cadastro'} className="font-bold text-solo-300 hover:underline">
-                {noCadastro ? 'Entrar' : 'Criar conta'}
-              </Link>
-            </p>
+            {/* Sem "Criar conta": o acesso é só por convite (cadastro público
+                fechado no Supabase; ver docs/decisoes.md). */}
+            <p className="text-slate-400">Acesso por convite</p>
             <div className="rounded-lg border border-white/10 bg-white/5 p-1.5">
               <AlternadorTema />
             </div>

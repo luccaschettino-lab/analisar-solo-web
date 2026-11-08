@@ -5,7 +5,11 @@ import { validarSenha } from '../lib/senha.js'
 import { Campo, BotaoPrincipal, Aviso, CabecalhoEntrada } from '../componentes/formulario.jsx'
 
 /**
- * Destino do link do e-mail de "Esqueci minha senha".
+ * Destino do link do e-mail de "Esqueci minha senha" e do convite.
+ *
+ * Convite: a conta foi criada por quem administra o sistema (o cadastro
+ * público está fechado) e a pessoa ainda não tem senha. A tela é a mesma,
+ * com outro texto.
  *
  * O link abre uma sessão só para isto: enquanto `recuperando` estiver ligado,
  * as guardas de rota mandam para cá. Aberta sem link, a página leva ao login
@@ -13,7 +17,7 @@ import { Campo, BotaoPrincipal, Aviso, CabecalhoEntrada } from '../componentes/f
  * sessão: a página diz isso e oferece pedir outro.
  */
 export default function NovaSenha() {
-  const { sessao, recuperando, carregando, erroRecuperacao, definirNovaSenha, cancelarRecuperacao } = useAuth()
+  const { sessao, recuperando, convite, carregando, erroRecuperacao, definirNovaSenha, cancelarRecuperacao } = useAuth()
   const navegar = useNavigate()
   const [senha, setSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
@@ -25,14 +29,16 @@ export default function NovaSenha() {
   if (!sessao && (recuperando || erroRecuperacao)) {
     return (
       <div className="space-y-6">
-        <CabecalhoEntrada rotulo="Recuperar acesso" titulo="Link inválido" />
+        <CabecalhoEntrada rotulo={convite ? 'Convite' : 'Recuperar acesso'} titulo="Link inválido" />
         <Aviso>{erroRecuperacao ?? 'Este link venceu ou já foi usado. Peça um novo.'}</Aviso>
+        {/* Convite vencido: a conta já existe, então "Esqueci minha senha"
+            também resolve, sem depender de um convite novo. */}
         <Link
           to="/esqueci-senha"
           onClick={() => cancelarRecuperacao()}
           className="block text-center text-sm font-semibold text-solo-300 hover:underline"
         >
-          Pedir um novo link
+          {convite ? 'Receber um link para criar a senha' : 'Pedir um novo link'}
         </Link>
       </div>
     )
@@ -74,9 +80,9 @@ export default function NovaSenha() {
   return (
     <form onSubmit={aoEnviar} className="space-y-6">
       <CabecalhoEntrada
-        rotulo="Recuperar acesso"
-        titulo="Criar nova senha"
-        apoio={`Escolha a senha que você vai usar daqui para frente${sessao?.user?.email ? ` em ${sessao.user.email}` : ''}.`}
+        rotulo={convite ? 'Convite' : 'Recuperar acesso'}
+        titulo={convite ? 'Boas-vindas! Crie sua senha' : 'Criar nova senha'}
+        apoio={`${convite ? 'Você recebeu um convite para o sistema. Escolha' : 'Escolha'} a senha que vai usar daqui para frente${sessao?.user?.email ? ` em ${sessao.user.email}` : ''}.`}
       />
 
       <Aviso>{erro}</Aviso>
@@ -109,7 +115,7 @@ export default function NovaSenha() {
       />
 
       <BotaoPrincipal type="submit" disabled={enviando}>
-        {enviando ? 'Salvando…' : 'Salvar nova senha'}
+        {enviando ? 'Salvando…' : convite ? 'Criar senha e entrar' : 'Salvar nova senha'}
       </BotaoPrincipal>
 
       <p className="text-center text-sm">

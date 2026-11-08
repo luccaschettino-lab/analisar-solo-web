@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
 
-// URL de volta usada nos e-mails do Supabase (confirmação de cadastro).
+// URL de volta usada nos e-mails do Supabase (recuperação de senha).
 // BASE_URL vem do vite.config.js, então isso resolve para
 // http://localhost:5173/analisar-solo-web/ em dev e para o endereço do
 // GitHub Pages em produção, sem precisar de variável extra.
@@ -28,6 +28,51 @@ function erroDoLink() {
     return 'Este link venceu ou já foi usado. Peça um novo.'
   }
   return 'Não foi possível usar este link. Peça um novo.'
+}
+
+/**
+ * Link de e-mail que o app trata por conta própria, lido UMA vez ao carregar.
+ *
+ * O convite feito pelo painel do Supabase (Authentication > Users > Invite
+ * user) volta com a sessão no fim do endereço (`#access_token=…&type=invite`),
+ * o fluxo "implicit". O cliente deste app usa PKCE e recusa esse formato
+ * ("Not a valid PKCE flow url"): quem fosse convidado cairia no login sem
+ * conseguir entrar. O modelo de e-mail com `token_hash` (o recomendado pelo
+ * Supabase para PKCE) chega como `?token_hash=…&type=invite`. Os dois são
+ * aceitos aqui.
+ *
+ * O `?code=…` da recuperação de senha pedida pelo próprio app NÃO entra: esse
+ * é PKCE de verdade e o supabase-js troca o código sozinho.
+ */
+function lerLinkDoEmail() {
+  const busca = new URLSearchParams(window.location.search)
+  if (busca.get('token_hash') && busca.get('type')) {
+    return { formato: 'token_hash', tokenHash: busca.get('token_hash'), tipo: busca.get('type') }
+  }
+  const bruto = window.location.hash.replace(/^#/, '')
+  if (bruto && !bruto.startsWith('/')) {
+    const hash = new URLSearchParams(bruto)
+    if (hash.get('access_token') && hash.get('refresh_token')) {
+      return {
+        formato: 'sessao',
+        accessToken: hash.get('access_token'),
+        refreshToken: hash.get('refresh_token'),
+        tipo: hash.get('type') ?? '',
+      }
+    }
+    if (hash.get('error') || hash.get('error_code')) return { formato: 'erro', tipo: hash.get('type') ?? '' }
+  }
+  return null
+}
+
+// Lido antes de o roteador montar: `#access_token=…` no lugar da rota faria o
+// roteador (por hash) mostrar "página não encontrada".
+const LINK_DO_EMAIL = lerLinkDoEmail()
+const ERRO_DO_LINK = erroDoLink()
+const PEDE_SENHA = (tipo) => tipo === 'invite' || tipo === 'recovery'
+if (LINK_DO_EMAIL) {
+  const destino = PEDE_SENHA(LINK_DO_EMAIL.tipo) || LINK_DO_EMAIL.formato === 'erro' ? '#/nova-senha' : '#/'
+  window.history.replaceState(null, '', `${import.meta.env.BASE_URL}${destino}`)
 }
 
 // Tira do endereço a marca, o código e o erro, mantendo a rota do hash.
@@ -71,18 +116,43 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true)
   // A pessoa abriu o link de "esqueci minha senha": a sessão existe, mas antes
   // de qualquer outra tela ela precisa escolher a senha nova.
-  const [recuperando, setRecuperando] = useState(veioDoLinkDeRecuperacao)
-  const [erroRecuperacao] = useState(erroDoLink)
+  // Também liga para quem chega por convite: a conta existe, a senha não.
+  const [recuperando, setRecuperando] = useState(
+    () => veioDoLinkDeRecuperacao() || PEDE_SENHA(LINK_DO_EMAIL?.tipo) || LINK_DO_EMAIL?.formato === 'erro',
+  )
+  const [convite] = useState(() => LINK_DO_EMAIL?.tipo === 'invite')
+  const [erroRecuperacao, setErroRecuperacao] = useState(ERRO_DO_LINK)
 
   useEffect(() => {
     let ativo = true
 
-    // Sessão persistida no localStorage (pode incluir refresh do token).
-    supabase.auth.getSession().then(({ data }) => {
+    async function iniciar() {
+      // Convite (ou outro link de e-mail) no formato que o PKCE recusa: o app
+      // abre a sessão com o que veio no link, antes de ler a sessão salva.
+      if (LINK_DO_EMAIL?.formato === 'token_hash' || LINK_DO_EMAIL?.formato === 'sessao') {
+        const { error } =
+          LINK_DO_EMAIL.formato === 'token_hash'
+            ? await supabase.auth.verifyOtp({ token_hash: LINK_DO_EMAIL.tokenHash, type: LINK_DO_EMAIL.tipo })
+            : await supabase.auth.setSession({
+                access_token: LINK_DO_EMAIL.accessToken,
+                refresh_token: LINK_DO_EMAIL.refreshToken,
+              })
+        if (error && ativo) {
+          setErroRecuperacao(
+            LINK_DO_EMAIL.tipo === 'invite'
+              ? 'Este convite venceu ou já foi usado. Peça um novo convite a quem administra o sistema.'
+              : 'Este link venceu ou já foi usado. Peça um novo.',
+          )
+        }
+      }
+
+      // Sessão persistida no localStorage (pode incluir refresh do token).
+      const { data } = await supabase.auth.getSession()
       if (!ativo) return
       setSessao(data.session)
       setCarregando(false)
-    })
+    }
+    iniciar()
 
     // Mantém o estado em dia depois disso: login, logout, refresh de token e
     // logout feito em outra aba do navegador.
@@ -107,6 +177,7 @@ export function AuthProvider({ children }) {
       usuario: sessao?.user ?? null,
       carregando,
       recuperando,
+      convite,
       erroRecuperacao,
 
       /**
@@ -155,23 +226,6 @@ export function AuthProvider({ children }) {
         if (error) throw new Error(traduzirErro(error))
       },
 
-      async cadastrar(nome, email, senha) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: senha,
-          options: {
-            // Vai para raw_user_meta_data; o trigger ao_criar_usuario lê daqui
-            // para preencher perfis.nome.
-            data: { nome: nome.trim() },
-            emailRedirectTo: urlDeRetorno(),
-          },
-        })
-        if (error) throw new Error(traduzirErro(error))
-        // Sem sessão na resposta = projeto exige confirmação por e-mail.
-        // Quem chama usa isso para escolher a mensagem exibida.
-        return { precisaConfirmarEmail: !data.session }
-      },
-
       /**
        * Confere a senha de quem está logado, antes de uma exclusão. O Supabase
        * não tem um "só conferir senha": entrar de novo com o mesmo e-mail é o
@@ -197,7 +251,7 @@ export function AuthProvider({ children }) {
         if (error) throw new Error(traduzirErro(error))
       },
     }),
-    [sessao, carregando, recuperando, erroRecuperacao],
+    [sessao, carregando, recuperando, convite, erroRecuperacao],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>
