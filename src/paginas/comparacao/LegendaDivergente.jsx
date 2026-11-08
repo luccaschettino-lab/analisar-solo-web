@@ -85,18 +85,18 @@ export default function LegendaDivergente({ comparacao, criterio = null, elevada
 
         <div className="mt-2">
           <Barra max={max} limiar={limiar} />
-          <div className="mt-1 flex justify-between text-[11px] leading-tight text-slate-600 dark:text-slate-400">
+          <div className="mt-1 flex justify-between text-xs leading-tight text-slate-600 dark:text-slate-400">
             <span>{semVariacao ? '—' : extremo('−')}</span>
             <span>0</span>
             <span>{semVariacao ? '—' : extremo('+')}</span>
           </div>
-          <p className="mt-1 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs leading-tight text-slate-500 dark:text-slate-400">
             Queda em vermelho, alta em azul. A escala é simétrica: os dois lados ancoram na maior
             variação em módulo.
           </p>
         </div>
 
-        <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+        <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
           <span className="font-medium text-slate-800 dark:text-slate-100">
             Estável: variação de até {formatarValor(chaveParametro, limiar)}
             {unidade ? ` ${unidade}` : ''}
@@ -144,7 +144,7 @@ export default function LegendaDivergente({ comparacao, criterio = null, elevada
         {/* Vermelho e azul dizem direção; quem transforma direção em juízo é a
             coluna de classificação. Por isso o aviso do sentido fica sempre, e
             a assinatura abaixo responde só pela classificação. */}
-        <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+        <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
           As cores indicam o sentido da mudança, não se ela é boa: alumínio que sobe é ruim, cálcio
           que sobe é bom.
         </p>

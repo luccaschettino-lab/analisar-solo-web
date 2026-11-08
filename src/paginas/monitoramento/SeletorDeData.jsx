@@ -133,7 +133,7 @@ export default function SeletorDeData({ cenas, selecionadaId, aoSelecionar }) {
           <span>{formatarData(cenas[cenas.length - 1].data)}</span>
         </div>
 
-        <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
           <span>Cada ponto é uma cena:</span>
           <span className="flex items-center gap-1"><i className={`inline-block h-2.5 w-2.5 rounded-full ${COR_DA_MARCA.pouca}`} /> até 20% de nuvens</span>
           <span className="flex items-center gap-1"><i className={`inline-block h-2.5 w-2.5 rounded-full ${COR_DA_MARCA.media}`} /> até 60%</span>

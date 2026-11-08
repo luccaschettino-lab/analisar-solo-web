@@ -55,8 +55,8 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
       </button>
 
       <div className={`${aberta ? 'w-56 max-w-[80vw] p-3 pt-0' : 'hidden'} md:block md:w-auto md:max-w-none md:p-0`}>
-      <h2 className="text-[11px] font-semibold text-slate-900 dark:text-slate-100">{rotuloComUnidade(chaveParametro)}</h2>
-      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+      <h2 className="text-xs font-semibold text-slate-900 dark:text-slate-100">{rotuloComUnidade(chaveParametro)}</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         {anoSafra} · {profundidade} cm
       </p>
 
@@ -64,7 +64,7 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
         {faixas.map((f) => (
           <li key={`${f.nivel}-${f.texto}`} className="flex items-center gap-1.5">
             <Amostra cor={f.cor} />
-            <span className="truncate text-[11px] leading-tight text-slate-700 dark:text-slate-300">
+            <span className="truncate text-xs leading-tight text-slate-700 dark:text-slate-300">
               {f.rotulo} <span className="text-slate-400 dark:text-slate-500">· {f.texto}</span>
             </span>
           </li>
@@ -85,7 +85,7 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
               className="h-2.5 w-2.5 rounded-full border-2 border-dashed border-slate-500 bg-white/30 dark:border-slate-400 dark:bg-white/10"
             />
           </span>
-          <span className="text-[11px] leading-tight text-slate-700 dark:text-slate-300">Sem dado</span>
+          <span className="text-xs leading-tight text-slate-700 dark:text-slate-300">Sem dado</span>
         </li>
       </ul>
 

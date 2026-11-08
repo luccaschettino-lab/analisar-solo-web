@@ -82,7 +82,7 @@ export default function PontosColetaNoMapa({
       )}
       {!carregando && !erro && (
         <>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-green-600" />Disponível</span>
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />Neste grupo</span>
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-slate-500" />Já usado</span>

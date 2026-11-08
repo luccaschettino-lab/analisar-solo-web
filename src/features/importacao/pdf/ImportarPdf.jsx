@@ -308,7 +308,7 @@ export default function ImportarPdf() {
                 aria-invalid={!safraOk}
                 className={`${CAMPO} mt-1 w-24 ${safraOk ? '' : 'border-red-400'}`}
               />
-              <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                 {safraOk
                   ? 'Sugerida pela data de entrada do laudo. Confira.'
                   : 'Use o formato 25-26 (dois anos seguidos).'}

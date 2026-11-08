@@ -267,7 +267,7 @@ export default function ImportarArquivo({ fazendaId, talhoes, aoFechar, aoImport
                         </div>
 
                         {errosLinha.length > 0 && (
-                          <p className="text-[11px] text-red-700 dark:text-red-300">{errosLinha.join(' ')}</p>
+                          <p className="text-xs text-red-700 dark:text-red-300">{errosLinha.join(' ')}</p>
                         )}
                       </div>
                     </div>

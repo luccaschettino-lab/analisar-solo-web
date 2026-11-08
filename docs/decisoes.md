@@ -716,3 +716,9 @@ Com o cadastro aberto, qualquer pessoa na internet criava conta e usava o armaze
 O resto da P9 já estava coberto: mesclar talhões (transação, P1); importar laudo e pontos (repetir é seguro, P4); criar glebas dos pontos (uma transação por gleba, retomável).
 
 **Testado no banco**, como o usuário dono, num bloco desfeito no fim: duas glebas gravadas juntas; uma boa com uma inexistente → recusada e a boa não mudou; usuário sem acesso → recusado; lista vazia → recusada. Dados reais conferidos depois. **Não testado** pela tela logada contra o banco real.
+
+### Tamanho mínimo de texto (auditoria P17)
+
+Textos de 10 e 11 px em 34 lugares (legenda do mapa, painel de detalhe, critérios, comparação, mensagens de erro da importação) passaram para 12 px (`text-xs`), o menor tamanho do resto do app. O público lê no celular, no campo.
+
+Ficam menores de propósito: a coordenada do cursor e a data da imagem de satélite (avisos sobre o mapa, que não podem cobrir o desenho) e a seta decorativa da tabela de variação (`aria-hidden`). Conferido no Chrome em largura de celular (390 px): legenda e botões do painel cabem, sem rolagem lateral.

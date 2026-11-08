@@ -81,7 +81,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200">{rotuloComUnidade(chave)}</h4>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
           {origem === ORIGEM.CRITERIO && 'personalizado'}
           {origem === ORIGEM.CONFIG && 'padrão do sistema'}
           {origem === ORIGEM.SEM_CLASSIFICACAO && 'sem classificação'}
@@ -89,7 +89,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
       </div>
 
       {p?.nota && origem !== ORIGEM.CRITERIO && (
-        <p className="mt-1 text-[11px] leading-tight text-slate-500 dark:text-slate-400">{p.nota}</p>
+        <p className="mt-1 text-xs leading-tight text-slate-500 dark:text-slate-400">{p.nota}</p>
       )}
 
       {!somenteLeitura && (
@@ -118,7 +118,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
             const editavel = origem === ORIGEM.CRITERIO && !somenteLeitura
             return (
               <li key={i} className="flex flex-wrap items-center gap-1.5">
-                <span className="w-14 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="w-14 shrink-0 text-xs text-slate-500 dark:text-slate-400">
                   {ultima ? 'acima de' : 'até'}
                 </span>
 
@@ -187,7 +187,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
       )}
 
       {origem === ORIGEM.CRITERIO && !somenteLeitura && (
-        <label className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+        <label className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
           Variação mínima para contar como mudança
           <input
             inputMode="decimal"
@@ -206,12 +206,12 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
       )}
 
       {erros.map((e) => (
-        <p key={e} role="alert" className="mt-1.5 text-[11px] font-medium text-red-700 dark:text-red-300">
+        <p key={e} role="alert" className="mt-1.5 text-xs font-medium text-red-700 dark:text-red-300">
           {e}
         </p>
       ))}
       {avisos.map((a) => (
-        <p key={a} className="mt-1.5 text-[11px] text-amber-800 dark:text-amber-200">
+        <p key={a} className="mt-1.5 text-xs text-amber-800 dark:text-amber-200">
           {a}
         </p>
       ))}

@@ -31,7 +31,7 @@ function Cabecalho({ coluna, rotulo, sublinha, aDireita = false, ordenacao, aoOr
       >
         <span className="flex flex-col items-start">
           <span>{rotulo}</span>
-          {sublinha && <span className="font-normal text-[11px] text-slate-500 dark:text-slate-400">{sublinha}</span>}
+          {sublinha && <span className="font-normal text-xs text-slate-500 dark:text-slate-400">{sublinha}</span>}
         </span>
         <span aria-hidden="true" className="text-[9px] text-slate-500 dark:text-slate-400">{seta}</span>
       </button>
@@ -51,7 +51,7 @@ function CelulaValor({ lado, unidade }) {
     return (
       <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs">
         <span className="text-slate-500 dark:text-slate-400">sem dado</span>
-        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{textoDaAusencia(lado.estado)}</span>
+        <span className="block text-xs text-slate-400 dark:text-slate-500">{textoDaAusencia(lado.estado)}</span>
       </td>
     )
   }
@@ -217,7 +217,7 @@ export default function TabelaVariacao({ comparacao, selecionado, aoSelecionar }
                   ) : (
                     // Ano A igual a zero: a porcentagem não existe. Dizer o
                     // motivo evita a leitura de que a conta falhou.
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-[11px] text-slate-400 dark:text-slate-500">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right text-xs text-slate-400 dark:text-slate-500">
                       partiu de zero
                     </td>
                   )}

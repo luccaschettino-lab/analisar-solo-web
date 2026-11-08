@@ -119,7 +119,7 @@ export default function BuscaLocal({ aoIrPara }) {
             ))}
           </ul>
           {/* Crédito exigido pela política de uso do Nominatim. */}
-          <p className="border-t border-slate-200 px-3 py-1.5 text-[11px] text-slate-400 dark:border-white/10 dark:text-slate-500">
+          <p className="border-t border-slate-200 px-3 py-1.5 text-xs text-slate-400 dark:border-white/10 dark:text-slate-500">
             Resultados de busca ©{' '}
             <a
               href="https://www.openstreetmap.org/copyright"

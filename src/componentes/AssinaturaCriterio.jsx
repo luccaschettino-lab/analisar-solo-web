@@ -25,7 +25,7 @@ export default function AssinaturaCriterio({ criterio, chaveParametro, carregand
   if (origem === ORIGEM.CRITERIO) {
     const data = criterio.atualizado_em ?? criterio.criado_em
     return (
-      <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+      <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs leading-tight text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
         <span className="font-medium text-slate-800 dark:text-slate-100">{criterio.nome}</span>
         {criterio.autor_nome && <span className="block">por {criterio.autor_nome}</span>}
         {data && (
