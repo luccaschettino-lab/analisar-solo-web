@@ -43,11 +43,12 @@ export default function Painel() {
   const [visualizacaoAberta, setVisualizacaoAberta] = useState(false)
   const [mostrarCor, setMostrarCor] = useState(true)
   const [mostrarPontosAmostra, setMostrarPontosAmostra] = useState(false)
+  const [versaoPontosAmostra, setVersaoPontosAmostra] = useState(0)
   const {
     pontos: pontosAmostra,
     carregando: carregandoPontosAmostra,
     erro: erroPontosAmostra,
-  } = usePontosAmostraDaFazenda(fazendaSelecionada?.id, mostrarPontosAmostra)
+  } = usePontosAmostraDaFazenda(fazendaSelecionada?.id, mostrarPontosAmostra, versaoPontosAmostra)
   const [mostrarCoordenadas, setMostrarCoordenadas] = useState(() => {
     try {
       return localStorage.getItem('mostrarCoordenadas') === '1'
@@ -404,6 +405,7 @@ export default function Painel() {
           aoFecharImportarGlebas={() => setImportandoGlebas(false)}
           mesclandoTalhoes={mesclandoTalhoes}
           aoFecharMesclarTalhoes={() => setMesclandoTalhoes(false)}
+          aoMudarPontosAmostra={() => setVersaoPontosAmostra((v) => v + 1)}
         />
       </div>
     </div>

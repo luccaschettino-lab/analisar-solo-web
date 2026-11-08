@@ -21,6 +21,9 @@ function traduzir(erro, contexto) {
   if (codigo === '42501' || erro?.status === 403) {
     return 'Você não tem permissão para essa ação nesta fazenda.'
   }
+  // `raise exception` das nossas funções SQL (mesclar_talhoes,
+  // criar_gleba_com_pontos): a mensagem já foi escrita para quem usa o app.
+  if (codigo === 'P0001' && msg) return msg
   if (/failed to fetch|networkerror/i.test(msg)) return 'Sem conexão com o servidor.'
 
   return contexto ? `${contexto}: ${msg}` : msg || 'Não foi possível concluir a operação.'

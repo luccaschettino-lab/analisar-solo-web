@@ -602,3 +602,19 @@ A tela mostra só o talhão escolhido, com NDVI, EVI, SAVI e NDWI em pixels de 1
 
 **Verificado de verdade:** a função rodou (via Node) contra a cena real de 04/08/2026 no talhão 8 (NDVI médio 0,38, NDWI negativo, coerente com a seca no Tocantins) e o mapa foi desenhado num Chrome de verdade, alinhado ao contorno.
 **Não verificado:** a chamada da função a partir da tela logada (precisa de sessão); o desempenho em talhões grandes (limite de 700×700 pixels, ~11 km); a comparação dos valores com um produto de reflectância de superfície.
+
+### Mesclar talhões: tudo numa transação no banco (auditoria P1)
+
+A auditoria de 2026-11-07 achou que mesclar talhões apagava as análises e os pontos de coleta dos talhões absorvidos: a tela movia só as glebas e depois excluía os talhões, e `analises.talhao_id` e `pontos_coleta.talhao_id` são `on delete cascade`.
+
+| Decisão | Motivo |
+|---|---|
+| **A mesclagem é a função `mesclar_talhoes`** (migração `20261107120000`), chamada uma vez pela tela. | Leva glebas, análises e pontos para a base, apaga os absorvidos já vazios e atualiza a base, numa transação. Se qualquer passo falhar, nada muda; antes, uma queda de rede deixava a mesclagem pela metade. |
+| **`SECURITY INVOKER`.** | Roda com a permissão de quem chama: as políticas de RLS de cada tabela continuam valendo. A checagem de permissão no começo só existe para dar uma mensagem clara. |
+| **Recusa antes de mexer** se dois talhões têm gleba com o mesmo código, se a base está na lista de absorvidos ou se algum talhão é de outra fazenda. | A unique `(talhao_id, codigo)` das glebas falharia no meio; melhor dizer qual código renomear. |
+| **Os absorvidos são apagados antes de a base receber o código final.** | Assim a base pode herdar o código de um deles ("10-2" vira "10") sem bater na unique `(fazenda_id, codigo)`. |
+| **Mensagens de `raise exception` (código `P0001`) aparecem como vieram** (`dados/cliente.js`). | São escritas para quem usa o app; o prefixo "Falha ao …" só repetia. |
+
+**Testado:** no banco real, dentro de um bloco desfeito no fim, como o usuário dono: juntar os talhões 15 e 17 no 19 levou 5 glebas, 8 análises e 40 pontos; os totais da fazenda (113 análises, 810 pontos) não mudaram e nenhum ponto ficou com gleba de outro talhão. Recusas conferidas: usuário sem acesso, código de gleba repetido, base na lista, código final de outro talhão (esta desfez tudo). Depois, os dados reais conferidos intactos. A tela foi exercitada no Chrome com o banco simulado: uma chamada só à função, nenhuma gravação direta em tabela, erro mostrado com "Nada foi alterado".
+**Não testado:** a mesclagem pela tela logada contra o banco real.
+**Pendente:** a migração foi colada à mão no SQL Editor, então não está registrada em `supabase_migrations.schema_migrations` (ver aviso em `PROJECT_CONTEXT.md`).

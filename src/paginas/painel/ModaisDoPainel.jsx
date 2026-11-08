@@ -45,6 +45,7 @@ export default function ModaisDoPainel({
   aoFecharImportarGlebas,
   mesclandoTalhoes,
   aoFecharMesclarTalhoes,
+  aoMudarPontosAmostra,
 }) {
   const talhaoPontosId =
     criacao.talhaoDaEscolha?.id ??
@@ -158,11 +159,22 @@ export default function ModaisDoPainel({
           talhoes={talhoes}
           glebas={glebas}
           aoFechar={aoFecharMesclarTalhoes}
-          aoMesclado={({ talhao, glebasMovidas, removidos }) => {
+          aoMesclado={({ talhao, glebasMovidas, removidos, analisesMovidas, pontosMovidos }) => {
             aplicarTalhao(talhao)
+            // Glebas antes de remover os talhões: removerTalhao tira do estado
+            // as glebas que ainda apontam para o talhão apagado.
             if (glebasMovidas.length) aplicarGlebas(glebasMovidas)
             for (const id of removidos) removerTalhao(id)
-            mostrarAviso(`Talhão ${talhao.codigo} criado a partir da mesclagem de ${removidos.length + 1} talhões.`)
+            if (pontosMovidos > 0) aoMudarPontosAmostra?.()
+            const levados = [
+              glebasMovidas.length && `${glebasMovidas.length} ${glebasMovidas.length === 1 ? 'gleba' : 'glebas'}`,
+              analisesMovidas && `${analisesMovidas} ${analisesMovidas === 1 ? 'análise' : 'análises'}`,
+              pontosMovidos && `${pontosMovidos} ${pontosMovidos === 1 ? 'ponto de coleta' : 'pontos de coleta'}`,
+            ].filter(Boolean)
+            mostrarAviso(
+              `Talhão ${talhao.codigo} criado a partir da mesclagem de ${removidos.length + 1} talhões` +
+                (levados.length ? `, com ${levados.join(', ')} trazidos dos outros.` : '.'),
+            )
           }}
         />
       )}

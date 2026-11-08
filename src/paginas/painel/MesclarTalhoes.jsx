@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { combinarGeometrias, areaEmHectares } from '../../lib/geo.js'
-import { atualizarTalhao, excluirTalhao } from '../../dados/talhoes.js'
-import { atualizarGleba } from '../../dados/glebas.js'
+import { mesclarTalhoes } from '../../dados/talhoes.js'
 import { glebasDoTalhao } from '../../hooks/useHierarquia.js'
+import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { CORES_TALHAO } from '../../config/mapa.js'
 
 function formatarArea(ha) {
@@ -19,13 +19,16 @@ function formatarArea(ha) {
  *
  * Um dos selecionados é a "base": mantém o id (e portanto o histórico), e
  * ganha a geometria combinada, a área recalculada, e o código/nome/cor que
- * a pessoa confirmar. As glebas dos outros mudam de pai; os outros talhões,
- * já vazios, são apagados por último — nessa ordem porque é a que arrisca
- * menos: se algo falhar no meio, o pior caso é sobrar um talhão vazio pra
- * apagar de novo, nunca uma gleba órfã. (`glebas.talhao_id` é `on delete
- * cascade` — apagar o talhão sem mover a gleba primeiro a apagaria junto.)
+ * a pessoa confirmar. Glebas, análises e pontos de coleta dos outros passam
+ * para a base, e só então os outros, vazios, são apagados.
+ *
+ * Tudo isso roda no banco, numa transação (`mesclar_talhoes`): análise e ponto
+ * são `on delete cascade` no talhão, e a versão antiga, que movia só as
+ * glebas pelo navegador, apagava as análises e os pontos dos talhões
+ * absorvidos (auditoria de 2026-11-07, P1). Se algo falhar, nada muda.
  */
 export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }) {
+  const { analisesDaFazenda, recarregarAnalises } = useFazendaAtual()
   const [selecionados, setSelecionados] = useState(() => new Set())
   const [baseId, setBaseId] = useState(null)
   const [codigo, setCodigo] = useState('')
@@ -69,6 +72,11 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
     [talhoesSelecionados, baseId, glebas],
   )
 
+  const quantidadeAnalisesParaMover = useMemo(() => {
+    const outros = new Set(talhoesSelecionados.filter((t) => t.id !== baseId).map((t) => t.id))
+    return (analisesDaFazenda ?? []).filter((a) => outros.has(a.talhao_id)).length
+  }, [talhoesSelecionados, baseId, analisesDaFazenda])
+
   const areaCombinada = useMemo(() => {
     if (talhoesSelecionados.length < 2) return null
     const combinada = combinarGeometrias(talhoesSelecionados.map((t) => t.geometria))
@@ -93,38 +101,30 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
 
     const base = talhoesSelecionados.find((t) => t.id === baseId)
     const outros = talhoesSelecionados.filter((t) => t.id !== baseId)
-    const glebasMovidas = []
 
     try {
-      // 1) Reparenta as glebas primeiro — é o que não pode se perder.
-      for (const talhao of outros) {
-        for (const gleba of glebasDoTalhao(glebas, talhao.id)) {
-          const salva = await atualizarGleba(gleba.id, { talhaoId: base.id })
-          glebasMovidas.push(salva)
-        }
-      }
-
-      // 2) Só então a base ganha a geometria e os dados combinados.
       const geometriaCombinada = combinarGeometrias(talhoesSelecionados.map((t) => t.geometria))
-      const talhaoMesclado = await atualizarTalhao(base.id, {
+      const resultado = await mesclarTalhoes({
+        baseId: base.id,
+        absorvidos: outros.map((t) => t.id),
         codigo,
         nome,
         cor,
         geometria: geometriaCombinada,
-        areaHa: areaEmHectares(geometriaCombinada),
+        areaHa: geometriaCombinada ? areaEmHectares(geometriaCombinada) : null,
       })
 
-      // 3) Os outros, já sem gleba nenhuma, saem por último.
-      for (const talhao of outros) {
-        await excluirTalhao(talhao.id)
-      }
-
-      aoMesclado({ talhao: talhaoMesclado, glebasMovidas, removidos: outros.map((t) => t.id) })
+      // O banco já mudou as glebas de talhão; o estado local acompanha.
+      const glebasMovidas = outros.flatMap((t) =>
+        glebasDoTalhao(glebas, t.id).map((g) => ({ ...g, talhao_id: base.id })),
+      )
+      // As análises em memória ainda apontam para os talhões apagados.
+      if (resultado.analisesMovidas > 0) recarregarAnalises?.()
+      aoMesclado({ ...resultado, glebasMovidas, removidos: outros.map((t) => t.id) })
       aoFechar()
     } catch (e) {
-      setErro(
-        `${e.message} Confira a lista de talhões antes de tentar de novo — parte da mesclagem pode já ter sido feita.`,
-      )
+      // A mesclagem é uma transação: se falhou, nada foi alterado.
+      setErro(`${e.message} Nada foi alterado.`)
       setMesclando(false)
     }
   }
@@ -201,6 +201,9 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
               {quantidadeGlebasParaMover > 0 && (
                 <> · {quantidadeGlebasParaMover} {quantidadeGlebasParaMover === 1 ? 'gleba muda' : 'glebas mudam'} de talhão</>
               )}
+              {quantidadeAnalisesParaMover > 0 && (
+                <> · {quantidadeAnalisesParaMover} {quantidadeAnalisesParaMover === 1 ? 'análise vai junto' : 'análises vão junto'}</>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -257,9 +260,9 @@ export default function MesclarTalhoes({ talhoes, glebas, aoFechar, aoMesclado }
             </div>
 
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Os outros {talhoesSelecionados.length - 1} talhões selecionados serão apagados depois de
-              mover as glebas deles pra cá — a área desenhada de cada um continua, só passa a ser uma
-              peça do talhão {codigo || '—'}.
+              Glebas, análises e pontos de coleta dos outros {talhoesSelecionados.length - 1} talhões
+              passam para o talhão {codigo || '—'}, e só então eles são apagados. A área desenhada de
+              cada um continua, como peça do talhão final. Se algo der errado, nada é alterado.
             </p>
           </div>
         )}

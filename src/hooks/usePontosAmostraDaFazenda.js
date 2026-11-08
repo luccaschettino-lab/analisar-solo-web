@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { listarPontosColetaDaFazenda } from '../dados/pontosColeta.js'
 
-export function usePontosAmostraDaFazenda(fazendaId, habilitado) {
+/**
+ * Pontos de coleta da fazenda, para desenhar no mapa. `versao` força uma nova
+ * leitura quando os pontos mudam por fora (ex.: mesclar talhões).
+ */
+export function usePontosAmostraDaFazenda(fazendaId, habilitado, versao = 0) {
   const [pontos, setPontos] = useState([])
   const [fazendaCarregada, setFazendaCarregada] = useState(null)
   const [carregando, setCarregando] = useState(false)
@@ -39,7 +43,7 @@ export function usePontosAmostraDaFazenda(fazendaId, habilitado) {
     return () => {
       requisicaoAtual.current += 1
     }
-  }, [fazendaId, habilitado])
+  }, [fazendaId, habilitado, versao])
 
   return {
     pontos: fazendaCarregada === fazendaId && habilitado ? pontos : [],

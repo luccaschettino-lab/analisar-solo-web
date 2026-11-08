@@ -57,6 +57,37 @@ export async function atualizarTalhao(id, campos) {
   )
 }
 
+/**
+ * Junta os talhões `absorvidos` no talhão `baseId`, numa transação no banco
+ * (função `mesclar_talhoes`). Glebas, análises e pontos de coleta dos
+ * absorvidos passam para a base antes de eles serem apagados; se algo falhar,
+ * nada muda. Devolve o talhão final e quantos registros mudaram de talhão.
+ */
+export async function mesclarTalhoes({ baseId, absorvidos, codigo, nome, cor, geometria, areaHa }) {
+  const resultado = checar(
+    await supabase.rpc('mesclar_talhoes', {
+      p_base_id: baseId,
+      p_absorvidos: absorvidos,
+      p_codigo: codigo.trim(),
+      p_nome: nome?.trim() || null,
+      p_cor: cor,
+      p_geometria: geometria,
+      p_area_ha: areaHa,
+    }),
+    'Falha ao mesclar talhões',
+  )
+  const t = resultado.talhao
+  return {
+    talhao: {
+      id: t.id, fazenda_id: t.fazenda_id, codigo: t.codigo, nome: t.nome,
+      geometria: t.geometria, area_ha: t.area_ha, cor: t.cor, criado_em: t.criado_em,
+    },
+    glebasMovidas: resultado.glebas_movidas,
+    analisesMovidas: resultado.analises_movidas,
+    pontosMovidos: resultado.pontos_movidos,
+  }
+}
+
 export async function excluirTalhao(id) {
   checar(await supabase.from('talhoes').delete().eq('id', id), 'Falha ao excluir talhão')
 }
