@@ -5,7 +5,7 @@ import { primeiraFeature, areaEmHectares, avaliarContencao, CONTENCAO, mesmaGeom
 import { SNAP_DISTANCIA } from '../../config/mapa.js'
 import { planejarDivisa } from '../../lib/divisaCompartilhada.js'
 import { atualizarTalhao, excluirTalhao, resumoCascataTalhao } from '../../dados/talhoes.js'
-import { atualizarGleba, excluirGleba, contarAnalisesDaGleba } from '../../dados/glebas.js'
+import { atualizarGleba, excluirGleba, contarAnalisesDaGleba, salvarGeometriasDeGlebas } from '../../dados/glebas.js'
 
 /**
  * O talhão ou gleba selecionado, e tudo que se faz com ele: focar, editar
@@ -222,17 +222,21 @@ export function useItemSelecionado({
   // Grava o que está na camada. Com `plano`, leva a divisa mexida também às
   // glebas vizinhas que a compartilhavam.
   async function gravarGeometria({ feature, areaHa, plano = null }) {
-    const alteradas = []
+    const alteradas = (plano?.afetadas ?? []).map((v) => v.gleba.codigo)
     setGravandoGeometria(true)
     try {
       if (selecionado.tipo === 'talhao') {
         aplicarTalhao(await atualizarTalhao(selecionado.id, { geometria: feature, areaHa }))
-      } else {
+      } else if (alteradas.length === 0) {
         aplicarGleba(await atualizarGleba(selecionado.id, { geometria: feature, areaHa }))
-      }
-      for (const vizinha of plano?.afetadas ?? []) {
-        aplicarGleba(await atualizarGleba(vizinha.gleba.id, { geometria: vizinha.geometria, areaHa: vizinha.areaHa }))
-        alteradas.push(vizinha.gleba.codigo)
+      } else {
+        // A gleba editada e as vizinhas numa transação só: se uma falhar,
+        // nenhuma muda, e a divisa continua batendo (auditoria P9).
+        const gravadas = await salvarGeometriasDeGlebas([
+          { id: selecionado.id, geometria: feature, areaHa },
+          ...plano.afetadas.map((v) => ({ id: v.gleba.id, geometria: v.geometria, areaHa: v.areaHa })),
+        ])
+        for (const gleba of gravadas) aplicarGleba(gleba)
       }
       // Só sai do modo de edição depois de gravado. Sair antes daria a impressão
       // de sucesso mesmo quando a gravação falha.
@@ -244,11 +248,8 @@ export function useItemSelecionado({
           : 'Geometria gravada.',
       )
     } catch (e) {
-      mostrarAviso(
-        alteradas.length > 0
-          ? `${e.message} A divisa já tinha sido levada para a gleba ${alteradas.join(', ')}: confira as vizinhas.`
-          : e.message,
-      )
+      // Transação: com ou sem vizinhas, nada foi gravado.
+      mostrarAviso(alteradas.length > 0 ? `${e.message} Nada foi gravado.` : e.message)
       // O desenho na tela não corresponde ao banco: volta ao que está salvo em
       // vez de deixar o usuário achar que gravou.
       desligarEdicao(chaveSelecionada)

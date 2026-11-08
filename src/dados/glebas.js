@@ -110,6 +110,24 @@ export async function atualizarGleba(id, campos) {
   )
 }
 
+/**
+ * Grava geometria e área de várias glebas numa transação (função
+ * `salvar_geometrias_glebas`): se uma falhar, nenhuma muda. Para mudanças de
+ * desenho que envolvem mais de uma gleba — a divisa compartilhada e o
+ * "Ajustar glebas ao talhão" (auditoria P9).
+ *
+ * `itens`: [{ id, geometria, areaHa }]. Devolve as glebas gravadas.
+ */
+export async function salvarGeometriasDeGlebas(itens) {
+  const linhas = checar(
+    await supabase.rpc('salvar_geometrias_glebas', {
+      p_itens: itens.map(({ id, geometria, areaHa }) => ({ id, geometria, area_ha: areaHa ?? null })),
+    }),
+    'Falha ao gravar as glebas',
+  )
+  return linhas ?? []
+}
+
 export async function excluirGleba(id) {
   checar(await supabase.from('glebas').delete().eq('id', id), 'Falha ao excluir gleba')
 }

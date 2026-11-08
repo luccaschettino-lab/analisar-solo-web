@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { listarPontosColetaDaFazenda } from '../../dados/pontosColeta.js'
-import { atualizarGleba } from '../../dados/glebas.js'
+import { salvarGeometriasDeGlebas } from '../../dados/glebas.js'
 import { recalcularGlebasDosPontos } from '../../lib/pontosDeColeta.js'
 
 /**
@@ -39,17 +39,18 @@ export default function RecalcularGlebas() {
   async function aplicar() {
     if (!plano || plano.atualizacoes.length === 0 || aplicando) return
     setErro('')
-    const feitas = []
+    let feitas = []
     setAplicando({ feito: 0, total: plano.atualizacoes.length })
     try {
-      for (const a of plano.atualizacoes) {
-        feitas.push(await atualizarGleba(a.glebaId, { geometria: a.geometria, areaHa: a.areaHa }))
-        setAplicando({ feito: feitas.length, total: plano.atualizacoes.length })
-      }
+      // Todas numa transação (auditoria P9): vizinhas redesenhadas juntas
+      // nunca ficam metade no desenho novo e metade no antigo.
+      feitas = await salvarGeometriasDeGlebas(
+        plano.atualizacoes.map((a) => ({ id: a.glebaId, geometria: a.geometria, areaHa: a.areaHa })),
+      )
       setResultado(`${feitas.length} ${feitas.length === 1 ? 'gleba ajustada' : 'glebas ajustadas'} para preencher os talhões.`)
       setPlano(null)
     } catch (e) {
-      setErro(`${e.message} ${feitas.length} de ${plano.atualizacoes.length} glebas foram ajustadas; pode verificar de novo para continuar.`)
+      setErro(`${e.message} Nenhuma gleba foi alterada.`)
     } finally {
       if (feitas.length > 0) aplicarGlebas(feitas)
       setAplicando(null)
@@ -101,7 +102,7 @@ export default function RecalcularGlebas() {
       <div className="flex items-center justify-between gap-2">
         {aplicando ? (
           <p role="status" aria-live="polite" className="text-xs text-slate-500 dark:text-slate-400">
-            Ajustando glebas: {aplicando.feito} de {aplicando.total}…
+            Ajustando {aplicando.total} {aplicando.total === 1 ? 'gleba' : 'glebas'}…
           </p>
         ) : <span />}
         <div className="flex gap-2">

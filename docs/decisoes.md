@@ -704,3 +704,15 @@ Com o cadastro aberto, qualquer pessoa na internet criava conta e usava o armaze
 | **As rotas têm `errorElement` próprio (`ErroDeRota`).** | Sem ele, o roteador mostrava "Unexpected Application Error!", em inglês e com detalhes técnicos. |
 
 **Testado no Chrome** com o app inteiro e o Supabase simulado: login sem baixar o mapa; mapa abrindo sob demanda; arquivo da tela "sumido" uma vez → recarregou uma vez e abriu a tela; sumido de vez → um recarregamento só e a mensagem em português.
+
+### Várias glebas numa transação (auditoria P9)
+
+| Decisão | Motivo |
+|---|---|
+| **Função `salvar_geometrias_glebas`** (migração `20261108120000`): grava geometria e área de várias glebas de uma vez; se uma falhar, nenhuma muda. | Antes cada gleba era uma chamada do navegador. Na divisa compartilhada, uma falha no meio deixava a divisa nova numa gleba e velha na vizinha (buraco ou sobreposição), e a tela só pedia para conferir. |
+| **Usada em "Mover nas vizinhas também" e em "Ajustar glebas já criadas ao talhão".** Gravar uma gleba sozinha continua igual. | São os dois lugares em que várias glebas mudam por causa de uma ação. |
+| **`SECURITY INVOKER`.** | As políticas de RLS de `glebas` valem; gleba sem permissão "não é encontrada" e desfaz tudo. |
+
+O resto da P9 já estava coberto: mesclar talhões (transação, P1); importar laudo e pontos (repetir é seguro, P4); criar glebas dos pontos (uma transação por gleba, retomável).
+
+**Testado no banco**, como o usuário dono, num bloco desfeito no fim: duas glebas gravadas juntas; uma boa com uma inexistente → recusada e a boa não mudou; usuário sem acesso → recusado; lista vazia → recusada. Dados reais conferidos depois. **Não testado** pela tela logada contra o banco real.
