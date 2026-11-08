@@ -722,3 +722,7 @@ O resto da P9 já estava coberto: mesclar talhões (transação, P1); importar l
 Textos de 10 e 11 px em 34 lugares (legenda do mapa, painel de detalhe, critérios, comparação, mensagens de erro da importação) passaram para 12 px (`text-xs`), o menor tamanho do resto do app. O público lê no celular, no campo.
 
 Ficam menores de propósito: a coordenada do cursor e a data da imagem de satélite (avisos sobre o mapa, que não podem cobrir o desenho) e a seta decorativa da tabela de variação (`aria-hidden`). Conferido no Chrome em largura de celular (390 px): legenda e botões do painel cabem, sem rolagem lateral.
+
+### Satélite do Google removido (auditoria P12, parte do Google)
+
+A camada "Satélite (Google) · provisório" usava um endereço não oficial (`mt1.google.com/vt`), sem chave. Os Termos de Serviço do Google exigem a Maps Platform (paga) para mostrar essas imagens fora do Google, e o endereço podia parar sem aviso. Foi removida do seletor de camadas; o padrão continua Esri, com Esri Clarity como alternativa de alta resolução. Nada dependia dela (a camada escolhida não é guardada entre visitas). A outra metade da P12 (mover o banco para São Paulo) fica para quando se tratar o backup (P2).
