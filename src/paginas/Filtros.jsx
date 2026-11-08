@@ -37,6 +37,7 @@ export default function Filtros() {
   const {
     fazendaSelecionada,
     talhoes,
+    glebas,
     carregando: carregandoHierarquia,
     anos,
     filtro,
@@ -104,6 +105,8 @@ export default function Filtros() {
     filtro,
     mostrarCor: true,
     mostrarPontosAmostra,
+    // Só para hachurar as glebas sem análise; esta tela não desenha glebas.
+    glebasParaHachura: glebas,
   })
 
   useEffect(() => {

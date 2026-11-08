@@ -83,6 +83,9 @@ export function useGeometrias(
   {
     talhoes,
     glebas = [],
+    // Glebas usadas só para hachurar as que ficam sem amostra no filtro, sem
+    // desenhá-las (tela de Filtros). Padrão: as mesmas de `glebas`.
+    glebasParaHachura = null,
     selecionado,
     aoSelecionar,
     revisao = 0,
@@ -471,7 +474,7 @@ export function useGeometrias(
       // O calor estima o talhão inteiro; gleba sem amostra própria no filtro
       // receberia só cor emprestada das vizinhas. Hachura por cima, como o
       // talhão sem dado — ausência de medição é informação.
-      const semAmostra = glebasSemAmostra(glebas, amostrasPorTalhao)
+      const semAmostra = glebasSemAmostra(glebasParaHachura ?? glebas, amostrasPorTalhao)
       if (semAmostra.length > 0 && garantirHachura(mapa)) {
         const grupo = L.layerGroup()
         for (const gleba of semAmostra) {
@@ -491,7 +494,7 @@ export function useGeometrias(
       camadaGlebasSemDado.current?.remove()
       camadaGlebasSemDado.current = null
     }
-  }, [mapa, talhoes, glebas, coloracao, mostrarCor])
+  }, [mapa, talhoes, glebas, glebasParaHachura, coloracao, mostrarCor])
 
   useEffect(() => {
     if (!mapa) return
