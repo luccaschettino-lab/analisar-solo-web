@@ -5,6 +5,7 @@ import LayoutApp from './layouts/LayoutApp.jsx'
 import Login from './paginas/Login.jsx'
 import Cadastro from './paginas/Cadastro.jsx'
 import EsqueciSenha from './paginas/EsqueciSenha.jsx'
+import NovaSenha from './paginas/NovaSenha.jsx'
 import Painel from './paginas/Painel.jsx'
 import Filtros from './paginas/Filtros.jsx'
 import Dados from './paginas/Dados.jsx'
@@ -29,6 +30,12 @@ export const router = createHashRouter([
         ],
       },
     ],
+  },
+  // Fora das duas guardas: quem abre o link do e-mail já está logado (a
+  // RotaPublica o mandaria ao mapa) mas ainda não escolheu a senha nova.
+  {
+    element: <LayoutPublico />,
+    children: [{ path: '/nova-senha', element: <NovaSenha /> }],
   },
   {
     element: <RotaProtegida />,

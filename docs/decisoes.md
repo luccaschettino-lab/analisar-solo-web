@@ -632,3 +632,18 @@ Pedido do usuário em 2026-11-07: confirmar a senha antes de qualquer exclusão.
 | **O resumo da exclusão de fazenda conta análises e pontos pelo talhão** e passou a listar os pontos de coleta; o de talhão também lista os pontos (auditoria P6). | A contagem antiga ia pela gleba e dava "0 análises" quando a exclusão apagaria 113. |
 
 **Testado no Chrome** (login simulado, largura de celular): sem senha o botão fica desligado; senha errada mostra "Senha incorreta." e não exclui; senha certa (Enter ou clique) exclui. **Não testado:** contra o Supabase real pela tela logada.
+
+### Recuperação de senha (auditoria P3)
+
+"Esqueci minha senha" chamava `pedirRecuperacaoDeSenha`, que não existia no `AuthContext`, e a página `NovaSenha.jsx` não tinha rota.
+
+| Decisão | Motivo |
+|---|---|
+| **O link do e-mail volta para `<site>/?recuperar=1`** e o Supabase acrescenta o `code`. A marca liga `recuperando` desde o primeiro render; o evento `PASSWORD_RECOVERY` liga também, como reserva. | O evento pode chegar antes de a tela estar escutando; a marca no endereço não se perde. |
+| **`/nova-senha` fica fora das duas guardas, e as duas mandam para lá enquanto `recuperando`.** | Quem abre o link já está logado: a `RotaPublica` o mandaria ao mapa sem trocar a senha. |
+| **Link vencido ou já usado mostra "Este link venceu ou já foi usado" e oferece pedir outro.** | O Supabase devolve `error_code=otp_expired` no endereço; antes, a pessoa caía no login sem explicação. |
+| **"Cancelar e voltar ao login" encerra a sessão aberta pelo link.** | Sem isso, desistir deixaria alguém logado sem ter escolhido senha. |
+| **Depois de salvar, o endereço é limpo** (sai `recuperar`, `code` e erro). | Um F5 não reabre a troca de senha nem reaproveita o código. |
+
+**Configuração necessária no Supabase:** Authentication → URL Configuration → Redirect URLs precisa aceitar `https://luccaschettino-lab.github.io/analisar-solo-web/**`. Sem isso o link cai no Site URL sem a marca (o evento ainda leva à tela certa, mas é a reserva).
+**Testado no Chrome** com o app inteiro e o Supabase simulado: pedir o link, abrir e salvar (com senhas diferentes recusadas), link vencido, logado comum abrindo `/nova-senha` direto, desistir. **Não testado:** o e-mail real chegando e o link do Supabase de verdade.

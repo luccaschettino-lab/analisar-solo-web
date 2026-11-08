@@ -9,6 +9,32 @@ const AuthContext = createContext(null)
 // GitHub Pages em produção, sem precisar de variável extra.
 const urlDeRetorno = () => `${window.location.origin}${import.meta.env.BASE_URL}`
 
+// Marca posta no link do e-mail de recuperação de senha. O Supabase acrescenta
+// o `?code=...` a esse endereço; a marca diz ao app que a sessão que vai nascer
+// desse código é para trocar a senha, mesmo que o evento PASSWORD_RECOVERY
+// chegue antes de a tela estar escutando.
+const MARCA_RECUPERACAO = 'recuperar'
+const urlDeRecuperacao = () => `${urlDeRetorno()}?${MARCA_RECUPERACAO}=1`
+const veioDoLinkDeRecuperacao = () => new URLSearchParams(window.location.search).has(MARCA_RECUPERACAO)
+
+// Erro que o Supabase devolve no endereço quando o link venceu ou já foi usado.
+function erroDoLink() {
+  const params = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#\/?/, '').split('?').pop())
+  const descricao = params.get('error_description') ?? hash.get('error_description')
+  const codigo = params.get('error_code') ?? hash.get('error_code')
+  if (!descricao && !codigo) return null
+  if (codigo === 'otp_expired' || /expired|invalid/i.test(descricao ?? '')) {
+    return 'Este link venceu ou já foi usado. Peça um novo.'
+  }
+  return 'Não foi possível usar este link. Peça um novo.'
+}
+
+// Tira do endereço a marca, o código e o erro, mantendo a rota do hash.
+function limparEnderecoDaRecuperacao() {
+  window.history.replaceState(null, '', `${import.meta.env.BASE_URL}${window.location.hash}`)
+}
+
 // O Supabase responde em inglês e com mensagens genéricas por decisão de
 // segurança (não revela se o e-mail existe). Traduzimos o que é acionável.
 function traduzirErro(erro) {
@@ -43,6 +69,10 @@ export function AuthProvider({ children }) {
   // usuário fica na rota ou vai para o login. Sem isso, um F5 em uma rota
   // protegida joga o usuário logado para a tela de login por um instante.
   const [carregando, setCarregando] = useState(true)
+  // A pessoa abriu o link de "esqueci minha senha": a sessão existe, mas antes
+  // de qualquer outra tela ela precisa escolher a senha nova.
+  const [recuperando, setRecuperando] = useState(veioDoLinkDeRecuperacao)
+  const [erroRecuperacao] = useState(erroDoLink)
 
   useEffect(() => {
     let ativo = true
@@ -58,9 +88,11 @@ export function AuthProvider({ children }) {
     // logout feito em outra aba do navegador.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_evento, novaSessao) => {
+    } = supabase.auth.onAuthStateChange((evento, novaSessao) => {
       setSessao(novaSessao)
       setCarregando(false)
+      if (evento === 'PASSWORD_RECOVERY') setRecuperando(true)
+      if (evento === 'SIGNED_OUT') setRecuperando(false)
     })
 
     return () => {
@@ -74,6 +106,46 @@ export function AuthProvider({ children }) {
       sessao,
       usuario: sessao?.user ?? null,
       carregando,
+      recuperando,
+      erroRecuperacao,
+
+      /**
+       * Manda o e-mail com o link para criar uma senha nova. Não diz se o
+       * e-mail tem conta (a tela mostra a mesma mensagem nos dois casos).
+       *
+       * O endereço de volta precisa estar em Authentication > URL
+       * Configuration > Redirect URLs no Supabase, senão o link cai no Site URL
+       * sem a marca (o evento PASSWORD_RECOVERY ainda leva à tela certa).
+       */
+      async pedirRecuperacaoDeSenha(email) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: urlDeRecuperacao(),
+        })
+        if (error) throw new Error(traduzirErro(error))
+      },
+
+      /** Grava a senha nova de quem abriu o link de recuperação. */
+      async definirNovaSenha(senha) {
+        const { error } = await supabase.auth.updateUser({ password: senha })
+        if (error) {
+          if (/session missing|not authenticated/i.test(error.message ?? '')) {
+            throw new Error('O link venceu antes de você salvar. Peça um novo em "Esqueci minha senha".')
+          }
+          if (/should be different|same.*password/i.test(error.message ?? '')) {
+            throw new Error('A senha nova precisa ser diferente da antiga.')
+          }
+          throw new Error(traduzirErro(error))
+        }
+        setRecuperando(false)
+        limparEnderecoDaRecuperacao()
+      },
+
+      /** Desiste de trocar a senha: sai da sessão aberta pelo link. */
+      async cancelarRecuperacao() {
+        setRecuperando(false)
+        limparEnderecoDaRecuperacao()
+        await supabase.auth.signOut()
+      },
 
       async entrar(email, senha) {
         const { error } = await supabase.auth.signInWithPassword({
@@ -125,7 +197,7 @@ export function AuthProvider({ children }) {
         if (error) throw new Error(traduzirErro(error))
       },
     }),
-    [sessao, carregando],
+    [sessao, carregando, recuperando, erroRecuperacao],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>
