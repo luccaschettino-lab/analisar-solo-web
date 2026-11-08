@@ -1,4 +1,5 @@
 import { supabase, checar } from './cliente.js'
+import { paginarTudo } from '../lib/paginar.js'
 import { CHAVES_PARAMETROS } from '../config/parametros.js'
 
 const CAMPOS_BASE =
@@ -28,7 +29,9 @@ function ordenar(a, b) {
  */
 export async function listarAnalisesDoTalhao(talhaoId) {
   const linhas = checar(
-    await supabase.from('analises').select(CAMPOS).eq('talhao_id', talhaoId),
+    await paginarTudo(() =>
+      supabase.from('analises').select(CAMPOS, { count: 'exact' }).eq('talhao_id', talhaoId),
+    ),
     'Falha ao carregar análises',
   )
   return (linhas ?? []).sort(ordenar)
@@ -44,10 +47,13 @@ export async function listarAnalisesDoTalhao(talhaoId) {
  */
 export async function listarAnalisesDaFazenda(fazendaId) {
   const linhas = checar(
-    await supabase
-      .from('analises')
-      .select(`${CAMPOS_MAPA}, talhoes!inner(fazenda_id)`)
-      .eq('talhoes.fazenda_id', fazendaId),
+    // Em páginas: a API corta em 1.000 linhas sem avisar (auditoria P5).
+    await paginarTudo(() =>
+      supabase
+        .from('analises')
+        .select(`${CAMPOS_MAPA}, talhoes!inner(fazenda_id)`, { count: 'exact' })
+        .eq('talhoes.fazenda_id', fazendaId),
+    ),
     'Falha ao carregar análises da fazenda',
   )
   // Descarta o objeto do join: quem consome quer a análise, não o caminho.
@@ -103,10 +109,14 @@ export async function criarAnalisesEmLote(payloads, aoProgredir) {
  */
 export async function listarIdentidadesDaFazenda(fazendaId) {
   const linhas = checar(
-    await supabase
-      .from('analises')
-      .select('talhao_id, ano_safra, profundidade, numero_amostra_lab, talhoes!inner(fazenda_id)')
-      .eq('talhoes.fazenda_id', fazendaId),
+    await paginarTudo(() =>
+      supabase
+        .from('analises')
+        .select('id, talhao_id, ano_safra, profundidade, numero_amostra_lab, talhoes!inner(fazenda_id)', {
+          count: 'exact',
+        })
+        .eq('talhoes.fazenda_id', fazendaId),
+    ),
     'Falha ao conferir as análises já gravadas',
   )
   return (linhas ?? []).map(({ talhoes, ...analise }) => analise)

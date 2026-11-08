@@ -668,3 +668,15 @@ O mapa de calor estima o talhão inteiro a partir das amostras (IDW). Em 2026-11
 | **A importação de pontos usa "ignorar repetidos"** e diz quantos já existiam. | Reimportar passa a ser seguro: "0 importados, 810 já existiam e foram pulados". |
 
 Migração `20261107140000`, colada à mão no SQL Editor (não está em `schema_migrations`). **Testado no banco**, como o usuário dono, num bloco desfeito no fim: análise repetida recusada; mesmo talhão, safra e profundidade com outro nº aceita; duas manuais sem nº aceitas; ponto repetido recusado; com `on conflict do nothing`, 0 gravado e sem erro. Totais conferidos depois: 113 análises, 810 pontos. **Não testado:** a importação de pontos pela tela logada.
+
+### Leituras grandes em páginas (auditoria P5)
+
+| Decisão | Motivo |
+|---|---|
+| **As leituras de "tudo da fazenda" (e de um talhão) buscam em páginas de 1.000** (`lib/paginar.js`): análises, identidades das análises, pontos de coleta e glebas. | A API do Supabase devolve no máximo "Max rows" (1.000 por padrão) e corta o resto sem erro. Com 810 pontos ainda não acontecia; a próxima coleta na mesma fazenda passaria do limite, e o mapa, a importação de laudo e o recalcular glebas veriam só parte dos pontos. |
+| **Pára pela contagem (`count: 'exact'`), não pelo tamanho da página.** | Se o "Max rows" do projeto for menor que 1.000, a página vem menor sem ser a última. |
+| **Ordena por `id`.** | Sem ordem fixa, duas páginas podem repetir ou pular linhas. |
+| **Erro em qualquer página devolve o erro, não a lista pela metade.** | Meia lista sem aviso é o problema que isto resolve. |
+| **Não se aumentou o "Max rows".** | Só adiaria o corte. |
+
+**Testado:** `testes/paginar.mjs` (810, 1.000, 1.600 linhas, limite de 500, sem contagem, erro no meio) e no Chrome a tela de Filtros com 1.600 pontos simulados num servidor que entrega no máximo 1.000 por pedido: mostrou os 1.600, em 2 pedidos. **Não testado** contra o Supabase real com mais de 1.000 linhas (a fazenda tem 810).

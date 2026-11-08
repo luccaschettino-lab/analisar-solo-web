@@ -1,14 +1,18 @@
 import { supabase, checar } from './cliente.js'
+import { paginarTudo } from '../lib/paginar.js'
 
 const CAMPOS = 'id, talhao_id, geometria, propriedades, criado_em'
 const CAMPOS_LISTA = `${CAMPOS}, gleba_id`
 
 export async function listarPontosColetaDaFazenda(fazendaId) {
   const linhas = checar(
-    await supabase
-      .from('pontos_coleta')
-      .select(`${CAMPOS_LISTA}, talhoes!inner(fazenda_id)`)
-      .eq('talhoes.fazenda_id', fazendaId),
+    // Em páginas: a API corta em 1.000 linhas sem avisar (auditoria P5).
+    await paginarTudo(() =>
+      supabase
+        .from('pontos_coleta')
+        .select(`${CAMPOS_LISTA}, talhoes!inner(fazenda_id)`, { count: 'exact' })
+        .eq('talhoes.fazenda_id', fazendaId),
+    ),
     'Falha ao carregar pontos de amostra da fazenda',
   )
   return (linhas ?? []).map(({ talhoes, ...ponto }) => ponto)
@@ -16,7 +20,9 @@ export async function listarPontosColetaDaFazenda(fazendaId) {
 
 export async function listarPontosColetaDoTalhao(talhaoId) {
   const linhas = checar(
-    await supabase.from('pontos_coleta').select(CAMPOS_LISTA).eq('talhao_id', talhaoId),
+    await paginarTudo(() =>
+      supabase.from('pontos_coleta').select(CAMPOS_LISTA, { count: 'exact' }).eq('talhao_id', talhaoId),
+    ),
     'Falha ao carregar pontos de amostra',
   )
   return linhas ?? []

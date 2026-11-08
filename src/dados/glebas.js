@@ -1,4 +1,5 @@
 import { supabase, checar, checarContagem } from './cliente.js'
+import { paginarTudo } from '../lib/paginar.js'
 import { compararCodigo } from './talhoes.js'
 
 const CAMPOS = 'id, talhao_id, codigo, nome, geometria, area_ha, foto_path, foto_em, criado_em'
@@ -12,10 +13,12 @@ const CAMPOS = 'id, talhao_id, codigo, nome, geometria, area_ha, foto_path, foto
  */
 export async function listarGlebasDaFazenda(fazendaId) {
   const linhas = checar(
-    await supabase
-      .from('glebas')
-      .select(`${CAMPOS}, talhoes!inner(fazenda_id)`)
-      .eq('talhoes.fazenda_id', fazendaId),
+    await paginarTudo(() =>
+      supabase
+        .from('glebas')
+        .select(`${CAMPOS}, talhoes!inner(fazenda_id)`, { count: 'exact' })
+        .eq('talhoes.fazenda_id', fazendaId),
+    ),
     'Falha ao carregar glebas',
   )
   // Descarta o objeto do join: quem consome quer a gleba, nao o vinculo.
