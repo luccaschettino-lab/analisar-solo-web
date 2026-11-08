@@ -735,3 +735,14 @@ A camada "Satélite (Google) · provisório" usava um endereço não oficial (`m
 | **Regra de senha no Supabase: mínimo de 8, letras e números** (configurada pelo dono em 2026-11-08). | É a regra da tela (`lib/senha.js`); sem ela no servidor, a API aceitaria senha mais fraca. |
 | **Proteção contra senhas vazadas (HaveIBeenPwned) não ligada.** | Só existe no plano Pro (documentação do Supabase). Fica para a decisão do plano (P2). |
 | **As 8 funções `security definer` apontadas pelo Supabase continuam chamáveis por usuário logado.** | Seis só respondem sobre quem chama (papel, acesso). `fazenda_do_talhao`, `fazenda_da_gleba` e `talhao_da_gleba` dizem a fazenda/talhão de um id: exigiriam já conhecer um UUID alheio e devolveriam só outro UUID. Mudá-las mexeria no caminho de toda regra de RLS; o risco de mexer é maior que o de deixar. |
+
+### Limpeza: campo antigo das análises e funções do Planet (auditoria P14 e P15)
+
+| Decisão | Motivo |
+|---|---|
+| **`analises.gleba_id` removido** (migração `20261108140000`). | Vínculo da época em que a amostra era da gleba; vazio nas 113 análises e sem nada no banco dependendo dele. O único uso, no diálogo de excluir gleba, estava errado: contava as análises como "também será apagado", mas a chave era `set null` e elas nunca iam junto. |
+| **Excluir gleba diz o que acontece:** "As análises e os pontos de coleta dela continuam no talhão; só a gleba sai." | É o que o banco faz. |
+| **Criar ponto de coleta confere que a gleba é do mesmo talhão**, como a regra de editar já fazia. | A de criar só conferia o talhão. |
+| **Funções do Planet saem do repositório** (`planet-buscar-cenas`, `planet-mosaicos`); a terceira publicada, `planet-teste-visual`, nunca esteve no repositório. As três são apagadas no painel junto com o segredo `PLANET_API_KEY`. | Nenhuma tela as usava desde que o monitoramento passou ao CBERS-4A. Função publicada sem uso é porta aberta e gasta a cota da conta Planet. |
+
+Ordem: o app novo (sem `gleba_id`) foi publicado antes do SQL; o app antigo contava por essa coluna e quebraria se ela saísse primeiro.

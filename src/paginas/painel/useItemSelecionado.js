@@ -5,7 +5,7 @@ import { primeiraFeature, areaEmHectares, avaliarContencao, CONTENCAO, mesmaGeom
 import { SNAP_DISTANCIA } from '../../config/mapa.js'
 import { planejarDivisa } from '../../lib/divisaCompartilhada.js'
 import { atualizarTalhao, excluirTalhao, resumoCascataTalhao } from '../../dados/talhoes.js'
-import { atualizarGleba, excluirGleba, contarAnalisesDaGleba, salvarGeometriasDeGlebas } from '../../dados/glebas.js'
+import { atualizarGleba, excluirGleba, salvarGeometriasDeGlebas } from '../../dados/glebas.js'
 
 /**
  * O talhão ou gleba selecionado, e tudo que se faz com ele: focar, editar
@@ -333,11 +333,9 @@ export function useItemSelecionado({
           ],
         })
       } else {
-        setConfirmandoItem({
-          consequencias: [
-            { rotulo: 'análises', quantidade: await contarAnalisesDaGleba(selecionado.id) },
-          ],
-        })
+        // Excluir a gleba não apaga nada além dela: a análise é do talhão, e
+        // os pontos de coleta ficam no talhão sem gleba (chave `set null`).
+        setConfirmandoItem({ consequencias: [] })
       }
     } catch (e) {
       mostrarAviso(e.message)

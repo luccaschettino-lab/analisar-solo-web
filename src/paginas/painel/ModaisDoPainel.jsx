@@ -314,7 +314,11 @@ export default function ModaisDoPainel({
       {item.confirmandoItem && item.itemSelecionado && (
         <ConfirmarExclusao
           titulo={`Excluir ${item.selecionado.tipo === 'talhao' ? 'talhão' : 'gleba'} ${item.itemSelecionado.codigo}?`}
-          descricao="Não há como desfazer."
+          descricao={
+            item.selecionado.tipo === 'gleba'
+              ? 'As análises e os pontos de coleta dela continuam no talhão; só a gleba sai. Não há como desfazer.'
+              : 'Não há como desfazer.'
+          }
           consequencias={item.confirmandoItem.consequencias}
           aoFechar={item.fecharExclusao}
           aoConfirmar={item.confirmarExclusao}
