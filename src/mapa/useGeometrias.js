@@ -9,6 +9,7 @@ import { conteudoRotuloTalhao, conteudoRotuloGleba } from './rotuloTalhao.js'
 import { criarCamadaCalor, PANE_CALOR, Z_CALOR } from './camadaCalor.js'
 import { posicaoDoNivel } from '../lib/coloracao.js'
 import { rotuloPontoColeta, criarCorDosPontos } from '../lib/pontosDeColeta.js'
+import { glebasSemAmostra } from '../lib/glebasSemAmostra.js'
 import {
   CINZA_HACHURA,
   ZOOM_MINIMO_ROTULO,
@@ -36,6 +37,11 @@ const Z_CONTORNO_TALHAO = 450
 // escondendo nenhuma das duas.
 const PANE_GLEBA = 'glebas'
 const Z_GLEBA = 430
+
+// Hachura das glebas sem amostra no filtro: por cima do mapa de calor (420),
+// para cobrir a cor estimada, e por baixo das linhas das glebas (430).
+const PANE_GLEBA_SEM_DADO = 'glebaSemDado'
+const Z_GLEBA_SEM_DADO = 425
 
 function rotulo(talhao) {
   return talhao.nome ? `${talhao.codigo} — ${talhao.nome}` : talhao.codigo
@@ -93,6 +99,7 @@ export function useGeometrias(
   const grupoGlebas = useRef(null)
   const grupoRotulosGleba = useRef(null)
   const camadaCalor = useRef(null)
+  const camadaGlebasSemDado = useRef(null)
   const marcadoresPontoAmostra = useRef(null)
   const porId = useRef(new Map())
   const porIdGleba = useRef(new Map())
@@ -141,6 +148,13 @@ export function useGeometrias(
     if (!mapa.getPane(PANE_CALOR)) {
       const pane = mapa.createPane(PANE_CALOR)
       pane.style.zIndex = Z_CALOR
+      pane.style.pointerEvents = 'none'
+    }
+
+    if (!mapa.getPane(PANE_GLEBA_SEM_DADO)) {
+      const pane = mapa.createPane(PANE_GLEBA_SEM_DADO)
+      pane.style.zIndex = Z_GLEBA_SEM_DADO
+      // Só cobre a cor; o clique passa para a gleba e o talhão por baixo.
       pane.style.pointerEvents = 'none'
     }
 
@@ -431,9 +445,12 @@ export function useGeometrias(
 
     camadaCalor.current?.remove()
     camadaCalor.current = null
+    camadaGlebasSemDado.current?.remove()
+    camadaGlebasSemDado.current = null
 
     if (mostrarCor && coloracao) {
       const talhoesComDado = []
+      const amostrasPorTalhao = new Map()
       for (const talhao of talhoes) {
         const info = coloracao(talhao.id)
         // A coloração de variação não tem pontos individuais; nesses casos,
@@ -441,23 +458,40 @@ export function useGeometrias(
         if (!info || info.hachurado || !info.pontos?.length) continue
         const geometry = paraFeature(talhao.geometria)?.geometry
         if (!geometry) continue
-        talhoesComDado.push({
-          geometry,
-          pontos: info.pontos
-            .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
-            .filter((p) => p.lat != null && p.lng != null && p.valor != null),
-        })
+        const pontos = info.pontos
+          .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
+          .filter((p) => p.lat != null && p.lng != null && p.valor != null)
+        talhoesComDado.push({ geometry, pontos })
+        amostrasPorTalhao.set(talhao.id, pontos)
       }
 
       const raster = criarCamadaCalor(talhoesComDado)
       if (raster) camadaCalor.current = raster.addTo(mapa)
+
+      // O calor estima o talhão inteiro; gleba sem amostra própria no filtro
+      // receberia só cor emprestada das vizinhas. Hachura por cima, como o
+      // talhão sem dado — ausência de medição é informação.
+      const semAmostra = glebasSemAmostra(glebas, amostrasPorTalhao)
+      if (semAmostra.length > 0 && garantirHachura(mapa)) {
+        const grupo = L.layerGroup()
+        for (const gleba of semAmostra) {
+          L.geoJSON(paraFeature(gleba.geometria), {
+            pane: PANE_GLEBA_SEM_DADO,
+            interactive: false,
+            style: { stroke: false, fillColor: PREENCHIMENTO_HACHURA, fillOpacity: 1 },
+          }).addTo(grupo)
+        }
+        camadaGlebasSemDado.current = grupo.addTo(mapa)
+      }
     }
 
     return () => {
       camadaCalor.current?.remove()
       camadaCalor.current = null
+      camadaGlebasSemDado.current?.remove()
+      camadaGlebasSemDado.current = null
     }
-  }, [mapa, talhoes, coloracao, mostrarCor])
+  }, [mapa, talhoes, glebas, coloracao, mostrarCor])
 
   useEffect(() => {
     if (!mapa) return

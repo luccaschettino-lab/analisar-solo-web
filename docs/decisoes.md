@@ -647,3 +647,14 @@ Pedido do usuário em 2026-11-07: confirmar a senha antes de qualquer exclusão.
 
 **Configuração necessária no Supabase:** Authentication → URL Configuration → Redirect URLs precisa aceitar `https://luccaschettino-lab.github.io/analisar-solo-web/**`. Sem isso o link cai no Site URL sem a marca (o evento ainda leva à tela certa, mas é a reserva).
 **Testado no Chrome** com o app inteiro e o Supabase simulado: pedir o link, abrir e salvar (com senhas diferentes recusadas), link vencido, logado comum abrindo `/nova-senha` direto, desistir. **Não testado:** o e-mail real chegando e o link do Supabase de verdade.
+
+### Mapa: gleba sem amostra fica hachurada
+
+O mapa de calor estima o talhão inteiro a partir das amostras (IDW). Em 2026-11-08, 26 das 83 glebas não tinham laudo (no talhão 12, 14 de 16): os pontos delas ficavam brancos, mas o chão embaixo saía colorido com cor emprestada das vizinhas. O usuário escolheu hachurar.
+
+| Decisão | Motivo |
+|---|---|
+| **Gleba sem amostra no filtro, dentro de talhão com amostra, é hachurada por cima do calor** (`lib/glebasSemAmostra.js`, pane `glebaSemDado`, z 425). | Mesma hachura do talhão sem dado: ausência de medição é informação. A legenda já tem "Sem dado". |
+| **"Tem amostra" = a posição de alguma análise do filtro cai dentro do polígono da gleba.** | A análise importada fica na média dos pontos de coleta da gleba, que está dentro dela. Não depende de os pontos estarem carregados no mapa. |
+| **O calor continua contínuo entre as glebas com amostra.** | O solo não segue a divisa do cadastro; só a área sem nenhuma medição própria deixa de receber cor. |
+| **Gleba que é só um ponto não é hachurada; a hachura não recebe clique.** | Sem área não há o que cobrir; o clique tem de chegar à gleba e ao talhão por baixo. |
