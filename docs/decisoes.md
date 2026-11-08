@@ -726,3 +726,12 @@ Ficam menores de propósito: a coordenada do cursor e a data da imagem de satél
 ### Satélite do Google removido (auditoria P12, parte do Google)
 
 A camada "Satélite (Google) · provisório" usava um endereço não oficial (`mt1.google.com/vt`), sem chave. Os Termos de Serviço do Google exigem a Maps Platform (paga) para mostrar essas imagens fora do Google, e o endereço podia parar sem aviso. Foi removida do seletor de camadas; o padrão continua Esri, com Esri Clarity como alternativa de alta resolução. Nada dependia dela (a camada escolhida não é guardada entre visitas). A outra metade da P12 (mover o banco para São Paulo) fica para quando se tratar o backup (P2).
+
+### Índices e avisos de segurança do Supabase (auditoria P19 e P20)
+
+| Decisão | Motivo |
+|---|---|
+| **Índices em `analises.talhao_id`, `analises.criado_por` e `fazendas.criado_por`** (migração `20261108130000`, conferida no banco). | `talhao_id` é a coluna mais filtrada (mapa, tela do talhão, regra de acesso) e só a coluna antiga `gleba_id` tinha índice. `criado_por`: apagar um usuário varreria as duas tabelas. |
+| **Regra de senha no Supabase: mínimo de 8, letras e números** (configurada pelo dono em 2026-11-08). | É a regra da tela (`lib/senha.js`); sem ela no servidor, a API aceitaria senha mais fraca. |
+| **Proteção contra senhas vazadas (HaveIBeenPwned) não ligada.** | Só existe no plano Pro (documentação do Supabase). Fica para a decisão do plano (P2). |
+| **As 8 funções `security definer` apontadas pelo Supabase continuam chamáveis por usuário logado.** | Seis só respondem sobre quem chama (papel, acesso). `fazenda_do_talhao`, `fazenda_da_gleba` e `talhao_da_gleba` dizem a fazenda/talhão de um id: exigiriam já conhecer um UUID alheio e devolveriam só outro UUID. Mudá-las mexeria no caminho de toda regra de RLS; o risco de mexer é maior que o de deixar. |
