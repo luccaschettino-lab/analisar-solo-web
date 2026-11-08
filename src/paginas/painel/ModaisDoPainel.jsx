@@ -329,6 +329,7 @@ export default function ModaisDoPainel({
             { rotulo: 'talhões', quantidade: confirmandoFazenda.talhoes },
             { rotulo: 'glebas', quantidade: confirmandoFazenda.glebas },
             { rotulo: 'análises', quantidade: confirmandoFazenda.analises },
+            { rotulo: 'pontos de coleta', quantidade: confirmandoFazenda.pontos },
           ]}
           aoFechar={aoFecharConfirmacaoFazenda}
           aoConfirmar={aoConfirmarExclusaoFazenda}

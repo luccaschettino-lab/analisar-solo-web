@@ -6,6 +6,7 @@ import { useAviso } from '../hooks/useAviso.js'
 import { validarCriterio } from '../lib/criterios.js'
 import { aplicarCriterioNaFazenda } from '../dados/criterios.js'
 import EditorCriterio from './criterios/EditorCriterio.jsx'
+import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx'
 
 const BOTAO =
   'rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-white/15 dark:bg-noite-900 dark:text-slate-300 dark:hover:bg-white/10 dark:disabled:border-white/10 dark:disabled:text-slate-600'
@@ -36,6 +37,7 @@ export default function Criterios() {
   const [rascunho, setRascunho] = useState(null)
   const [salvando, setSalvando] = useState(false)
   const [aplicando, setAplicando] = useState(false)
+  const [confirmandoApagar, setConfirmandoApagar] = useState(null)
 
   const aberto = criterios.find((c) => c.id === idAberto) ?? null
   const souAutor = aberto?.criado_por === usuario?.id
@@ -117,20 +119,21 @@ export default function Criterios() {
     }
   }
 
-  async function apagar() {
-    if (!aberto) return
-    if (!window.confirm(`Apagar "${aberto.nome}"? As fazendas que o usam voltam ao padrão do sistema.`)) return
-    try {
-      await excluir(aberto.id)
-      setIdAberto(null)
-      if (fazendaSelecionada?.criterio_id === aberto.id) {
-        aplicarFazenda({ ...fazendaSelecionada, criterio_id: null })
-        await recarregarCriterio()
-      }
-      mostrarAviso('Conjunto apagado.')
-    } catch (e) {
-      mostrarAviso(e.message)
+  // Pede a senha antes (ConfirmarExclusao), como toda exclusão do app.
+  function apagar() {
+    if (aberto) setConfirmandoApagar(aberto)
+  }
+
+  async function confirmarApagar() {
+    const alvo = confirmandoApagar
+    await excluir(alvo.id)
+    setConfirmandoApagar(null)
+    setIdAberto(null)
+    if (fazendaSelecionada?.criterio_id === alvo.id) {
+      aplicarFazenda({ ...fazendaSelecionada, criterio_id: null })
+      await recarregarCriterio()
     }
+    mostrarAviso('Conjunto apagado.')
   }
 
   async function aplicarNaFazenda(idCriterio) {
@@ -312,6 +315,16 @@ export default function Criterios() {
           </p>
         )}
       </div>
+
+      {confirmandoApagar && (
+        <ConfirmarExclusao
+          titulo={`Apagar o conjunto "${confirmandoApagar.nome}"?`}
+          descricao="As fazendas que usam este conjunto voltam ao padrão do sistema. Não há como desfazer."
+          rotuloBotao="Apagar"
+          aoFechar={() => setConfirmandoApagar(null)}
+          aoConfirmar={confirmarApagar}
+        />
+      )}
 
       {aviso && (
         <div className="fixed inset-x-0 bottom-4 z-[1200] flex justify-center px-3">

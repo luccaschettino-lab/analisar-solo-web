@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
 import { useFotoDaGleba } from '../../hooks/useFotoDaGleba.js'
 import { formatarTamanho } from '../../lib/imagem.js'
 
@@ -29,6 +30,7 @@ function dataLegivel(iso) {
  */
 export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
   const entrada = useRef(null)
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false)
 
   const { url, carregando, enviando, erro, ultimaReducao, enviar, remover } = useFotoDaGleba({
     fazendaId,
@@ -63,6 +65,20 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
 
   return (
     <div className="p-3 sm:p-4">
+      {confirmandoRemocao && (
+        <ConfirmarExclusao
+          titulo={`Remover a foto da gleba ${gleba.codigo}?`}
+          descricao="O arquivo da foto é apagado. Não há como desfazer."
+          rotuloBotao="Remover"
+          aoFechar={() => setConfirmandoRemocao(false)}
+          aoConfirmar={async () => {
+            // `remover` mostra a própria falha no aviso da foto, acima.
+            await remover()
+            setConfirmandoRemocao(false)
+          }}
+        />
+      )}
+
       {erro && (
         <p role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
           {erro}
@@ -106,7 +122,7 @@ export default function FotoGleba({ fazendaId, gleba, editor, aoAtualizar }) {
               >
                 {enviando ? 'Enviando…' : 'Substituir foto'}
               </button>
-              <button type="button" onClick={remover} disabled={enviando} className={BOTAO}>
+              <button type="button" onClick={() => setConfirmandoRemocao(true)} disabled={enviando} className={BOTAO}>
                 Remover
               </button>
               {ultimaReducao && (

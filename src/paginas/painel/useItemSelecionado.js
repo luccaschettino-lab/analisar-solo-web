@@ -328,6 +328,7 @@ export function useItemSelecionado({
           consequencias: [
             { rotulo: 'glebas', quantidade: resumo.glebas },
             { rotulo: 'análises', quantidade: resumo.analises },
+            { rotulo: 'pontos de coleta', quantidade: resumo.pontos },
           ],
         })
       } else {

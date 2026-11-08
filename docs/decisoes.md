@@ -618,3 +618,17 @@ A auditoria de 2026-11-07 achou que mesclar talhões apagava as análises e os p
 **Testado:** no banco real, dentro de um bloco desfeito no fim, como o usuário dono: juntar os talhões 15 e 17 no 19 levou 5 glebas, 8 análises e 40 pontos; os totais da fazenda (113 análises, 810 pontos) não mudaram e nenhum ponto ficou com gleba de outro talhão. Recusas conferidas: usuário sem acesso, código de gleba repetido, base na lista, código final de outro talhão (esta desfez tudo). Depois, os dados reais conferidos intactos. A tela foi exercitada no Chrome com o banco simulado: uma chamada só à função, nenhuma gravação direta em tabela, erro mostrado com "Nada foi alterado".
 **Não testado:** a mesclagem pela tela logada contra o banco real.
 **Pendente:** a migração foi colada à mão no SQL Editor, então não está registrada em `supabase_migrations.schema_migrations` (ver aviso em `PROJECT_CONTEXT.md`).
+
+### Senha para excluir dados
+
+Pedido do usuário em 2026-11-07: confirmar a senha antes de qualquer exclusão.
+
+| Decisão | Motivo |
+|---|---|
+| **O diálogo `ConfirmarExclusao` pede a senha de quem está logado** e só chama a exclusão depois de ela conferir. Vale para fazenda, talhão, gleba, análise, conjunto de critérios e foto da gleba. | Não há como desfazer, e ainda não há backup (P2). Evita exclusão por engano e por alguém usando um computador já logado. O conjunto de critérios usava `window.confirm` e a foto era removida sem pergunta: os dois passaram a usar o mesmo diálogo. |
+| **A senha é conferida entrando de novo com o mesmo e-mail** (`confirmarSenha` em `AuthContext`). | O Supabase não tem um "só conferir senha"; a sessão continua da mesma pessoa. |
+| **É uma barreira da tela, não do banco.** | Quem tem a sessão ainda consegue apagar pela API. Para exigir a senha no servidor, cada exclusão teria de virar uma Edge Function que confere a senha; não vale o custo enquanto o acesso à API exige login e o RLS limita cada um às próprias fazendas. |
+| **Mesclar e substituir foto não pedem senha.** | Nada se perde: a mesclagem leva tudo para o talhão base, e substituir troca uma foto pela nova. |
+| **O resumo da exclusão de fazenda conta análises e pontos pelo talhão** e passou a listar os pontos de coleta; o de talhão também lista os pontos (auditoria P6). | A contagem antiga ia pela gleba e dava "0 análises" quando a exclusão apagaria 113. |
+
+**Testado no Chrome** (login simulado, largura de celular): sem senha o botão fica desligado; senha errada mostra "Senha incorreta." e não exclui; senha certa (Enter ou clique) exclui. **Não testado:** contra o Supabase real pela tela logada.

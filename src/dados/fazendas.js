@@ -71,7 +71,9 @@ export async function excluirFazenda(id) {
 
 // Quantos filhos serao perdidos junto. Alimenta o dialogo de confirmacao.
 export async function resumoCascataFazenda(id) {
-  const [talhoes, glebas, analises] = await Promise.all([
+  // Análise e ponto de coleta pertencem ao TALHÃO (não à gleba): contar pelo
+  // caminho antigo, análise → gleba → talhão, dava zero (auditoria P6).
+  const [talhoes, glebas, analises, pontos] = await Promise.all([
     supabase.from('talhoes').select('id', { count: 'exact', head: true }).eq('fazenda_id', id),
     supabase
       .from('glebas')
@@ -79,13 +81,18 @@ export async function resumoCascataFazenda(id) {
       .eq('talhoes.fazenda_id', id),
     supabase
       .from('analises')
-      .select('id, glebas!inner(talhoes!inner(fazenda_id))', { count: 'exact', head: true })
-      .eq('glebas.talhoes.fazenda_id', id),
+      .select('id, talhoes!inner(fazenda_id)', { count: 'exact', head: true })
+      .eq('talhoes.fazenda_id', id),
+    supabase
+      .from('pontos_coleta')
+      .select('id, talhoes!inner(fazenda_id)', { count: 'exact', head: true })
+      .eq('talhoes.fazenda_id', id),
   ])
 
   return {
     talhoes: checarContagem(talhoes, 'Falha ao contar talhões'),
     glebas: checarContagem(glebas, 'Falha ao contar glebas'),
     analises: checarContagem(analises, 'Falha ao contar análises'),
+    pontos: checarContagem(pontos, 'Falha ao contar pontos de coleta'),
   }
 }

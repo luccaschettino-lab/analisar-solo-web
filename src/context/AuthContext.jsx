@@ -100,6 +100,26 @@ export function AuthProvider({ children }) {
         return { precisaConfirmarEmail: !data.session }
       },
 
+      /**
+       * Confere a senha de quem está logado, antes de uma exclusão. O Supabase
+       * não tem um "só conferir senha": entrar de novo com o mesmo e-mail é o
+       * jeito, e a sessão continua a mesma pessoa. Senha errada lança erro.
+       *
+       * É uma barreira da tela contra exclusão por engano ou por alguém no
+       * computador destravado; o banco continua aceitando a exclusão de quem
+       * tem a sessão (ver docs/decisoes.md).
+       */
+      async confirmarSenha(senha) {
+        const email = sessao?.user?.email
+        if (!email) throw new Error('Sessão expirada. Entre de novo.')
+        if (!senha) throw new Error('Digite sua senha para confirmar.')
+        const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+        if (error) {
+          if (/invalid login credentials/i.test(error.message ?? '')) throw new Error('Senha incorreta.')
+          throw new Error(traduzirErro(error))
+        }
+      },
+
       async sair() {
         const { error } = await supabase.auth.signOut()
         if (error) throw new Error(traduzirErro(error))
