@@ -4,8 +4,12 @@ import App from './App.jsx'
 import ErrorBoundary from './componentes/ErrorBoundary.jsx'
 import ErroFatal from './componentes/ErroFatal.jsx'
 import { erroConfiguracao } from './lib/supabase.js'
+import { instalarRecarregarAoAtualizar } from './lib/versaoDoSite.js'
 import '@fontsource-variable/manrope'
 import './index.css'
+
+// Site publicado de novo com uma aba aberta: recarrega uma vez (ver o módulo).
+instalarRecarregarAoAtualizar()
 
 // Configuracao ausente e checada antes de montar o App: sem cliente Supabase
 // nenhuma tela funciona, e o error boundary nao alcancaria uma falha ocorrida

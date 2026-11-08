@@ -694,3 +694,13 @@ Com o cadastro aberto, qualquer pessoa na internet criava conta e usava o armaze
 
 **Testado no Chrome** com o app inteiro e o Supabase simulado: convite pelos dois formatos (abre, cria a senha, entra), convite vencido nos dois formatos, `/cadastro` e `/login` sem "Criar conta", e os cenários de recuperação de senha de antes. **Não testado:** um convite real enviado pelo painel.
 **Depende do painel:** desligar o cadastro público e conferir o Site URL (`https://luccaschettino-lab.github.io/analisar-solo-web/`) e as Redirect URLs.
+
+### Telas baixadas sob demanda (auditoria P11)
+
+| Decisão | Motivo |
+|---|---|
+| **As telas de dentro do sistema (`LayoutApp`, Painel, Filtros, Dados, Comparar, Monitoramento, Critérios, Gleba) são carregadas com `React.lazy`.** Login, cadastro, senha e "não encontrada" ficam no pacote inicial. | Antes, ~540 KB comprimidos (1,7 MB de código) chegavam antes até do login. Agora o login baixa ~161 KB; o mapa, os gráficos e os leitores de arquivo só quando a tela é aberta. |
+| **Ao falhar o carregamento de uma tela por publicação nova, a página recarrega sozinha uma vez** (`lib/versaoDoSite.js`, evento `vite:preloadError`). Se falhar de novo em 30 s, não recarrega: mostra "O site foi atualizado" com o botão. | Cada arquivo leva um código de versão no nome, e o GitHub Pages apaga os da versão anterior. Com tudo num arquivo só isso só acontecia com o leitor de PDF; com telas sob demanda, aconteceria ao trocar de tela. O limite de 30 s evita laço sem internet. |
+| **As rotas têm `errorElement` próprio (`ErroDeRota`).** | Sem ele, o roteador mostrava "Unexpected Application Error!", em inglês e com detalhes técnicos. |
+
+**Testado no Chrome** com o app inteiro e o Supabase simulado: login sem baixar o mapa; mapa abrindo sob demanda; arquivo da tela "sumido" uma vez → recarregou uma vez e abriu a tela; sumido de vez → um recarregamento só e a mensagem em português.

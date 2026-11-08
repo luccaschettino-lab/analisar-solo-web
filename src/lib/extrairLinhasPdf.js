@@ -18,19 +18,13 @@ const LIMITE_PAGINAS = 60
 // tabela há bem mais que 3 pt.
 const TOLERANCIA_Y = 3
 
+import { MENSAGEM_SITE_ATUALIZADO, ehSiteDesatualizado } from './versaoDoSite.js'
+
 let biblioteca = null
 
-// Página aberta antes de uma publicação nova do site: ela ainda aponta para os
-// arquivos antigos (o nome leva um código que muda a cada versão), e o GitHub
-// Pages já os apagou. O navegador diz "Failed to fetch dynamically imported
-// module" (Chrome/Edge), "Importing a module script failed" (Safari) ou
-// "error loading dynamically imported module" (Firefox).
-export const MENSAGEM_SITE_ATUALIZADO =
-  'O site foi atualizado enquanto esta página estava aberta. Recarregue a página (Ctrl+F5) e escolha o laudo de novo. Nada foi gravado.'
-
-export function ehSiteDesatualizado(erro) {
-  return /dynamically imported module|importing a module script failed/i.test(erro?.message ?? '')
-}
+// A mensagem e a detecção moram em versaoDoSite.js (valem para todo o site);
+// seguem exportadas daqui porque a importação de laudo as usa por este caminho.
+export { MENSAGEM_SITE_ATUALIZADO, ehSiteDesatualizado } from './versaoDoSite.js'
 
 async function carregarPdfjs() {
   if (biblioteca) return biblioteca
