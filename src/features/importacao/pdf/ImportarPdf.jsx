@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useFazendaAtual } from '../../../context/FazendaContext.jsx'
-import { extrairLinhasPdf } from '../../../lib/extrairLinhasPdf.js'
+import { extrairLinhasPdf, MENSAGEM_SITE_ATUALIZADO } from '../../../lib/extrairLinhasPdf.js'
 import { lerLaudoUfv, ehLaudoUfv, anoSafraDaData } from '../../../lib/laudoUfv.js'
 import { resolverAmostraDoLaudo, payloadDaAmostra, chaveDeDuplicidade, STATUS } from '../../../lib/importacaoLaudo.js'
 import { listarPontosColetaDaFazenda } from '../../../dados/pontosColeta.js'
@@ -78,6 +78,9 @@ export default function ImportarPdf() {
           if (laudo.amostras.length === 0) throw new Error('não encontrei nenhuma amostra nele.')
           lidos.push({ nomeArquivo: arquivo.name, laudo })
         } catch (e) {
+          // Site publicado de novo com a página aberta: nenhum arquivo vai
+          // abrir até recarregar, então diz isso uma vez, sem nome de arquivo.
+          if (e.message === MENSAGEM_SITE_ATUALIZADO) throw e
           falhas.push(`"${arquivo.name}" ${e.message}`)
         }
       }

@@ -20,16 +20,33 @@ const TOLERANCIA_Y = 3
 
 let biblioteca = null
 
+// Página aberta antes de uma publicação nova do site: ela ainda aponta para os
+// arquivos antigos (o nome leva um código que muda a cada versão), e o GitHub
+// Pages já os apagou. O navegador diz "Failed to fetch dynamically imported
+// module" (Chrome/Edge), "Importing a module script failed" (Safari) ou
+// "error loading dynamically imported module" (Firefox).
+export const MENSAGEM_SITE_ATUALIZADO =
+  'O site foi atualizado enquanto esta página estava aberta. Recarregue a página (Ctrl+F5) e escolha o laudo de novo. Nada foi gravado.'
+
+export function ehSiteDesatualizado(erro) {
+  return /dynamically imported module|importing a module script failed/i.test(erro?.message ?? '')
+}
+
 async function carregarPdfjs() {
   if (biblioteca) return biblioteca
-  const pdfjs = await import('pdfjs-dist/build/pdf.mjs')
-  // `?worker` faz o Vite empacotar o worker como um .js comum do próprio site —
-  // um arquivo .mjs solto poderia ser servido com o tipo errado e o navegador
-  // se recusaria a executá-lo. Um worker só, reaproveitado entre os PDFs.
-  const { default: PdfWorker } = await import('pdfjs-dist/build/pdf.worker.min.mjs?worker')
-  pdfjs.GlobalWorkerOptions.workerPort = new PdfWorker()
-  biblioteca = pdfjs
-  return pdfjs
+  try {
+    const pdfjs = await import('pdfjs-dist/build/pdf.mjs')
+    // `?worker` faz o Vite empacotar o worker como um .js comum do próprio site —
+    // um arquivo .mjs solto poderia ser servido com o tipo errado e o navegador
+    // se recusaria a executá-lo. Um worker só, reaproveitado entre os PDFs.
+    const { default: PdfWorker } = await import('pdfjs-dist/build/pdf.worker.min.mjs?worker')
+    pdfjs.GlobalWorkerOptions.workerPort = new PdfWorker()
+    biblioteca = pdfjs
+    return pdfjs
+  } catch (e) {
+    if (ehSiteDesatualizado(e)) throw new Error(MENSAGEM_SITE_ATUALIZADO)
+    throw e
+  }
 }
 
 function linhasDaPagina(itens) {
