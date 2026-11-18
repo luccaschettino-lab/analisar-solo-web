@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
-import { useCenasCbers } from './monitoramento/useCenasCbers.js'
+import { useCenasCbers, SATELITES } from './monitoramento/useCenasCbers.js'
 import { useIndicesCbers } from './monitoramento/useIndicesCbers.js'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
 import MapaDoTalhao from './monitoramento/MapaDoTalhao.jsx'
@@ -33,7 +33,7 @@ const INDICES = [
     rotulo: 'NDWI',
     nome: 'Índice de água por diferença normalizada',
     explicacao:
-      'Não mede umidade do solo. Com as bandas verde e infravermelho próximo do CBERS, o NDWI de McFeeters ajuda a identificar água superficial, como rios, açudes e áreas alagadas.',
+      'Não mede umidade do solo. Com as bandas verde e infravermelho próximo, o NDWI de McFeeters ajuda a identificar água superficial, como rios, açudes e áreas alagadas.',
   },
 ]
 
@@ -133,7 +133,7 @@ function Numeros({ dados, indice, rotulo }) {
         ))}
       </dl>
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {q.validos.toLocaleString('pt-BR')} de {q.pixelsNoTalhao.toLocaleString('pt-BR')} pixels de 16 m entram na conta
+        {q.validos.toLocaleString('pt-BR')} de {q.pixelsNoTalhao.toLocaleString('pt-BR')} pixels de {dados.janela?.tamanhoPixelM ?? ''} m entram na conta
         {q.possivelNuvemPct > 0 ? `; ${q.possivelNuvemPct}% parece nuvem e fica de fora` : ''}.
       </p>
     </>
@@ -165,6 +165,25 @@ export default function Monitoramento() {
   const [talhaoId, setTalhaoId] = useState('')
   const [indiceAtivo, setIndiceAtivo] = useState('ndvi')
   const [cenaAtivaId, setCenaAtivaId] = useState('')
+  // Satélite: Sentinel-2 por padrão (imagem a cada 2–5 dias). A escolha fica
+  // no navegador, para quem prefere o CBERS não precisar trocar toda vez.
+  const [fonte, setFonte] = useState(() => {
+    try {
+      return localStorage.getItem('moinho-satelite') === 'cbers' ? 'cbers' : 'sentinel'
+    } catch {
+      return 'sentinel'
+    }
+  })
+  function trocarFonte(nova) {
+    setFonte(nova)
+    setCenaAtivaId('')
+    try {
+      localStorage.setItem('moinho-satelite', nova)
+    } catch {
+      // Sem storage: a escolha vale só nesta visita.
+    }
+  }
+  const satelite = SATELITES[fonte]
 
   // Começa no talhão selecionado no mapa, se houver; senão no primeiro.
   useEffect(() => {
@@ -175,9 +194,9 @@ export default function Monitoramento() {
 
   const talhao = talhoes.find((t) => t.id === talhaoId) ?? null
   const geometria = talhao?.geometria ?? null
-  const { cenas, carregando, erro } = useCenasCbers(talhaoId, geometria)
+  const { cenas, carregando, erro } = useCenasCbers(talhaoId, geometria, fonte)
   const cenaSelecionada = cenas.find((cena) => cena.id === cenaAtivaId) ?? cenas.at(-1) ?? null
-  const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria)
+  const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria, fonte)
 
   useEffect(() => {
     if (cenas.length > 0 && !cenas.some((cena) => cena.id === cenaAtivaId)) {
@@ -206,7 +225,7 @@ export default function Monitoramento() {
           <div className="min-w-0">
             <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Monitoramento por satélite</h1>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-              {fazendaSelecionada.nome} · imagens CBERS-4A (INPE), calculadas só dentro do talhão
+              {fazendaSelecionada.nome} · imagens {satelite.nome}, calculadas só dentro do talhão
             </p>
           </div>
         </div>
@@ -257,10 +276,32 @@ export default function Monitoramento() {
 
           {/* Painel */}
           <aside className="space-y-4 lg:min-h-0 lg:overflow-auto lg:pr-1">
+            <Cartao titulo="Satélite">
+              <div role="radiogroup" aria-label="Satélite" className="grid grid-cols-2 gap-2">
+                {Object.values(SATELITES).map((s) => (
+                  <button
+                    key={s.chave}
+                    type="button"
+                    role="radio"
+                    aria-checked={fonte === s.chave}
+                    onClick={() => trocarFonte(s.chave)}
+                    className={`rounded-lg border px-3 py-2 text-left transition ${
+                      fonte === s.chave
+                        ? 'border-solo-600 bg-solo-50 dark:border-solo-500 dark:bg-solo-500/10'
+                        : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{s.nome}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{s.resumo}</span>
+                  </button>
+                ))}
+              </div>
+            </Cartao>
+
             <Cartao titulo="Data da imagem">
               {geometria && carregando && (
                 <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
-                  Consultando as datas no catálogo do INPE…
+                  Consultando as datas no catálogo do {satelite.nome}…
                 </p>
               )}
               {erro && (
@@ -269,7 +310,7 @@ export default function Monitoramento() {
                 </p>
               )}
               {geometria && !carregando && !erro && cenas.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do satélite para este talhão.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do {satelite.nome} para este talhão.</p>
               )}
               <SeletorDeData cenas={cenas} selecionadaId={cenaSelecionada?.id} aoSelecionar={(cena) => setCenaAtivaId(cena.id)} />
             </Cartao>
@@ -309,15 +350,23 @@ export default function Monitoramento() {
                 </summary>
                 <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-100">{info.nome}</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{info.explicacao}</p>
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                  Valores de reflectância no topo da atmosfera, sem correção atmosférica: servem para acompanhar a lavoura ao
-                  longo da safra, mas ficam um pouco abaixo dos de reflectância de superfície. Cada quadrado do mapa tem 16 m.
-                  Imagens: CBERS-4A MUX, INPE (
-                  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline">
-                    CC BY-SA 4.0
-                  </a>
-                  ).
-                </p>
+                {fonte === 'sentinel' ? (
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Reflectância de superfície, já corrigida da atmosfera pela ESA. Nuvem e sombra de nuvem são marcadas pixel a pixel
+                    pela classificação da própria cena e ficam fora das contas. Cada quadrado do mapa tem 10 m. Imagens: Sentinel-2
+                    L2A, Copernicus/ESA, pelo repositório público da AWS (Earth Search).
+                  </p>
+                ) : (
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Valores de reflectância no topo da atmosfera, sem correção atmosférica: servem para acompanhar a lavoura ao
+                    longo da safra, mas ficam um pouco abaixo dos de reflectância de superfície. Cada quadrado do mapa tem 16 m.
+                    Imagens: CBERS-4A MUX, INPE (
+                    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline">
+                      CC BY-SA 4.0
+                    </a>
+                    ).
+                  </p>
+                )}
               </details>
             </Cartao>}
           </aside>

@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { bboxDaGeometria, listarCenasCbers } from '../../dados/cbers.js'
+import { listarCenasSentinel } from '../../dados/sentinel.js'
 
-export function useCenasCbers(talhaoId, geometria) {
+/** Satélites do Monitoramento. A chave é o que vai na URL/estado. */
+export const SATELITES = {
+  sentinel: { chave: 'sentinel', nome: 'Sentinel-2', resumo: 'a cada 2–5 dias · 10 m', listar: listarCenasSentinel },
+  cbers: { chave: 'cbers', nome: 'CBERS-4A', resumo: 'mensal · 16 m', listar: listarCenasCbers },
+}
+
+/** Datas com imagem do satélite escolhido sobre o talhão. */
+export function useCenasCbers(talhaoId, geometria, fonte = 'sentinel') {
   const bbox = bboxDaGeometria(geometria)
   const chaveBbox = bbox?.join(',') ?? ''
   const chaveGeometria = geometria ? JSON.stringify(geometria) : ''
@@ -10,6 +18,7 @@ export function useCenasCbers(talhaoId, geometria) {
   const [erro, setErro] = useState(null)
 
   useEffect(() => {
+    const satelite = SATELITES[fonte] ?? SATELITES.sentinel
     if (!talhaoId || !chaveBbox || !chaveGeometria) {
       setCenas([])
       setErro(null)
@@ -23,14 +32,15 @@ export function useCenasCbers(talhaoId, geometria) {
     setErro(null)
     setCenas([])
 
-    listarCenasCbers(chaveBbox.split(',').map(Number), JSON.parse(chaveGeometria), controle.signal)
+    satelite
+      .listar(chaveBbox.split(',').map(Number), JSON.parse(chaveGeometria), controle.signal)
       .then((resultado) => {
         if (ativa) setCenas(resultado)
       })
       .catch((falha) => {
         if (!ativa || falha.name === 'AbortError') return
         setCenas([])
-        setErro(falha.message || 'Não foi possível consultar o catálogo CBERS do INPE.')
+        setErro(falha.message || `Não foi possível consultar o catálogo do ${satelite.nome}.`)
       })
       .finally(() => {
         if (ativa) setCarregando(false)
@@ -40,7 +50,7 @@ export function useCenasCbers(talhaoId, geometria) {
       ativa = false
       controle.abort()
     }
-  }, [talhaoId, chaveBbox, chaveGeometria])
+  }, [talhaoId, chaveBbox, chaveGeometria, fonte])
 
   return { cenas, carregando, erro }
 }

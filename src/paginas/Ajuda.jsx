@@ -166,7 +166,7 @@ const SECOES = [
     itens: [
       [
         'De onde vêm as imagens?',
-        'Do satélite CBERS-4A, do INPE. Cada quadradinho do mapa tem 16 m. As datas dependem de quando o satélite passou sobre a fazenda.',
+        'De dois satélites, que você escolhe no topo do painel. O Sentinel-2 (Europa, padrão) passa a cada 2 a 5 dias, com quadradinhos de 10 m e reflectância já corrigida da atmosfera; é o que dá imagem toda semana. O CBERS-4A (INPE) passa mais ou menos uma vez por mês, com 16 m. Na época de chuva, muitas imagens vêm nubladas, e nenhum satélite óptico enxerga através da nuvem.',
       ],
       [
         'Qual índice uso?',
@@ -174,7 +174,7 @@ const SECOES = [
       ],
       [
         'Qual data escolho?',
-        'Na barra do tempo, cada bolinha é uma imagem. As verdes têm até 20% de nuvem e são as melhores. Nuvem aparece em cinza no mapa e fica fora das contas.',
+        'Na barra do tempo, cada bolinha é uma imagem. As verdes têm até 20% de nuvem na região e são as melhores. A nuvem de cada imagem é medida na região inteira; no talhão pode ser mais ou menos. Os pixels com nuvem aparecem em cinza no mapa e ficam fora das contas, e o painel diz quanto do talhão entrou no cálculo.',
       ],
     ],
   },

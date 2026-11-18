@@ -837,3 +837,22 @@ bom ou ruim.
 - Tutorial: fase 8 "Critérios" explica isso e, só para a fazenda de exemplo,
   cria um conjunto pronto com um clique. Primeiros passos ganharam "Definir
   os critérios (agrônomo)".
+
+### Sentinel-2 no Monitoramento (imagem semanal), com o CBERS como alternativa
+
+Pedido de 2026-11-18: imagens semanais. O CBERS-4A MUX passa a cada ~31 dias
+(2 cenas em 90 dias sobre a 07/11); o Sentinel-2 L2A passa a cada 2–5 dias
+(27 cenas no mesmo período; 105 em 12 meses, 44 com até 20% de nuvem).
+
+- Fonte: Earth Search (STAC público da AWS) e os COGs de `sentinel-cogs`, sem
+  cadastro. A lista de cenas sai do navegador (CORS liberado); o cálculo, da
+  função `sentinel-indice` (exige login, como a `cbers-indice`).
+- `_shared/cogRecorte.js`: leitor de COG em ladrilhos (8/16 bits, Deflate,
+  predictor 2), lendo só os ladrilhos que o talhão toca (~1,5 MB por cálculo).
+- Reflectância de superfície = DN × 0,0001. O Earth Search já aplica o offset
+  −0,1 da ESA nos arquivos (`earthsearch:boa_offset_applied`), mas continua
+  listando o offset na banda: aplicá-lo de novo zerava os pixels escuros.
+- Nuvem e sombra pela camada SCL (classes 3, 8, 9, 10), pixel a pixel.
+- Partes comuns aos dois satélites em `_shared/indicesComuns.js`.
+- A tela tem o seletor "Satélite" (Sentinel-2 padrão, escolha guardada no
+  navegador). A resposta das duas funções tem o mesmo formato.
