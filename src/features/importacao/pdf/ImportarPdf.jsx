@@ -227,6 +227,7 @@ export default function ImportarPdf() {
         <>
           <label
             htmlFor="importar-laudo"
+            data-tutorial="importar-pdf"
             onDragOver={(e) => {
               e.preventDefault()
               setArrastando(true)
@@ -444,6 +445,7 @@ export default function ImportarPdf() {
               <button
                 type="button"
                 onClick={() => void gravar()}
+                data-tutorial="gravar-laudo"
                 disabled={Boolean(gravando) || marcadas.length === 0 || !safraOk}
                 aria-busy={Boolean(gravando)}
                 className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600"

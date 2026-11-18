@@ -62,6 +62,28 @@ assert.ok(Math.max(...phs) - Math.min(...phs) > 0.8, 'pH varia pela fazenda')
 
 console.log('fazenda de exemplo: talhões, pontos, 24 glebas e análises coerentes OK')
 
+// --- Laudo PDF do tutorial: amostras a partir das glebas criadas ---
+{
+  const { amostrasDoLaudoExemplo } = await import('../src/lib/fazendaExemplo.js')
+  const { resolverAmostraDoLaudo, STATUS } = await import('../src/lib/importacaoLaudo.js')
+  const glebasDoBanco = glebas.map((g, i) => ({ id: `g${i}`, codigo: g.codigo, talhao_id: g.talhaoId, geometria: g.geometria }))
+  const codigoDe = new Map(talhoes.map((t) => [t.id, t.codigo]))
+  const amostras = amostrasDoLaudoExemplo(glebasDoBanco.map((g) => ({ ...g, codigoTalhao: codigoDe.get(g.talhao_id) })), '25-26')
+  assert.equal(amostras.length, 22 * 2 - 1, '22 glebas × 2 profundidades, menos a digitada à mão')
+  const pontosLigados = glebas.flatMap((g, i) => g.pontoIds.map((id) => ({ ...pontoPorId.get(id), gleba_id: `g${i}` })))
+  for (const a of amostras) {
+    const r = resolverAmostraDoLaudo({ n_lab: '9', gleba: a.gleba, profundidade: a.profundidade }, null, {
+      glebas: glebasDoBanco,
+      pontos: pontosLigados,
+      anoSafra: '25-26',
+      existentes: new Set(),
+    })
+    assert.equal(r.status, STATUS.PRONTA, `Gleba ${a.gleba} ${a.profundidade} casa sozinha`)
+    assert.ok(r.gleba.codigo.endsWith(`-${a.gleba}`))
+  }
+  console.log('tutorial guiado: laudo PDF casa cada amostra com a sua gleba OK')
+}
+
 // --- Tutorial guiado: arquivos gerados ao redor da sede ---
 {
   const { origemPelaSede, kmlDosTalhoes, geojsonDosPontos } = await import('../src/lib/fazendaExemplo.js')

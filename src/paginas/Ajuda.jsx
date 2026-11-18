@@ -24,7 +24,7 @@ const SECOES = [
       ],
       [
         'Como funciona o tutorial guiado?',
-        'São 9 fases, como num jogo: um cartão no canto da tela diz a tarefa, o botão certo pisca, e a fase só avança quando você a conclui. Você monta uma fazenda de exemplo inteira: cria a fazenda, marca a sede, importa os talhões e os pontos (o próprio tutorial entrega os arquivos), digita uma análise, recebe o laudo e lê o mapa, a comparação e o satélite. O botão "–" minimiza o cartão.',
+        'São 10 fases, como num jogo: um cartão no canto da tela diz a tarefa, o botão certo pisca, e a fase só avança quando você a conclui. Você monta uma fazenda de exemplo inteira: cria a fazenda, marca a sede, importa os talhões e os pontos (o próprio tutorial entrega os arquivos), digita uma análise, importa um laudo em PDF e lê o mapa, a comparação e o satélite. O botão "–" minimiza o cartão.',
       ],
       [
         'O que é a fazenda de exemplo?',

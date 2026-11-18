@@ -1,8 +1,14 @@
 import { supabase, checar } from './cliente.js'
 import { criarAnalisesEmLote, listarIdentidadesDaFazenda } from './analises.js'
 import { listarPontosColetaDaFazenda } from './pontosColeta.js'
-import { analisesExemplo } from '../lib/fazendaExemplo.js'
+import { analisesExemplo, centroDaGleba } from '../lib/fazendaExemplo.js'
 import { chaveDeDuplicidade } from '../lib/importacaoLaudo.js'
+
+/** Apaga várias glebas de uma vez (desfazer uma importação errada no tutorial). */
+export async function excluirGlebas(ids) {
+  if (ids.length === 0) return
+  checar(await supabase.from('glebas').delete().in('id', ids), 'Falha ao apagar as glebas')
+}
 
 /**
  * A fazenda criada no tutorial guiado vira "de exemplo": ganha a faixa de
@@ -23,7 +29,7 @@ export async function marcarFazendaComoExemplo(id) {
  *
  * `talhoes` e `glebas` vêm do contexto da fazenda. Devolve quantas entraram.
  */
-export async function receberLaudoExemplo(fazendaId, talhoes, glebas, aoProgredir) {
+export async function receberLaudoExemplo(fazendaId, talhoes, glebas, aoProgredir, { safra } = {}) {
   const [pontos, existentes] = await Promise.all([
     listarPontosColetaDaFazenda(fazendaId),
     listarIdentidadesDaFazenda(fazendaId),
@@ -46,10 +52,14 @@ export async function receberLaudoExemplo(fazendaId, talhoes, glebas, aoProgredi
       codigo: g.codigo,
       talhaoId: g.talhao_id,
       codigoTalhao: codigoDoTalhao.get(g.talhao_id),
-      pontos: (pontosDaGleba.get(g.id) ?? []).filter(Boolean),
+      // Sem pontos ligados, a amostra fica no centro do desenho da gleba.
+      pontos: pontosDaGleba.get(g.id)?.filter(Boolean).length
+        ? pontosDaGleba.get(g.id).filter(Boolean)
+        : [centroDaGleba(g.geometria)].filter(Boolean),
     })),
   ).filter(
     (a) =>
+      (!safra || a.ano_safra === safra) &&
       !jaGravadas.has(
         chaveDeDuplicidade({ talhaoId: a.talhao_id, anoSafra: a.ano_safra, profundidade: a.profundidade, numeroAmostraLab: a.numero_amostra_lab }),
       ),

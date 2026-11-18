@@ -80,8 +80,8 @@ function Passo4() {
   return (
     <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
       <p>
-        Agora é com você. Em <strong>9 fases</strong>, você monta uma fazenda de exemplo com dados fictícios: cria a fazenda,
-        importa os talhões e os pontos de amostra, lança uma análise e lê o mapa.
+        Agora é com você. Em <strong>10 fases</strong>, você monta uma fazenda de exemplo com dados fictícios: cria a fazenda,
+        importa os talhões e os pontos de amostra, lança uma análise, importa um laudo em PDF e lê o mapa.
       </p>
       <p>
         Um cartão no canto da tela diz o que fazer em cada fase, e o botão certo fica piscando. A fase só avança quando você

@@ -251,6 +251,47 @@ export function valoresExemplo({ x, y, talhao, safra, profundidade, amostra }) {
 }
 
 /**
+ * Centro aproximado de uma gleba pelo desenho (média dos vértices, ou o
+ * próprio ponto): a posição da amostra quando a gleba não tem pontos ligados.
+ */
+export function centroDaGleba(geometria) {
+  const g = geometria?.geometry ?? geometria
+  if (!g) return null
+  if (g.type === 'Point') return g.coordinates
+  const anel = g.type === 'Polygon' ? g.coordinates?.[0] : g.type === 'MultiPolygon' ? g.coordinates?.[0]?.[0] : null
+  if (!anel?.length) return null
+  const vertices = anel.length > 1 ? anel.slice(0, -1) : anel
+  return [vertices.reduce((s, v) => s + v[0], 0) / vertices.length, vertices.reduce((s, v) => s + v[1], 0) / vertices.length]
+}
+
+/**
+ * As amostras do laudo PDF fictício (fase do tutorial que ensina a importar
+ * laudo): uma por gleba e profundidade, de uma safra, menos a que a pessoa já
+ * digitou à mão. `glebas`: [{ codigo, codigoTalhao, geometria }].
+ */
+export function amostrasDoLaudoExemplo(glebas, safra = SAFRAS_EXEMPLO[1]) {
+  const centros = glebas.map((g) => ({ g, centro: centroDaGleba(g.geometria) })).filter((c) => c.centro)
+  if (centros.length === 0) return []
+  const lngs = centros.map((c) => c.centro[0])
+  const lats = centros.map((c) => c.centro[1])
+  const [minLng, maxLng, minLat, maxLat] = [Math.min(...lngs), Math.max(...lngs), Math.min(...lats), Math.max(...lats)]
+  const amostras = []
+  for (const { g, centro } of centros) {
+    const amostra = numeroDaAmostra(g.codigo)
+    if (!Number.isFinite(amostra) || SEM_ANALISE.has(amostra)) continue
+    const x = (centro[0] - minLng) / (maxLng - minLng || 1)
+    const y = (maxLat - centro[1]) / (maxLat - minLat || 1)
+    for (const profundidade of ['0-20', '20-40']) {
+      const digitada =
+        safra === ANALISE_GUIADA.safra && profundidade === ANALISE_GUIADA.profundidade && String(amostra) === ANALISE_GUIADA.amostra && g.codigoTalhao === ANALISE_GUIADA.talhao
+      if (digitada) continue
+      amostras.push({ gleba: amostra, profundidade, valores: valoresExemplo({ x, y, talhao: g.codigoTalhao, safra, profundidade, amostra }) })
+    }
+  }
+  return amostras.sort((a, b) => a.gleba - b.gleba || a.profundidade.localeCompare(b.profundidade))
+}
+
+/**
  * Análises de todas as glebas criadas: duas safras × duas profundidades, na
  * média dos pontos de cada gleba (a mesma regra da importação de laudo).
  *

@@ -3,11 +3,17 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import ConfirmarPular from './ConfirmarPular.jsx'
 import { useTutorial } from '../../context/TutorialContext.jsx'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
-import { marcarFazendaComoExemplo, receberLaudoExemplo } from '../../dados/fazendaExemplo.js'
+import { marcarFazendaComoExemplo, receberLaudoExemplo, excluirGlebas } from '../../dados/fazendaExemplo.js'
 import { excluirFazenda } from '../../dados/fazendas.js'
-import { origemPelaSede, kmlDosTalhoes, geojsonDosPontos, ANALISE_GUIADA } from '../../lib/fazendaExemplo.js'
+import { origemPelaSede, kmlDosTalhoes, geojsonDosPontos, ANALISE_GUIADA, amostrasDoLaudoExemplo, SAFRAS_EXEMPLO } from '../../lib/fazendaExemplo.js'
+import { laudoExemploPdf } from '../../lib/laudoExemplo.js'
+import { ehPonto } from '../../lib/geo.js'
 
-export const TOTAL_FASES = 9
+export const TOTAL_FASES = 10
+
+// O laudo PDF do tutorial traz esta safra; a anterior chega depois, sozinha.
+const SAFRA_DO_PDF = SAFRAS_EXEMPLO[1]
+const SAFRA_ANTERIOR = SAFRAS_EXEMPLO[0]
 
 // Baixa um texto como arquivo, sem servidor: o arquivo nasce no navegador.
 function baixar(nome, conteudo, tipo) {
@@ -59,6 +65,8 @@ export default function MissaoTutorial() {
     removerFazenda,
     talhoes,
     glebas,
+    carregando: carregandoHierarquia,
+    removerGleba,
     selecionado,
     filtro,
     analisesDaFazenda,
@@ -77,6 +85,9 @@ export default function MissaoTutorial() {
 
   const fase = missao?.fase ?? 0
   const naFazenda = Boolean(missao?.fazendaId) && fazendaSelecionada?.id === missao?.fazendaId
+  const glebasDeArea = glebas.filter((g) => !ehPonto(g.geometria)).length
+  const glebasPonto = glebas.filter((g) => ehPonto(g.geometria))
+  const analisesDoPdf = analisesDaFazenda.filter((a) => a.ano_safra === SAFRA_DO_PDF).length
 
   // Fase concluída: comemora um instante e passa para a próxima.
   function concluirFase(proxima, extra = {}) {
@@ -116,20 +127,24 @@ export default function MissaoTutorial() {
     if (fase === 2 && fazendaSelecionada.sede_lat != null) concluirFase(3)
     else if (fase === 3 && talhoes.length >= 4) concluirFase(4)
     else if (fase === 4 && selecionado?.tipo === 'talhao' && pathname === '/') concluirFase(5)
-    else if (fase === 5 && glebas.length >= 24) concluirFase(6)
-    else if (fase === 6 && analisesDaFazenda.length >= 1 && !missao.laudoRecebido) {
-      // Fica na fase 6 até "receber o laudo" (abaixo).
-    } else if (fase === 7 && filtro?.anoSafra && filtro?.profundidade && filtro?.chaveParametro) {
+    // Glebas de ÁREA, criadas a partir dos pontos de amostra. Importar o
+    // arquivo de pontos por "Importar glebas" cria uma gleba-ponto por coleta
+    // (120), sem ponto de amostra ligado — não conta.
+    else if (fase === 5 && glebasDeArea >= 24) concluirFase(6)
+    else if (fase >= 6 && fase <= 8 && glebasDeArea < 24 && !carregandoHierarquia) atualizarMissao({ fase: 5 })
+    else if (fase === 6 && analisesDaFazenda.length >= 1) concluirFase(7)
+    // Fase 7: importou o laudo PDF; fica nela até receber a safra anterior.
+    else if (fase === 8 && filtro?.anoSafra && filtro?.profundidade && filtro?.chaveParametro) {
       marcarDica('filtros')
-      concluirFase(8)
+      concluirFase(9)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [missao, fase, comemorando, fazendas, carregandoFazendas, naFazenda, fazendaSelecionada, talhoes, glebas, selecionado, pathname, analisesDaFazenda, filtro])
+  }, [missao, fase, comemorando, fazendas, carregandoFazendas, naFazenda, fazendaSelecionada, talhoes, glebas, selecionado, pathname, analisesDaFazenda, filtro, glebasDeArea, carregandoHierarquia])
 
   // Fases 8 e 9: basta abrir a tela e olhar por alguns segundos.
   useEffect(() => {
     if (!missao || comemorando || !naFazenda) return
-    const alvo = fase === 8 ? '/comparar' : fase === 9 ? '/monitoramento' : null
+    const alvo = fase === 9 ? '/comparar' : fase === 10 ? '/monitoramento' : null
     if (!alvo || pathname !== alvo) return
     const t = setTimeout(() => concluirFase(fase + 1), 6000)
     return () => clearTimeout(t)
@@ -139,10 +154,11 @@ export default function MissaoTutorial() {
   // Fase 6: a análise digitada é gravada pela tela de Dados, que não avisa o
   // mapa; confere de tempos em tempos.
   useEffect(() => {
-    if (fase !== 6 || !naFazenda || analisesDaFazenda.length > 0) return
+    const esperando = (fase === 6 && analisesDaFazenda.length === 0) || (fase === 7 && analisesDoPdf < 20)
+    if (!esperando || !naFazenda) return
     const intervalo = setInterval(() => recarregarAnalises?.(), 4000)
     return () => clearInterval(intervalo)
-  }, [fase, naFazenda, analisesDaFazenda.length, recarregarAnalises])
+  }, [fase, naFazenda, analisesDaFazenda.length, analisesDoPdf, recarregarAnalises])
 
   // A fazenda do tutorial foi excluída no meio: recomeça da fase 1.
   useEffect(() => {
@@ -163,9 +179,10 @@ export default function MissaoTutorial() {
           3: pathname === '/' ? ['importar-talhoes'] : ['mapa', 'importar-talhoes'],
           5: pathname === '/dados' ? ['dados-pontos', 'importar-pontos', 'criar-glebas'] : ['dados'],
           6: pathname === '/dados' ? ['dados-manual'] : ['dados'],
-          7: ['filtros'],
-          8: ['comparar'],
-          9: ['monitoramento'],
+          7: analisesDoPdf >= 20 ? [] : pathname === '/dados' ? ['dados-pdf', 'importar-pdf', 'gravar-laudo'] : ['dados'],
+          8: ['filtros'],
+          9: ['comparar'],
+          10: ['monitoramento'],
         }[fase] ?? []
   const chaveAlvos = alvos.join(' ')
 
@@ -208,10 +225,12 @@ export default function MissaoTutorial() {
     setErro('')
     setOcupado('Recebendo o laudo…')
     try {
-      await receberLaudoExemplo(missao.fazendaId, talhoes, glebas, (feitas, total) => setOcupado(`Lançando análises (${feitas} de ${total})…`))
+      await receberLaudoExemplo(missao.fazendaId, talhoes, glebas, (feitas, total) => setOcupado(`Lançando análises (${feitas} de ${total})…`), {
+        safra: SAFRA_ANTERIOR,
+      })
       await recarregarAnalises?.()
       setOcupado('')
-      concluirFase(7, { laudoRecebido: true })
+      concluirFase(8, { laudoRecebido: true })
     } catch (e) {
       setErro(e.message)
       setOcupado('')
@@ -230,6 +249,28 @@ export default function MissaoTutorial() {
     encerrarMissao('concluido')
   }
 
+  async function desfazerGlebasPonto() {
+    setErro('')
+    setOcupado('Apagando…')
+    try {
+      await excluirGlebas(glebasPonto.map((g) => g.id))
+      glebasPonto.forEach((g) => removerGleba(g.id))
+    } catch (e) {
+      setErro(e.message)
+    }
+    setOcupado('')
+  }
+
+  function baixarLaudo() {
+    const codigoDoTalhao = new Map(talhoes.map((t) => [t.id, t.codigo]))
+    const amostras = amostrasDoLaudoExemplo(
+      glebas.filter((g) => !ehPonto(g.geometria)).map((g) => ({ codigo: g.codigo, codigoTalhao: codigoDoTalhao.get(g.talhao_id), geometria: g.geometria })),
+      SAFRA_DO_PDF,
+    )
+    const pdf = laudoExemploPdf({ amostras, entrada: '15/09/2025', identificacao: `${fazendaSelecionada?.nome ?? 'Fazenda do tutorial'} (dados fictícios)` })
+    baixar('laudo-tutorial.pdf', pdf, 'application/pdf')
+  }
+
   function pular() {
     setQuerPular(false)
     encerrarMissao('pulado')
@@ -239,7 +280,7 @@ export default function MissaoTutorial() {
   const voltarParaFazenda = fase >= 2 && !naFazenda && missao.fazendaId
   let titulo
   let corpo
-  if (fase === 10) {
+  if (fase === 11) {
     titulo = '🏁 Tutorial concluído!'
     corpo = (
       <>
@@ -320,43 +361,79 @@ export default function MissaoTutorial() {
     )
   } else if (fase === 5) {
     titulo = 'Importe os pontos de amostra'
-    corpo = (
-      <>
-        <p>
-          Baixe o arquivo dos pontos (24 amostras, 5 coletas cada). Vá em <strong>Dados → Pontos de amostra</strong>, escolha o
-          arquivo, clique em importar e, em seguida, em <strong>Criar 24 glebas</strong>.
-        </p>
-        <div className="mt-3">
-          <Botao principal onClick={() => baixar('pontos-tutorial.geojson', geojsonDosPontos(origemPelaSede(sede)), 'application/geo+json')}>
-            ⬇ Baixar pontos (.geojson)
-          </Botao>
-        </div>
-      </>
-    )
-  } else if (fase === 6 && analisesDaFazenda.length === 0) {
+    corpo =
+      glebasPonto.length > 0 ? (
+        <>
+          <p>
+            O arquivo de pontos entrou por <strong>Importar glebas</strong>, e cada coleta virou uma gleba solta (
+            {glebasPonto.length}). Pontos de amostra entram por outro caminho: <strong>Dados → Pontos de amostra</strong>, que junta
+            as 5 coletas de cada amostra numa gleba só.
+          </p>
+          <div className="mt-3">
+            <Botao principal onClick={() => void desfazerGlebasPonto()} disabled={Boolean(ocupado)}>
+              {ocupado || `Desfazer: apagar as ${glebasPonto.length} glebas soltas`}
+            </Botao>
+          </div>
+        </>
+      ) : (
+        <>
+          <p>
+            Pontos de amostra são as coletas no campo: as 5 de uma mesma amostra têm o mesmo número e viram uma gleba. Baixe o
+            arquivo, vá em <strong>Dados → Pontos de amostra</strong> (não em "Importar glebas"), escolha o arquivo, clique em
+            importar e, em seguida, em <strong>Criar 24 glebas</strong>.
+          </p>
+          <div className="mt-3">
+            <Botao principal onClick={() => baixar('pontos-tutorial.geojson', geojsonDosPontos(origemPelaSede(sede)), 'application/geo+json')}>
+              ⬇ Baixar pontos (.geojson)
+            </Botao>
+          </div>
+        </>
+      )
+  } else if (fase === 6) {
     titulo = 'Digite uma análise'
     corpo = (
       <>
         <p>
           Em <strong>Dados → Entrada manual</strong>, escolha esta fazenda e o <strong>talhão {ANALISE_GUIADA.talhao}</strong> e marque o
-          ponto no mapa. O valor de cada campo aparece <strong>em amarelo, em cima dele</strong>; vira verde quando está certo.
+          ponto no mapa (clicando ou digitando as coordenadas). O valor de cada campo aparece <strong>em amarelo, em cima dele</strong>;
+          vira verde quando está certo.
         </p>
         <p className="mt-2 text-xs">Os outros campos podem ficar vazios. No fim, clique em salvar.</p>
       </>
     )
-  } else if (fase === 6) {
-    titulo = 'O laboratório mandou o laudo'
+  } else if (fase === 7 && analisesDoPdf < 20) {
+    titulo = 'Importe o laudo em PDF'
     corpo = (
       <>
-        <p>Sua análise foi gravada. As outras amostras, das safras 24-25 e 25-26, chegaram do laboratório.</p>
+        <p>
+          Digitar análise por análise cansa: o normal é importar o <strong>laudo em PDF</strong> que o laboratório manda. Baixe o laudo
+          de exemplo (fictício, no formato da UFV), vá em <strong>Dados → Importar laudo PDF</strong> e escolha o arquivo.
+        </p>
+        <p className="mt-2">
+          Confira a tabela: cada amostra já vem ligada à sua gleba pelo número ("Gleba 5" → gleba 1-5) e a safra sai da data do
+          laudo (<strong>{SAFRA_DO_PDF}</strong>). Depois clique em <strong>Gravar</strong>.
+        </p>
         <div className="mt-3">
-          <Botao principal onClick={() => void receberLaudo()} disabled={Boolean(ocupado)}>
-            {ocupado || 'Receber o laudo'}
-          </Botao>
+          <Botao principal onClick={baixarLaudo}>⬇ Baixar laudo (.pdf)</Botao>
         </div>
       </>
     )
   } else if (fase === 7) {
+    titulo = 'Chegou o laudo do ano passado'
+    corpo = (
+      <>
+        <p>
+          Laudo importado! Para comparar safras, falta o ano anterior: o laboratório mandou o de <strong>{SAFRA_ANTERIOR}</strong>, e
+          este entra com um clique.
+        </p>
+        <div className="mt-3">
+          <Botao principal onClick={() => void receberLaudo()} disabled={Boolean(ocupado)}>
+            {ocupado || `Receber o laudo de ${SAFRA_ANTERIOR}`}
+          </Botao>
+        </div>
+      </>
+    )
+  } else if (fase === 8) {
     titulo = 'Pinte o mapa'
     corpo = (
       <p>
@@ -364,7 +441,7 @@ export default function MissaoTutorial() {
         <strong>pH</strong>. Verde é o ideal; listrado é onde não há análise.
       </p>
     )
-  } else if (fase === 8) {
+  } else if (fase === 9) {
     titulo = 'Compare as safras'
     corpo = (
       <p>
@@ -372,12 +449,12 @@ export default function MissaoTutorial() {
         duas: veja onde o pH subiu.
       </p>
     )
-  } else if (fase === 9) {
+  } else if (fase === 10) {
     titulo = 'Veja a lavoura pelo satélite'
     corpo = (
       <p>
         Abra <strong>Monitoramento</strong>, escolha um talhão e uma data com bolinha verde (pouca nuvem). O NDVI mostra o vigor
-        da vegetação.
+        da vegetação; "Sem filtro" mostra só a imagem.
       </p>
     )
   }

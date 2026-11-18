@@ -566,7 +566,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
               <SubItem tutorial="dados-manual" ativo={naDados && !['pdf', 'pontos'].includes(abaDados)} onClick={() => irPara('/dados')}>
                 Entrada manual
               </SubItem>
-              <SubItem ativo={naDados && abaDados === 'pdf'} onClick={() => irPara('/dados?aba=pdf')}>
+              <SubItem tutorial="dados-pdf" ativo={naDados && abaDados === 'pdf'} onClick={() => irPara('/dados?aba=pdf')}>
                 Importar laudo PDF
               </SubItem>
               <SubItem tutorial="dados-pontos" ativo={naDados && abaDados === 'pontos'} onClick={() => irPara('/dados?aba=pontos')}>
