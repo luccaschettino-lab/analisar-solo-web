@@ -873,3 +873,11 @@ campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
   divisão continua como antes. Para respeitar as estradas, o talhão precisa
   ser desenhado com os campos separados.
 - Glebas já existentes: refeitas pelo "Ajustar glebas já criadas ao talhão".
+- Atualização do mesmo dia: carreador desenhado como ENTALHE (talhão de uma
+  peça só, campos ligados por uma ponta, como o talhão 7) também separa os
+  campos — `camposDaParte` encolhe o desenho 15 m (`LARGURA_CARREADOR_M` = 30)
+  e o que se separa vira campo. No talhão 7 real: 3 campos (84 + 33 + 31 ha);
+  a 7-4 e a 7-5 ficaram cada uma com o seu campo inteiro.
+- Divisas retas: dentro de cada campo a divisão usa um ponto por amostra (a
+  média das coletas, onde fica a análise), não um por coleta — some o
+  zigue-zague entre coletas vizinhas, e a análise fica sempre dentro da gleba.

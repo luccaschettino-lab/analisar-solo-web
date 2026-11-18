@@ -5,6 +5,8 @@ import voronoi from '@turf/voronoi'
 import { featureCollection, point } from '@turf/helpers'
 import area from '@turf/area'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import buffer from '@turf/buffer'
+import difference from '@turf/difference'
 import { paraFeature, areaEmHectares } from './geo.js'
 
 // Pedaços menores que isto (m²) são resto do recorte, não terra: a divisa do
@@ -41,6 +43,77 @@ export function descartarPedacosMinusculos(feature, minimoM2 = AREA_MINIMA_DO_PE
   }
 }
 
+// Abaixo desta largura (m), o desenho do talhão é um carreador, não lavoura:
+// dois campos ligados só por um "pescoço" mais estreito que isso são campos
+// separados (talhão 7 da 07/11: os carreadores são entalhes no desenho, e os
+// campos continuam ligados por uma ponta).
+export const LARGURA_CARREADOR_M = 30
+// Componente menor que isto (m²) depois de encolher é rebarba, não campo.
+const AREA_MINIMA_DO_CAMPO_M2 = 5000
+
+const comoPoligonos = (feature) => {
+  const g = feature?.geometry
+  if (g?.type === 'Polygon') return [g.coordinates]
+  if (g?.type === 'MultiPolygon') return g.coordinates
+  return []
+}
+const poligono = (aneis) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: aneis } })
+
+/**
+ * Os campos de uma parte do talhão: encolhe o desenho meia largura de
+ * carreador (o que estava ligado só por um pescoço estreito se separa),
+ * devolve cada pedaço ao tamanho original recortado pela parte, e o que
+ * sobrar (as bordas e o próprio pescoço) vai para o campo mais próximo. Sem
+ * pescoço, devolve a parte inteira.
+ */
+export function camposDaParte(parte) {
+  const raioKm = LARGURA_CARREADOR_M / 2 / 1000
+  let encolhida
+  try {
+    encolhida = buffer(parte, -raioKm, { units: 'kilometers' })
+  } catch {
+    return [parte]
+  }
+  const nucleos = comoPoligonos(encolhida).map(poligono).filter((p) => area(p) >= AREA_MINIMA_DO_CAMPO_M2)
+  if (nucleos.length <= 1) return [parte]
+
+  try {
+    const campos = []
+    let usado = null
+    for (const nucleo of nucleos) {
+      let campo = intersect(featureCollection([buffer(nucleo, raioKm * 1.05, { units: 'kilometers' }), parte]))
+      if (campo && usado) campo = difference(featureCollection([campo, usado]))
+      if (!campo) continue
+      campos.push(campo)
+      usado = usado ? union(featureCollection([usado, campo])) : campo
+    }
+    if (campos.length <= 1) return [parte]
+    // Sobras (cantos e o próprio pescoço): cada uma para o campo mais perto.
+    const sobra = usado ? difference(featureCollection([parte, usado])) : null
+    for (const aneis of comoPoligonos(sobra)) {
+      const [lng, lat] = aneis[0][0]
+      let melhor = 0
+      let menor = Infinity
+      campos.forEach((c, i) => {
+        const d = distanciaAFeatureM(lng, lat, c)
+        if (d < menor) {
+          menor = d
+          melhor = i
+        }
+      })
+      campos[melhor] = union(featureCollection([campos[melhor], poligono(aneis)])) ?? campos[melhor]
+    }
+    return campos
+  } catch {
+    // Geometria que o recorte não aguenta: melhor a parte inteira que nada.
+    return [parte]
+  }
+}
+
+function distanciaAFeatureM(lng, lat, feature) {
+  return Math.min(...comoPoligonos(feature).map((aneis) => distanciaAoPoligonoM(lng, lat, aneis)))
+}
+
 // Distância (m) de um ponto a um polígono (zero se está dentro), numa
 // projeção plana local — para centenas de metros o erro é desprezível.
 function distanciaAoPoligonoM(lng, lat, aneis) {
@@ -62,8 +135,30 @@ function distanciaAoPoligonoM(lng, lat, aneis) {
   return menor
 }
 
-/** Células de Voronoi dos pontos, recortadas por UMA parte do talhão. */
-function dividirParte(parte, pontos, guardar) {
+/**
+ * Divide UM campo entre as amostras que têm pontos nele. Um ponto por
+ * amostra — a média das suas coletas no campo, que é onde fica a análise —
+ * em vez de um por coleta: as divisas saem retas entre as amostras, e não em
+ * zigue-zague entre coletas vizinhas (2026-11-19). A média de cada amostra
+ * fica sempre dentro da própria gleba.
+ */
+function dividirParte(parte, coletas, guardar) {
+  const somas = new Map()
+  for (const p of coletas) {
+    const s = somas.get(p.chave) ?? { chave: p.chave, lng: 0, lat: 0, n: 0 }
+    s.lng += p.lng
+    s.lat += p.lat
+    s.n++
+    somas.set(p.chave, s)
+  }
+  const pontos = [
+    ...new Map([...somas.values()].map((s) => [`${(s.lng / s.n).toFixed(9)},${(s.lat / s.n).toFixed(9)}`, { chave: s.chave, lng: s.lng / s.n, lat: s.lat / s.n }])).values(),
+  ]
+  celulasDeVoronoi(parte, pontos, guardar)
+}
+
+/** Células de Voronoi dos pontos, recortadas por um campo. */
+function celulasDeVoronoi(parte, pontos, guardar) {
   if (pontos.length === 1) {
     guardar(pontos[0].chave, parte)
     return
@@ -132,16 +227,17 @@ export function dividirTalhaoPorPontos(geometriaTalhao, pontos) {
     celulasPorChave.get(chave).push(feature)
   }
 
-  const aneisDasPartes = tipo === 'Polygon' ? [talhao.geometry.coordinates] : talhao.geometry.coordinates
-  const partes = aneisDasPartes.map((aneis) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: aneis } }))
+  // Os campos: as partes do desenho e, dentro de cada uma, o que um carreador
+  // estreito separa.
+  const partes = comoPoligonos(talhao).map(poligono).flatMap(camposDaParte)
 
-  // Cada ponto vai para a parte que o contém, ou para a mais próxima.
+  // Cada ponto vai para o campo que o contém, ou para o mais próximo.
   const pontosDaParte = partes.map(() => [])
   for (const p of unicos) {
     let melhor = 0
     let menor = Infinity
-    aneisDasPartes.forEach((aneis, i) => {
-      const d = distanciaAoPoligonoM(p.lng, p.lat, aneis)
+    partes.forEach((parte, i) => {
+      const d = distanciaAFeatureM(p.lng, p.lat, parte)
       if (d < menor) {
         menor = d
         melhor = i
@@ -159,7 +255,7 @@ export function dividirTalhaoPorPontos(geometriaTalhao, pontos) {
     let chave = unicos[0].chave
     let menor = Infinity
     for (const p of unicos) {
-      const d = distanciaAoPoligonoM(p.lng, p.lat, aneisDasPartes[i])
+      const d = distanciaAFeatureM(p.lng, p.lat, parte)
       if (d < menor) {
         menor = d
         chave = p.chave

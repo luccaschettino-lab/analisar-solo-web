@@ -259,6 +259,37 @@ console.log('pontos de coleta: glebas preenchem o talhão, sem vão, e recálcul
   console.log('pontos de coleta: divisão respeita os campos do talhão (não atravessa o carreador) OK')
 }
 
+// --- Talhão de uma peça só, com dois campos ligados por um "pescoço" de ~11 m (entalhe do carreador) ---
+{
+  const anel = [
+    [-49.010, -10.004], [-49.006, -10.004], [-49.006, -10.00205], [-49.004, -10.00205], [-49.004, -10.004], [-49.000, -10.004],
+    [-49.000, -10.000], [-49.004, -10.000], [-49.004, -10.00195], [-49.006, -10.00195], [-49.006, -10.000], [-49.010, -10.000], [-49.010, -10.004],
+  ]
+  const talhaoPescoco = { id: 'tq', codigo: '7', geometria: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [anel] } } }
+  // A: perto da borda direita do campo da esquerda; B: no meio do campo da direita.
+  const pts = [
+    pt('q1', 'tq', -10.003, -49.0065, { id: 4 }), pt('q2', 'tq', -10.001, -49.0065, { id: 4 }),
+    pt('q3', 'tq', -10.003, -49.001, { id: 5 }), pt('q4', 'tq', -10.001, -49.001, { id: 5 }),
+  ]
+  const r = agruparPontosEmGlebas(pts, [talhaoPescoco])
+  const g4 = r.glebas.find((g) => g.codigo === '7-4')
+  const g5 = r.glebas.find((g) => g.codigo === '7-5')
+  // Pela regra antiga, a divisa cairia em -49.00375, dentro do campo da direita.
+  assert.ok(booleanPointInPolygon([-49.0039, -10.003], g5.geometria), 'o campo da direita é todo da 7-5 (o pescoço separa os campos)')
+  assert.ok(!booleanPointInPolygon([-49.0039, -10.003], g4.geometria), 'a 7-4 não passa do pescoço')
+  const campoEsq = areaEmHectares({ type: 'Polygon', coordinates: [[[-49.010, -10.004], [-49.006, -10.004], [-49.006, -10.000], [-49.010, -10.000], [-49.010, -10.004]]] })
+  assert.ok(Math.abs(g4.areaHa - campoEsq) / campoEsq < 0.03, `7-4 ≈ campo da esquerda (${g4.areaHa} × ${campoEsq} ha)`)
+  const total = areaEmHectares(talhaoPescoco.geometria)
+  assert.ok(Math.abs(g4.areaHa + g5.areaHa - total) / total < 0.005, 'sem vão nem sobreposição')
+  // A média das coletas (onde fica a análise) está dentro da própria gleba.
+  for (const g of r.glebas) {
+    const meus = pts.filter((p) => g.pontoIds.includes(p.id)).map((p) => p.geometria.geometry.coordinates)
+    const media = [meus.reduce((s, c) => s + c[0], 0) / meus.length, meus.reduce((s, c) => s + c[1], 0) / meus.length]
+    assert.ok(booleanPointInPolygon(media, g.geometria), `a média das coletas da ${g.codigo} cai na própria gleba`)
+  }
+  console.log('pontos de coleta: carreador em entalhe (pescoço estreito) também separa os campos OK')
+}
+
 // --- Cor dos pontos de coleta segundo o filtro ---
 import { criarCorDosPontos } from '../src/lib/pontosDeColeta.js'
 const ptc = (id, talhao, gleba, lat, lng) => ({ id, talhao_id: talhao, gleba_id: gleba, geometria: pontoFeature(lat, lng) })
