@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ehPonto } from '../../lib/geo.js'
+import FotosDoTalhao from './FotosDoTalhao.jsx'
 
 function formatarArea(ha) {
   if (ha == null) return null
@@ -73,6 +74,10 @@ export default function PainelDetalhe({
           </div>
         )}
       </dl>
+
+      {/* Fotos do perfil do solo (0-20, 20-40, 40-60 cm), por safra. A chave
+          zera o estado ao trocar de talhão. */}
+      {tipo === 'talhao' && <FotosDoTalhao key={item.id} talhao={item} />}
 
       {/* Fora do bloco de permissão: consultar análises é leitura, e um
           leitor tem tanto direito a isso quanto um proprietário. */}

@@ -333,7 +333,7 @@ export default function Painel() {
         )}
 
         {item.itemSelecionado && (
-          <div className="vidro-forte absolute inset-x-0 bottom-0 z-[1100] border-t border-slate-200 shadow-painel dark:border-white/15 sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-52 sm:rounded-lg sm:border">
+          <div className="vidro-forte absolute inset-x-0 bottom-0 z-[1100] max-h-[70vh] overflow-y-auto border-t border-slate-200 shadow-painel dark:border-white/15 sm:inset-x-auto sm:bottom-6 sm:left-3 sm:w-64 sm:rounded-lg sm:border">
             <PainelDetalhe
               item={item.itemSelecionado}
               tipo={selecionado.tipo}
