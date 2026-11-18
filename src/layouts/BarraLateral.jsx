@@ -195,6 +195,12 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
   const navegar = useNavigate()
   const local = useLocation()
   const naDados = local.pathname === '/dados'
+  // As opções de Dados ficam escondidas até clicar; ao entrar em Dados, abrem
+  // sozinhas (e dá para recolher de novo).
+  const [dadosVisivel, setDadosAberto] = useState(naDados)
+  useEffect(() => {
+    if (naDados) setDadosAberto(true)
+  }, [naDados])
   const abaDados = new URLSearchParams(local.search).get('aba')
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
   // aberta empurrava Dados/Monitoramento/Critérios para fora da primeira tela.
@@ -518,10 +524,27 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
           <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Dados" compacta={compacta} />
-          <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta={compacta} />
+          {compacta ? (
+            <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta />
+          ) : (
+            // Recolhido: clicar mostra as formas de lançar dados, sem sair da
+            // tela atual. Abre sozinho quando se está em Dados.
+            <button
+              type="button"
+              onClick={() => setDadosAberto((a) => !a)}
+              aria-expanded={dadosVisivel}
+              className={`${ITEM_NAV} ${naDados ? `${ATIVO} ${MARCA_ATIVO}` : INATIVO}`}
+            >
+              <IconeDados aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
+              <span className="min-w-0 flex-1 truncate text-left">Dados</span>
+              <span aria-hidden="true" className={`text-xs text-slate-500 transition-transform dark:text-slate-400 ${dadosVisivel ? 'rotate-90' : ''}`}>
+                ›
+              </span>
+            </button>
+          )}
           {/* As abas de Dados, alinhadas ao texto do item de cima e marcando
               qual está aberta. */}
-          {!compacta && (
+          {!compacta && dadosVisivel && (
             <div className="flex flex-col gap-0.5">
               <SubItem ativo={naDados && !['pdf', 'pontos'].includes(abaDados)} onClick={() => irPara('/dados')}>
                 Entrada manual
