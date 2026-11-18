@@ -86,12 +86,15 @@ function IconeDados(props) {
   )
 }
 
+// Satélite: corpo, dois painéis e o sinal. O de antes (arcos + ponto) era o
+// símbolo de RSS/wi-fi.
 function IconeMonitoramento(props) {
   return (
     <svg {...PROPRIEDADES_ICONE} {...props}>
-      <path d="M4 11a9 9 0 0 1 9 9" />
-      <path d="M4 4a16 16 0 0 1 16 16" />
-      <circle cx="5" cy="19" r="1" />
+      <rect x="9" y="9" width="6" height="6" rx="1" transform="rotate(45 12 12)" />
+      <path d="M8.5 8.5 4 4M2 6l4-4" />
+      <path d="M15.5 15.5 20 20M18 22l4-4" />
+      <path d="M3 15a6 6 0 0 0 6 6" />
     </svg>
   )
 }
@@ -112,21 +115,57 @@ function IconeCriterios(props) {
   )
 }
 
+// Item principal da navegação: mais alto que os da árvore, ícone e texto
+// sempre na mesma coluna, e uma barrinha à esquerda marcando onde se está.
+const ITEM_NAV = `relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition ${FOCO}`
+const MARCA_ATIVO =
+  "before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:rounded-full before:bg-solo-600 before:content-[''] dark:before:bg-solo-400"
+
 /** Ícone + rótulo, na mesma linha — o padrão de todo item da barra. */
-function ItemNav({ to, Icone, rotulo, onClick, compacta = false }) {
+function ItemNav({ to, Icone, rotulo, onClick, compacta = false, end = false, extra = null }) {
   return (
     <NavLink
       to={to}
+      end={end}
       onClick={onClick}
       title={compacta ? rotulo : undefined}
       aria-label={rotulo}
       className={({ isActive }) =>
-        `${ITEM} font-medium ${compacta ? 'justify-center px-0' : ''} ${isActive ? ATIVO : INATIVO}`
+        `${ITEM_NAV} ${compacta ? 'justify-center px-0' : ''} ${isActive ? `${ATIVO} ${MARCA_ATIVO}` : INATIVO}`
       }
     >
-      <Icone aria-hidden="true" className="h-4 w-4 shrink-0" />
-      {!compacta && rotulo}
+      <Icone aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
+      {!compacta && <span className="min-w-0 flex-1 truncate">{rotulo}</span>}
+      {!compacta && extra}
     </NavLink>
+  )
+}
+
+/** Título de grupo da navegação. Na barra recolhida vira só um traço. */
+function Secao({ titulo, compacta, primeira = false }) {
+  if (compacta) return primeira ? null : <div className="mx-2 my-2 border-t border-slate-200 dark:border-white/10" />
+  return (
+    <p className={`px-2.5 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 ${primeira ? 'pt-1' : 'pt-4'}`}>
+      {titulo}
+    </p>
+  )
+}
+
+/** Subitem (ex.: as duas formas de lançar análise), alinhado ao texto do pai. */
+function SubItem({ ativo, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-current={ativo ? 'page' : undefined}
+      className={`flex w-full items-center gap-2 rounded-md py-1.5 pl-[2.375rem] pr-2 text-left text-sm transition ${FOCO} ${
+        ativo
+          ? 'font-medium text-solo-800 dark:text-solo-300'
+          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
+      }`}
+    >
+      <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${ativo ? 'bg-solo-600 dark:bg-solo-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
+      {children}
+    </button>
   )
 }
 
@@ -155,6 +194,8 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
 
   const navegar = useNavigate()
   const local = useLocation()
+  const naDados = local.pathname === '/dados'
+  const abaDados = new URLSearchParams(local.search).get('aba')
   // Recolhida por padrão: numa fazenda com muitos talhões, a árvore inteira
   // aberta empurrava Dados/Monitoramento/Critérios para fora da primeira tela.
   const [arvoreAberta, setArvoreAberta] = useState(false)
@@ -337,18 +378,23 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {!compacta && <div className="flex items-stretch">
+        <Secao titulo="Análise" compacta={compacta} primeira />
+        {/* "Mapa" alinhado aos outros itens; a lista de talhões abre pelo
+            botão à direita, não por uma seta solta à esquerda. */}
+        {!compacta && <div className="relative">
+          <ItemNav to="/" end Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
           {fazendaSelecionada && (
             <button
               onClick={() => setArvoreAberta((a) => !a)}
               aria-expanded={arvoreAberta}
               aria-label={`${arvoreAberta ? 'Recolher' : 'Expandir'} lista de talhões`}
-              className={`w-5 shrink-0 ${FOCO}`}
+              title={`${arvoreAberta ? 'Recolher' : 'Ver'} talhões`}
+              className={`absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-md px-1.5 py-1 text-xs text-slate-500 hover:bg-slate-200/70 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100 ${FOCO}`}
             >
-              <Seta aberto={arvoreAberta} />
+              {talhoes.length > 0 && <span className="tabular-nums">{talhoes.length}</span>}
+              <span aria-hidden="true" className={`inline-block transition-transform ${arvoreAberta ? 'rotate-90' : ''}`}>›</span>
             </button>
           )}
-          <ItemNav to="/" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
         </div>}
 
         <div className="mt-0.5 flex flex-col gap-0.5">
@@ -467,30 +513,30 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             </div>
           )}
 
-          {compacta && <ItemNav to="/" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} compacta />}
+          {compacta && <ItemNav to="/" end Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} compacta />}
           <ItemNav to="/filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} compacta={compacta} />
           <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} compacta={compacta} />
 
-          <div className="my-1 border-t border-slate-200 dark:border-white/10" />
-
+          <Secao titulo="Dados" compacta={compacta} />
           <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta={compacta} />
-          {/* As duas formas de lançar análise, aninhadas embaixo de "Dados" —
-              não de "Critérios", onde estavam por engano. */}
-          {!compacta && <ul className="ml-6 space-y-0.5 border-l border-slate-200 pl-1 dark:border-white/10">
-            <li>
-              <button onClick={() => irPara('/dados')} className={`${ITEM} text-xs ${INATIVO}`}>
+          {/* As abas de Dados, alinhadas ao texto do item de cima e marcando
+              qual está aberta. */}
+          {!compacta && (
+            <div className="flex flex-col gap-0.5">
+              <SubItem ativo={naDados && !['pdf', 'pontos'].includes(abaDados)} onClick={() => irPara('/dados')}>
                 Entrada manual
-              </button>
-            </li>
-            <li>
-              <button onClick={() => irPara('/dados?aba=pdf')} className={`${ITEM} text-xs ${INATIVO}`}>
+              </SubItem>
+              <SubItem ativo={naDados && abaDados === 'pdf'} onClick={() => irPara('/dados?aba=pdf')}>
                 Importar laudo PDF
-              </button>
-            </li>
-          </ul>}
-
+              </SubItem>
+              <SubItem ativo={naDados && abaDados === 'pontos'} onClick={() => irPara('/dados?aba=pontos')}>
+                Pontos de amostra
+              </SubItem>
+            </div>
+          )}
           <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
 
+          <Secao titulo="Ajustes" compacta={compacta} />
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
