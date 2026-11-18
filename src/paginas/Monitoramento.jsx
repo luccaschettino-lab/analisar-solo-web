@@ -37,6 +37,9 @@ const INDICES = [
   },
 ]
 
+// Sem índice: só a imagem de satélite do mapa de fundo, recortada no talhão.
+const SEM_INDICE = 'imagem'
+
 const numero = (v) => (v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
 const SELECT =
@@ -55,7 +58,7 @@ function Cartao({ titulo, children, className = '' }) {
 function EscolhaDoIndice({ ativo, aoTrocar }) {
   return (
     <div role="radiogroup" aria-label="Índice" className="vidro flex gap-0.5 rounded-lg p-1 shadow">
-      {INDICES.map((item) => {
+      {[{ chave: SEM_INDICE, rotulo: 'Sem filtro', nome: 'Só a imagem de satélite, sem índice por cima' }, ...INDICES].map((item) => {
         const selecionado = item.chave === ativo
         return (
           <button
@@ -182,7 +185,8 @@ export default function Monitoramento() {
     }
   }, [cenas, cenaAtivaId])
 
-  const info = INDICES.find((i) => i.chave === indiceAtivo)
+  const semIndice = indiceAtivo === SEM_INDICE
+  const info = INDICES.find((i) => i.chave === indiceAtivo) ?? INDICES[0]
 
   if (!fazendaSelecionada) {
     return (
@@ -229,7 +233,7 @@ export default function Monitoramento() {
           {/* Mapa */}
           <div className="h-[60vh] min-h-[22rem] lg:h-full">
             {geometria ? (
-              <MapaDoTalhao geometria={geometria} dados={dados} indice={indiceAtivo}>
+              <MapaDoTalhao geometria={geometria} dados={semIndice ? null : dados} indice={indiceAtivo}>
                 <div className="absolute left-3 top-3 z-[1000] flex flex-col items-start gap-2">
                   <EscolhaDoIndice ativo={indiceAtivo} aoTrocar={setIndiceAtivo} />
                   {calculando && (
@@ -238,7 +242,7 @@ export default function Monitoramento() {
                     </p>
                   )}
                 </div>
-                {dados && (
+                {dados && !semIndice && (
                   <div className="absolute bottom-8 left-3 z-[1000]">
                     <LegendaNoMapa indice={indiceAtivo} />
                   </div>
@@ -276,7 +280,17 @@ export default function Monitoramento() {
               </p>
             )}
 
-            {dados && (
+            {semIndice && (
+              <Cartao titulo="Sem filtro">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  O talhão aparece só com a imagem de satélite do mapa de fundo, sem índice por cima. Essa imagem não é a da data
+                  escolhida acima: é o mosaico do provedor do mapa, e a data dela varia de lugar para lugar. Para trocar de imagem, use o botão de camadas no canto
+                  do mapa.
+                </p>
+              </Cartao>
+            )}
+
+            {dados && !semIndice && (
               <>
                 <Cartao titulo={`${info.rotulo} no talhão ${talhao?.codigo ?? ''}`}>
                   <Numeros dados={dados} indice={indiceAtivo} rotulo={info.rotulo} />
@@ -287,7 +301,7 @@ export default function Monitoramento() {
               </>
             )}
 
-            <Cartao>
+            {!semIndice && <Cartao>
               {/* Aberto de saída só no NDWI, cujo nome engana (não é umidade do solo). */}
               <details key={indiceAtivo} open={indiceAtivo === 'ndwi'}>
                 <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -305,7 +319,7 @@ export default function Monitoramento() {
                   ).
                 </p>
               </details>
-            </Cartao>
+            </Cartao>}
           </aside>
         </div>
       </div>

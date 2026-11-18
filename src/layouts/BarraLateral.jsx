@@ -403,7 +403,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
         {/* "Mapa" alinhado aos outros itens; a lista de talhões abre pelo
             botão à direita, não por uma seta solta à esquerda. */}
         {!compacta && <div className="relative">
-          <ItemNav to="/" end Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
+          <ItemNav to="/" end tutorial="mapa" Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} />
           {fazendaSelecionada && (
             <button
               onClick={() => setArvoreAberta((a) => !a)}

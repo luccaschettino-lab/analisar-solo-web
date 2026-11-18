@@ -12,13 +12,32 @@ import { ehNumeroInvalido } from '../../lib/numeros.js'
  * e o dado tem que entrar mesmo assim; o aviso serve para o usuário reparar
  * antes de gravar, não para discutir com ele.
  */
-function Campo({ p, valor, aoMudar, desabilitado }) {
+/** Valor que o tutorial guiado pede neste campo, em destaque em cima dele. */
+export function SugestaoTutorial({ valor, feito, prefixo = 'Digite:' }) {
+  if (valor == null) return null
+  return (
+    <span
+      className={`mb-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold ${
+        feito
+          ? 'bg-solo-100 text-solo-800 dark:bg-solo-500/20 dark:text-solo-300'
+          : 'bg-amber-400 text-amber-950 motion-safe:animate-pulse'
+      }`}
+    >
+      {feito ? '✓' : prefixo} {valor}
+    </span>
+  )
+}
+
+const semEspaco = (v) => String(v ?? '').replace(/\s/g, '').replace('.', ',')
+
+function Campo({ p, valor, aoMudar, desabilitado, sugestao }) {
   const invalido = ehNumeroInvalido(valor)
   const implausivel = !invalido && foraDaFaixaPlausivel(p.chave, valor)
   const idAviso = `${p.chave}-aviso`
 
   return (
     <div>
+      <SugestaoTutorial valor={sugestao} feito={sugestao != null && semEspaco(valor) === semEspaco(sugestao)} />
       <label htmlFor={p.chave} className="block text-xs font-medium text-slate-600 dark:text-slate-400">
         {p.rotulo}
         {p.unidade && <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">({p.unidade})</span>}
@@ -58,7 +77,7 @@ function Campo({ p, valor, aoMudar, desabilitado }) {
   )
 }
 
-export default function CamposParametros({ valores, aoMudar, desabilitado }) {
+export default function CamposParametros({ valores, aoMudar, desabilitado, sugestoes = null }) {
   return (
     <div className="space-y-5">
       {GRUPOS.map((grupo) => (
@@ -74,6 +93,7 @@ export default function CamposParametros({ valores, aoMudar, desabilitado }) {
                 valor={valores[p.chave]}
                 aoMudar={aoMudar}
                 desabilitado={desabilitado}
+                sugestao={sugestoes?.[p.chave]}
               />
             ))}
           </div>

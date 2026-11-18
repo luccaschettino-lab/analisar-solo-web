@@ -156,14 +156,8 @@ export const ANALISE_GUIADA = {
   amostra: '1',
   safra: SAFRAS_EXEMPLO[1],
   profundidade: '0-20',
-  valores: [
-    ['pH em água', '5,2'],
-    ['P', '8,5'],
-    ['K', '48'],
-    ['Ca²⁺', '1,8'],
-    ['Mg²⁺', '0,6'],
-    ['Matéria orgânica', '2,4'],
-  ],
+  // Por chave do parâmetro: o formulário mostra cada valor em cima do campo.
+  valores: { ph_h2o: '5,2', p: '8,5', k: '48', ca: '1,8', mg: '0,6', mo: '2,4' },
 }
 
 /** Número da amostra a partir do código da gleba ("2-8" → 8). */

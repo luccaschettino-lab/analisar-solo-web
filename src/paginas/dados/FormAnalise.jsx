@@ -6,7 +6,9 @@ import { pontoFeature, latLngDoPonto } from '../../lib/geo.js'
 import { montarPayload, criarAnalise, atualizarAnalise } from '../../dados/analises.js'
 import SeletorTalhao from './SeletorTalhao.jsx'
 import MapaPontoColeta from './MapaPontoColeta.jsx'
-import CamposParametros from './CamposParametros.jsx'
+import CamposParametros, { SugestaoTutorial } from './CamposParametros.jsx'
+import { useTutorial } from '../../context/TutorialContext.jsx'
+import { ANALISE_GUIADA } from '../../lib/fazendaExemplo.js'
 
 const FORMATO_SAFRA = /^\d{2}-\d{2}$/
 const VAZIO = { anoSafra: '', profundidade: '0-20', dataColeta: '', laboratorio: '', numeroAmostraLab: '', observacoes: '' }
@@ -20,6 +22,10 @@ function valoresDe(analise) {
 }
 
 export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdicao }) {
+  // Tutorial guiado, fase 6: o valor de cada campo aparece em cima dele.
+  const { missao } = useTutorial()
+  const guia = missao?.fase === 6 && !emEdicao ? ANALISE_GUIADA : null
+
   const [cabecalho, setCabecalho] = useState(VAZIO)
   const [valores, setValores] = useState(() => valoresDe(null))
   const [ponto, setPonto] = useState(null) // { lat, lng } | null
@@ -104,6 +110,12 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
         </p>
       )}
 
+      {guia && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <strong>Tutorial:</strong> escolha a fazenda do tutorial e o <strong>talhão {guia.talhao}</strong>, marque o ponto e preencha os
+          campos com o valor que aparece em amarelo em cima de cada um. Os outros podem ficar vazios.
+        </p>
+      )}
       <SeletorTalhao selecao={selecao} desabilitado={salvando || Boolean(emEdicao)} />
       {emEdicao && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -114,6 +126,13 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
 
       {selecao.talhao && (
         <div>
+          {guia && (
+            <SugestaoTutorial
+              prefixo="Marque:"
+              valor={ponto ? 'ponto marcado' : `clique no canto de cima, à esquerda, do talhão ${guia.talhao}`}
+              feito={Boolean(ponto)}
+            />
+          )}
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             Ponto de amostra
           </span>
@@ -136,8 +155,10 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
           placeholder="25-26"
           required
           disabled={bloqueado}
+          acao={guia && <SugestaoTutorial valor={guia.safra} feito={cabecalho.anoSafra.trim() === guia.safra} />}
         />
         <div>
+          {guia && <SugestaoTutorial valor={guia.profundidade} feito={cabecalho.profundidade === guia.profundidade} />}
           <label htmlFor="profundidade" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             Profundidade (cm)
           </label>
@@ -176,6 +197,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
           value={cabecalho.numeroAmostraLab}
           onChange={(e) => mudarCampo('numeroAmostraLab', e.target.value)}
           disabled={bloqueado}
+          acao={guia && <SugestaoTutorial valor={guia.amostra} feito={cabecalho.numeroAmostraLab.trim() === guia.amostra} />}
         />
       </div>
 
@@ -184,7 +206,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
         cada coleta, então serve só de referência, nunca para identificar o ponto.
       </p>
 
-      <CamposParametros valores={valores} aoMudar={mudarParametro} desabilitado={bloqueado} />
+      <CamposParametros valores={valores} aoMudar={mudarParametro} desabilitado={bloqueado} sugestoes={guia?.valores} />
 
       <div>
         <label htmlFor="observacoes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">

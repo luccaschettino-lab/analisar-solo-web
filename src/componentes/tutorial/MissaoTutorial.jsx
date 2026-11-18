@@ -160,7 +160,7 @@ export default function MissaoTutorial() {
       : {
           1: ['nova-fazenda'],
           2: ['marcar-sede'],
-          3: ['importar-talhoes'],
+          3: pathname === '/' ? ['importar-talhoes'] : ['mapa', 'importar-talhoes'],
           5: pathname === '/dados' ? ['dados-pontos', 'importar-pontos', 'criar-glebas'] : ['dados'],
           6: pathname === '/dados' ? ['dados-manual'] : ['dados'],
           7: ['filtros'],
@@ -295,8 +295,13 @@ export default function MissaoTutorial() {
     corpo = (
       <>
         <p>
-          Baixe o arquivo dos talhões (é um KML, como o Google Earth exporta). Depois clique em <strong>Importar talhões</strong>,
-          escolha o arquivo, confira a lista e confirme.
+          Os talhões da sua fazenda você não precisa desenhar: eles saem prontos do programa onde já estão. O{' '}
+          <strong>Google Earth</strong>, o <strong>QGIS</strong> e os sistemas de agricultura de precisão (como o Climate FieldView e
+          o John Deere Operations Center) exportam os talhões em <strong>KML/KMZ</strong> ou <strong>shapefile (.zip)</strong>.
+        </p>
+        <p className="mt-2">
+          Aqui, use o arquivo de exemplo: baixe-o abaixo, clique em <strong>Mapa</strong> na barra lateral e depois em{' '}
+          <strong>Importar talhões</strong>. Escolha o arquivo, confira a lista e confirme.
         </p>
         <div className="mt-3">
           <Botao principal onClick={() => baixar('talhoes-tutorial.kml', kmlDosTalhoes(origemPelaSede(sede)), 'application/vnd.google-earth.kml+xml')}>
@@ -333,21 +338,10 @@ export default function MissaoTutorial() {
     corpo = (
       <>
         <p>
-          Em <strong>Dados → Entrada manual</strong>, escolha esta fazenda e o <strong>talhão {ANALISE_GUIADA.talhao}</strong>, marque
-          no mapa um ponto no canto noroeste do talhão (onde fica a gleba {ANALISE_GUIADA.talhao}-{ANALISE_GUIADA.amostra}) e
-          preencha:
+          Em <strong>Dados → Entrada manual</strong>, escolha esta fazenda e o <strong>talhão {ANALISE_GUIADA.talhao}</strong> e marque o
+          ponto no mapa. O valor de cada campo aparece <strong>em amarelo, em cima dele</strong>; vira verde quando está certo.
         </p>
-        <ul className="mt-2 grid grid-cols-2 gap-x-3 text-xs">
-          <li>Safra: <strong>{ANALISE_GUIADA.safra}</strong></li>
-          <li>Profundidade: <strong>{ANALISE_GUIADA.profundidade}</strong></li>
-          <li>Nº da amostra: <strong>{ANALISE_GUIADA.amostra}</strong></li>
-          {ANALISE_GUIADA.valores.map(([rotulo, valor]) => (
-            <li key={rotulo}>
-              {rotulo}: <strong>{valor}</strong>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-xs">Os outros campos podem ficar vazios. Depois, salve.</p>
+        <p className="mt-2 text-xs">Os outros campos podem ficar vazios. No fim, clique em salvar.</p>
       </>
     )
   } else if (fase === 6) {

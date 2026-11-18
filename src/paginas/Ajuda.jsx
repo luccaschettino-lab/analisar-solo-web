@@ -65,7 +65,7 @@ const SECOES = [
     itens: [
       [
         'Como cadastro os talhões?',
-        'De dois jeitos: desenhando no mapa ("+ Talhão", na barra lateral) ou importando um arquivo ("Importar talhões"). O arquivo pode ser .kml ou .kmz (Google Earth), .geojson ou shapefile compactado em .zip (QGIS). Antes de gravar, você revisa código, nome e área de cada um.',
+        'De dois jeitos: desenhando no mapa ("+ Talhão", na barra lateral) ou importando um arquivo (Mapa → "Importar talhões"). O arquivo pode ser .kml ou .kmz, .geojson ou shapefile compactado em .zip. Quase sempre os talhões já existem em outro programa e saem prontos de lá: Google Earth, QGIS e os sistemas de agricultura de precisão (como Climate FieldView e John Deere Operations Center) exportam nesses formatos. Antes de gravar, você revisa código, nome e área de cada um.',
       ],
       [
         'Como corrijo o desenho de um talhão?',
