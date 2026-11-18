@@ -5,7 +5,7 @@ export { supabase }
 // Mostrada quando o navegador não alcança o Supabase (projeto pausado, fora do
 // ar ou sem internet). Usada aqui e no login (AuthContext).
 export const MENSAGEM_SEM_SERVIDOR =
-  'O site está pausado para manutenção. Entre em contato com o suporte.'
+  'Não foi possível conectar. Verifique sua internet; se o problema continuar, o site pode estar em manutenção — contate o suporte.'
 
 // O PostgREST devolve o codigo do Postgres em error.code. Traduzimos so o que
 // o usuario pode resolver; o resto sobe com a mensagem original, que e melhor
