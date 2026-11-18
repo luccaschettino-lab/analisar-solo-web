@@ -8,6 +8,15 @@
     <!-- Manrope vem do pacote @fontsource-variable/manrope (importado em
          main.jsx): geometria arredondada parecida com o wordmark da marca,
          servida pelo próprio site, sem pedir nada ao Google. -->
+    <!-- Tema antes do React: escuro, a não ser que a pessoa tenha escolhido o
+         claro. Mesma regra de ThemeContext.jsx; sem isto a tela pisca branca. -->
+    <script>
+      try {
+        if (localStorage.getItem('analisar-solo:tema') !== 'claro') document.documentElement.classList.add('dark')
+      } catch (e) {
+        document.documentElement.classList.add('dark')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -27,6 +27,10 @@ const SECOES = [
         'Uma fazenda com dados fictícios (4 talhões, 24 glebas e análises de duas safras) para você conhecer o sistema sem cadastrar nada. Aparece com uma faixa amarela no topo. Pode mexer à vontade, e o botão "Excluir exemplo" a remove sem tocar nas suas fazendas.',
       ],
       [
+        'Dá para deixar a tela clara?',
+        'Dá. O site abre no tema escuro, mas o botão de sol/lua no canto superior direito, ao lado de "Sair", troca entre escuro e claro. A escolha fica guardada neste navegador.',
+      ],
+      [
         'Como vejo o tutorial de novo?',
         'Pelo botão "Ver o tutorial de novo", no topo desta página. As boas-vindas abrem, e as dicas de cada tela e os primeiros passos voltam a aparecer.',
       ],

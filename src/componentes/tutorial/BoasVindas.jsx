@@ -21,6 +21,10 @@ function Passo1() {
         O Moinho transforma as análises de solo da sua fazenda em <strong>mapas</strong>: você vê, talhão por talhão, onde
         falta ou sobra cada nutriente, compara safras e acompanha a lavoura pelo satélite.
       </p>
+      <p>
+        Prefere a tela clara? O botão <span aria-hidden="true">☀</span> no canto superior direito troca entre tema escuro e
+        claro.
+      </p>
       <p>Em 1 minuto mostramos como tudo se encaixa. Dá para pular e rever depois em <strong>Ajuda → Ver o tutorial de novo</strong>.</p>
     </div>
   )

@@ -4,13 +4,19 @@ const ThemeContext = createContext(null)
 const CHAVE_ARMAZENAMENTO = 'analisar-solo:tema'
 
 /**
- * Tema padrão é claro. Quem já escolheu um tema antes mantém a escolha
- * (guardada em localStorage); o escuro continua a um clique no alternador.
+ * Tema padrão é o escuro (pedido de 2026-11-18). Quem já escolheu um tema
+ * antes mantém a escolha (guardada em localStorage); o claro continua a um
+ * clique no alternador do topo. O index.html aplica o mesmo padrão antes do
+ * React carregar, para a tela não piscar branca.
  */
 function lerTemaSalvo() {
-  if (typeof window === 'undefined') return 'claro'
-  const salvo = window.localStorage.getItem(CHAVE_ARMAZENAMENTO)
-  return salvo === 'claro' || salvo === 'escuro' ? salvo : 'claro'
+  if (typeof window === 'undefined') return 'escuro'
+  try {
+    const salvo = window.localStorage.getItem(CHAVE_ARMAZENAMENTO)
+    return salvo === 'claro' || salvo === 'escuro' ? salvo : 'escuro'
+  } catch {
+    return 'escuro'
+  }
 }
 
 /**
@@ -25,7 +31,11 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', tema === 'escuro')
-    window.localStorage.setItem(CHAVE_ARMAZENAMENTO, tema)
+    try {
+      window.localStorage.setItem(CHAVE_ARMAZENAMENTO, tema)
+    } catch {
+      // Sem storage (aba anônima restrita): o tema vale só nesta visita.
+    }
   }, [tema])
 
   const valor = useMemo(
