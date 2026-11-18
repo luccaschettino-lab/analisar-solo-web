@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { useCenasCbers, SATELITES } from './monitoramento/useCenasCbers.js'
-import { useIndicesCbers } from './monitoramento/useIndicesCbers.js'
+import { useIndicesCbers, calcularComCache, resultadoGuardado } from './monitoramento/useIndicesCbers.js'
+import GraficoDoMes from './monitoramento/GraficoDoMes.jsx'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
 import MapaDoTalhao from './monitoramento/MapaDoTalhao.jsx'
 import { distribuicaoPorFaixa, faixasDoIndice } from '../lib/rasterIndice.js'
@@ -185,6 +186,15 @@ export default function Monitoramento() {
   }
   const satelite = SATELITES[fonte]
 
+  // "Carregar o último mês": calcula de uma vez todas as imagens dos últimos
+  // 30 dias (3 por vez, para não sobrecarregar a função). Os resultados ficam
+  // no mesmo cache da escolha de data — depois, trocar de data é na hora.
+  const [lote, setLote] = useState(null) // { feitos, total, falhas }
+  const [, setVersaoSerie] = useState(0)
+  useEffect(() => {
+    setLote(null)
+  }, [talhaoId, fonte])
+
   // Começa no talhão selecionado no mapa, se houver; senão no primeiro.
   useEffect(() => {
     if (talhoes.some((t) => t.id === talhaoId)) return
@@ -197,6 +207,41 @@ export default function Monitoramento() {
   const { cenas, carregando, erro } = useCenasCbers(talhaoId, geometria, fonte)
   const cenaSelecionada = cenas.find((cena) => cena.id === cenaAtivaId) ?? cenas.at(-1) ?? null
   const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria, fonte)
+
+  const fimMes = new Date()
+  const inicioMes = new Date(fimMes.getTime() - 30 * 86400000)
+  const cenasDoMes = cenas.filter((c) => Date.parse(c.data) >= inicioMes.getTime())
+
+  async function carregarMes() {
+    if (!geometria || cenasDoMes.length === 0 || (lote && lote.feitos < lote.total)) return
+    const fila = [...cenasDoMes]
+    let feitos = 0
+    let falhas = 0
+    setLote({ feitos, total: fila.length, falhas })
+    const trabalhar = async () => {
+      while (fila.length) {
+        const cena = fila.shift()
+        try {
+          await calcularComCache(fonte, talhaoId, cena.id, geometria)
+        } catch {
+          falhas++
+        }
+        feitos++
+        setLote({ feitos, total: cenasDoMes.length, falhas })
+        setVersaoSerie((v) => v + 1)
+      }
+    }
+    await Promise.all([trabalhar(), trabalhar(), trabalhar()])
+  }
+
+  const pontosDoMes = cenasDoMes
+    .map((c) => {
+      const d = geometria ? resultadoGuardado(fonte, talhaoId, c.id, geometria) : null
+      if (!d) return null
+      const q = d.qualidade
+      return { id: c.id, data: c.data, media: d.estatisticas?.[indiceAtivo]?.media ?? null, limpoPct: q.pixelsNoTalhao ? (q.validos / q.pixelsNoTalhao) * 100 : 0 }
+    })
+    .filter(Boolean)
 
   useEffect(() => {
     if (cenas.length > 0 && !cenas.some((cena) => cena.id === cenaAtivaId)) {
@@ -313,7 +358,41 @@ export default function Monitoramento() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do {satelite.nome} para este talhão.</p>
               )}
               <SeletorDeData cenas={cenas} selecionadaId={cenaSelecionada?.id} aoSelecionar={(cena) => setCenaAtivaId(cena.id)} />
+              {geometria && !carregando && cenas.length > 0 && (
+                <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => void carregarMes()}
+                    disabled={cenasDoMes.length === 0 || Boolean(lote && lote.feitos < lote.total)}
+                    className="w-full rounded-md bg-solo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-solo-600 dark:hover:bg-solo-700"
+                  >
+                    {lote && lote.feitos < lote.total
+                      ? `Carregando ${lote.feitos} de ${lote.total} imagens…`
+                      : cenasDoMes.length === 0
+                        ? 'Nenhuma imagem nos últimos 30 dias'
+                        : `⚡ Carregar o último mês (${cenasDoMes.length} ${cenasDoMes.length === 1 ? 'imagem' : 'imagens'})`}
+                  </button>
+                  {lote && lote.feitos === lote.total && (
+                    <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                      Pronto: trocar de data agora é imediato.{lote.falhas > 0 && ` ${lote.falhas} não puderam ser calculadas.`}
+                    </p>
+                  )}
+                </div>
+              )}
             </Cartao>
+
+            {lote && pontosDoMes.length > 0 && !semIndice && (
+              <Cartao titulo={`${info.rotulo} médio no último mês`}>
+                <GraficoDoMes
+                  pontos={pontosDoMes}
+                  rotulo={info.rotulo}
+                  selecionadaId={cenaSelecionada?.id}
+                  inicio={inicioMes}
+                  fim={fimMes}
+                  aoEscolher={(id) => setCenaAtivaId(id)}
+                />
+              </Cartao>
+            )}
 
             {erroCalculo && (
               <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
