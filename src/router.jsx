@@ -19,6 +19,7 @@ const Filtros = lazy(() => import('./paginas/Filtros.jsx'))
 const Dados = lazy(() => import('./paginas/Dados.jsx'))
 const Comparar = lazy(() => import('./paginas/Comparar.jsx'))
 const Monitoramento = lazy(() => import('./paginas/Monitoramento.jsx'))
+const Ajuda = lazy(() => import('./paginas/Ajuda.jsx'))
 const Criterios = lazy(() => import('./paginas/Criterios.jsx'))
 const GlebaDetalhe = lazy(() => import('./paginas/GlebaDetalhe.jsx'))
 
@@ -73,6 +74,7 @@ export const router = createHashRouter([
           { path: '/comparar', element: comEspera(Comparar) },
           { path: '/monitoramento', element: comEspera(Monitoramento) },
           { path: '/criterios', element: comEspera(Criterios) },
+          { path: '/ajuda', element: comEspera(Ajuda) },
           { path: '/glebas/:id', element: comEspera(GlebaDetalhe) },
         ],
       },

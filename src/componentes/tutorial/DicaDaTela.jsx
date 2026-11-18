@@ -3,7 +3,7 @@ import { useTutorial } from '../../context/TutorialContext.jsx'
 
 /**
  * Uma dica curta na primeira visita de cada tela. Some no "Entendi" e não
- * volta, a não ser por Ajustes → Tutorial.
+ * volta, a não ser por Ajuda → Ver o tutorial de novo.
  */
 const DICAS = [
   {

@@ -67,7 +67,7 @@ export default function PrimeirosPassos({ acoes }) {
           type="button"
           onClick={fecharPassos}
           aria-label="Esconder primeiros passos"
-          title="Esconder (volta em Ajustes → Tutorial)"
+          title="Esconder (volta em Ajuda → Ver o tutorial de novo)"
           className="rounded px-1.5 text-slate-400 hover:bg-white/70 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
         >
           ✕

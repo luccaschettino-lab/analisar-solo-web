@@ -3,7 +3,6 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { ROTULO_PAPEL } from '../lib/permissoes.js'
-import { useTutorial } from '../context/TutorialContext.jsx'
 import PrimeirosPassos from '../componentes/tutorial/PrimeirosPassos.jsx'
 
 const FOCO = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500'
@@ -201,8 +200,6 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
     selecionado, setSelecionado, setPedidoDeDesenho,
     setFormFazenda, setPedidoDeAcao,
   } = useFazendaAtual()
-
-  const { recomecar: recomecarTutorial } = useTutorial()
 
   const temSede = fazendaSelecionada?.sede_lat != null && fazendaSelecionada?.sede_lng != null
 
@@ -578,18 +575,9 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
           <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
-          {/* Rever o tutorial: boas-vindas de novo, dicas e primeiros passos
-              voltam a aparecer. */}
-          <button
-            type="button"
-            onClick={() => { recomecarTutorial(); aoNavegar?.() }}
-            title={compacta ? 'Tutorial' : undefined}
-            aria-label="Tutorial"
-            className={`${ITEM_NAV} ${compacta ? 'justify-center px-0' : ''} ${INATIVO}`}
-          >
-            <IconeAjuda aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
-            {!compacta && <span className="min-w-0 flex-1 truncate text-left">Tutorial</span>}
-          </button>
+          {/* Ajuda: o que é cada coisa, com busca; dali também se revê o
+              tutorial. */}
+          <ItemNav to="/ajuda" Icone={IconeAjuda} rotulo="Ajuda" onClick={aoNavegar} compacta={compacta} />
         </div>
 
         {!compacta && (

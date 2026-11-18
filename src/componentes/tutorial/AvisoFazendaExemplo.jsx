@@ -63,7 +63,7 @@ export default function AvisoFazendaExemplo() {
         <Modal titulo="Excluir a fazenda de exemplo?" aoFechar={() => !excluindo && setConfirmando(false)}>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Somem os talhões, glebas e análises fictícios. Suas fazendas não são tocadas. Dá para criar o exemplo de novo em
-            Ajustes → Tutorial.
+            Ajuda → Ver o tutorial de novo.
           </p>
           {erro && <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-400">{erro}</p>}
           <div className="mt-4 flex justify-end gap-2">
