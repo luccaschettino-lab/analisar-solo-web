@@ -5,11 +5,12 @@ import { useTutorial } from '../../context/TutorialContext.jsx'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { marcarFazendaComoExemplo, receberLaudoExemplo, excluirGlebas } from '../../dados/fazendaExemplo.js'
 import { excluirFazenda } from '../../dados/fazendas.js'
+import { criarCriterio, aplicarCriterioNaFazenda } from '../../dados/criterios.js'
 import { origemPelaSede, kmlDosTalhoes, geojsonDosPontos, ANALISE_GUIADA, amostrasDoLaudoExemplo, SAFRAS_EXEMPLO } from '../../lib/fazendaExemplo.js'
 import { laudoExemploPdf } from '../../lib/laudoExemplo.js'
 import { ehPonto } from '../../lib/geo.js'
 
-export const TOTAL_FASES = 10
+export const TOTAL_FASES = 11
 
 // O laudo PDF do tutorial traz esta safra; a anterior chega depois, sozinha.
 const SAFRA_DO_PDF = SAFRAS_EXEMPLO[1]
@@ -131,12 +132,13 @@ export default function MissaoTutorial() {
     // arquivo de pontos por "Importar glebas" cria uma gleba-ponto por coleta
     // (120), sem ponto de amostra ligado — não conta.
     else if (fase === 5 && glebasDeArea >= 24) concluirFase(6)
-    else if (fase >= 6 && fase <= 8 && glebasDeArea < 24 && !carregandoHierarquia) atualizarMissao({ fase: 5 })
+    else if (fase >= 6 && fase <= 9 && glebasDeArea < 24 && !carregandoHierarquia) atualizarMissao({ fase: 5 })
     else if (fase === 6 && analisesDaFazenda.length >= 1) concluirFase(7)
     // Fase 7: importou o laudo PDF; fica nela até receber a safra anterior.
-    else if (fase === 8 && filtro?.anoSafra && filtro?.profundidade && filtro?.chaveParametro) {
+    // Fase 8: critério aplicado e a tela de Critérios aberta (efeito abaixo).
+    else if (fase === 9 && filtro?.anoSafra && filtro?.profundidade && filtro?.chaveParametro) {
       marcarDica('filtros')
-      concluirFase(9)
+      concluirFase(10)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [missao, fase, comemorando, fazendas, carregandoFazendas, naFazenda, fazendaSelecionada, talhoes, glebas, selecionado, pathname, analisesDaFazenda, filtro, glebasDeArea, carregandoHierarquia])
@@ -144,12 +146,13 @@ export default function MissaoTutorial() {
   // Fases 8 e 9: basta abrir a tela e olhar por alguns segundos.
   useEffect(() => {
     if (!missao || comemorando || !naFazenda) return
-    const alvo = fase === 9 ? '/comparar' : fase === 10 ? '/monitoramento' : null
+    const alvo = fase === 8 ? '/criterios' : fase === 10 ? '/comparar' : fase === 11 ? '/monitoramento' : null
     if (!alvo || pathname !== alvo) return
+    if (fase === 8 && !fazendaSelecionada?.criterio_id) return
     const t = setTimeout(() => concluirFase(fase + 1), 6000)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [missao, fase, comemorando, naFazenda, pathname])
+  }, [missao, fase, comemorando, naFazenda, pathname, fazendaSelecionada?.criterio_id])
 
   // Fase 6: a análise digitada é gravada pela tela de Dados, que não avisa o
   // mapa; confere de tempos em tempos.
@@ -180,9 +183,10 @@ export default function MissaoTutorial() {
           5: pathname === '/dados' ? ['dados-pontos', 'importar-pontos', 'criar-glebas'] : ['dados'],
           6: pathname === '/dados' ? ['dados-manual'] : ['dados'],
           7: analisesDoPdf >= 20 ? [] : pathname === '/dados' ? ['dados-pdf', 'importar-pdf', 'gravar-laudo'] : ['dados'],
-          8: ['filtros'],
-          9: ['comparar'],
-          10: ['monitoramento'],
+          8: fazendaSelecionada?.criterio_id ? ['criterios'] : [],
+          9: ['filtros'],
+          10: ['comparar'],
+          11: ['monitoramento'],
         }[fase] ?? []
   const chaveAlvos = alvos.join(' ')
 
@@ -271,6 +275,24 @@ export default function MissaoTutorial() {
     baixar('laudo-tutorial.pdf', pdf, 'application/pdf')
   }
 
+  async function criarCriterioDoExemplo() {
+    setErro('')
+    setOcupado('Criando…')
+    try {
+      const conjunto = await criarCriterio({
+        nome: 'Critério do exemplo (fictício)',
+        descricao: 'Tabela de referência do sistema, criada pelo tutorial só para a fazenda de exemplo.',
+        parametros: {},
+      })
+      await aplicarCriterioNaFazenda(missao.fazendaId, conjunto.id)
+      // Trocar o criterio_id já faz o contexto carregar o conjunto novo.
+      aplicarFazenda({ ...fazendaSelecionada, criterio_id: conjunto.id })
+    } catch (e) {
+      setErro(e.message)
+    }
+    setOcupado('')
+  }
+
   function pular() {
     setQuerPular(false)
     encerrarMissao('pulado')
@@ -280,7 +302,7 @@ export default function MissaoTutorial() {
   const voltarParaFazenda = fase >= 2 && !naFazenda && missao.fazendaId
   let titulo
   let corpo
-  if (fase === 11) {
+  if (fase === 12) {
     titulo = '🏁 Tutorial concluído!'
     corpo = (
       <>
@@ -434,6 +456,33 @@ export default function MissaoTutorial() {
       </>
     )
   } else if (fase === 8) {
+    titulo = 'Critérios: o que é bom ou ruim'
+    corpo = fazendaSelecionada?.criterio_id ? (
+      <>
+        <p>
+          Critério aplicado. Abra <strong>Critérios</strong> (piscando) e veja o conjunto em vigor: para cada parâmetro, as faixas de
+          muito baixo a muito alto. No laboratório da sua fazenda, é o agrônomo quem ajusta essas faixas e clica em{' '}
+          <strong>Aplicar nesta fazenda</strong>.
+        </p>
+      </>
+    ) : (
+      <>
+        <p>
+          O sistema <strong>não decide sozinho</strong> o que é baixo, ideal ou alto: isso depende da cultura, do solo e do
+          laboratório. Por isso, numa fazenda nova o mapa fica <strong>sem cores</strong> até um agrônomo criar um conjunto de
+          critérios em <strong>Critérios</strong> e aplicá-lo à fazenda.
+        </p>
+        <p className="mt-2">
+          <strong>Só para a fazenda de exemplo</strong>, criamos um pronto, com a tabela de referência do sistema.
+        </p>
+        <div className="mt-3">
+          <Botao principal onClick={() => void criarCriterioDoExemplo()} disabled={Boolean(ocupado)}>
+            {ocupado || 'Criar o critério do exemplo'}
+          </Botao>
+        </div>
+      </>
+    )
+  } else if (fase === 9) {
     titulo = 'Pinte o mapa'
     corpo = (
       <p>
@@ -441,7 +490,7 @@ export default function MissaoTutorial() {
         <strong>pH</strong>. Verde é o ideal; listrado é onde não há análise.
       </p>
     )
-  } else if (fase === 9) {
+  } else if (fase === 10) {
     titulo = 'Compare as safras'
     corpo = (
       <p>
@@ -449,7 +498,7 @@ export default function MissaoTutorial() {
         duas: veja onde o pH subiu.
       </p>
     )
-  } else if (fase === 10) {
+  } else if (fase === 11) {
     titulo = 'Veja a lavoura pelo satélite'
     corpo = (
       <p>

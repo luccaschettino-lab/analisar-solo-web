@@ -27,7 +27,20 @@ export const ORIGEM = {
   CRITERIO: 'criterio', // o conjunto declarou faixas para este parâmetro
   CONFIG: 'config', // o conjunto não fala dele; vale a semente
   SEM_CLASSIFICACAO: 'sem_classificacao', // o conjunto declarou que não há faixa
+  SEM_CRITERIO: 'sem_criterio', // a fazenda não tem conjunto nenhum
 }
+
+/**
+ * Fazenda sem conjunto de critérios (2026-11-18): nada se classifica, e o mapa
+ * não ganha cor. Antes a tabela do config valia sozinha; agora o que é bom ou
+ * ruim só existe depois que alguém (o agrônomo) aplica um conjunto à fazenda.
+ * Um conjunto aplicado continua usando o config como semente nos parâmetros
+ * que não personalizou.
+ *
+ * Valor sentinela, distinto de `null`: `null` segue significando "sem
+ * conjunto informado" nas funções puras (testes, editor), que caem no config.
+ */
+export const SEM_CRITERIO = Object.freeze({ __semCriterio: true })
 
 /**
  * O que o conjunto diz sobre um parâmetro, ou `null` se não disser nada.
@@ -57,6 +70,7 @@ function declarouFaixas(entrada) {
 
 /** Origem das faixas em vigor para o parâmetro. */
 export function origemDasFaixas(chave, criterio) {
+  if (criterio === SEM_CRITERIO) return ORIGEM.SEM_CRITERIO
   const entrada = entradaDe(criterio, chave)
   if (!declarouFaixas(entrada)) return ORIGEM.CONFIG
   return entrada.faixas === null ? ORIGEM.SEM_CLASSIFICACAO : ORIGEM.CRITERIO
@@ -71,6 +85,7 @@ export function origemDasFaixas(chave, criterio) {
  * pergunta a `origemDasFaixas`.
  */
 export function faixasEfetivas(chave, criterio) {
+  if (criterio === SEM_CRITERIO) return null
   const entrada = entradaDe(criterio, chave)
   // `faixas: null` é uma declaração: "este parâmetro não se classifica".
   if (declarouFaixas(entrada)) return entrada.faixas === null ? null : entrada.faixas.map(comNivelAtual)

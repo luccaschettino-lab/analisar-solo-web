@@ -24,7 +24,7 @@ const SECOES = [
       ],
       [
         'Como funciona o tutorial guiado?',
-        'São 10 fases, como num jogo: um cartão no canto da tela diz a tarefa, o botão certo pisca, e a fase só avança quando você a conclui. Você monta uma fazenda de exemplo inteira: cria a fazenda, marca a sede, importa os talhões e os pontos (o próprio tutorial entrega os arquivos), digita uma análise, importa um laudo em PDF e lê o mapa, a comparação e o satélite. O botão "–" minimiza o cartão.',
+        'São 11 fases, como num jogo: um cartão no canto da tela diz a tarefa, o botão certo pisca, e a fase só avança quando você a conclui. Você monta uma fazenda de exemplo inteira: cria a fazenda, marca a sede, importa os talhões e os pontos (o próprio tutorial entrega os arquivos), digita uma análise, importa um laudo em PDF, conhece os critérios e lê o mapa, a comparação e o satélite. O botão "–" minimiza o cartão.',
       ],
       [
         'O que é a fazenda de exemplo?',
@@ -180,7 +180,7 @@ const SECOES = [
     itens: [
       [
         'O que são os critérios?',
-        'São as faixas que dizem o que é baixo, ideal e alto em cada parâmetro, e que decidem a cor do mapa. O sistema já vem com um padrão. Mude só se o seu agrônomo usa outras faixas (por cultura ou por região).',
+        'São as faixas que dizem o que é baixo, ideal e alto em cada parâmetro, e que decidem a cor do mapa. O sistema não decide isso sozinho: depende da cultura, do solo e do laboratório. Por isso, uma fazenda nova fica sem cores no mapa até o agrônomo criar um conjunto em Critérios e clicar em "Aplicar nesta fazenda". Um conjunto novo já nasce com a tabela de referência do sistema; ele ajusta só o que precisar. (Na fazenda de exemplo do tutorial, o conjunto vem pronto.)',
       ],
     ],
   },
@@ -194,7 +194,7 @@ const SECOES = [
       ],
       [
         'O mapa ficou cinza, sem cor.',
-        'Falta escolher safra, profundidade ou parâmetro em Filtros, ou a fazenda ainda não tem análise para essa escolha.',
+        'Falta escolher safra, profundidade ou parâmetro em Filtros, a fazenda ainda não tem análise para essa escolha, ou ainda não tem critério aplicado (veja Critérios).',
       ],
       [
         'Um ponto de amostra ficou cinza no mapa.',

@@ -817,3 +817,23 @@ exemplo pronto" saiu a pedido.
 - Pular (nas boas-vindas ou "Sair do tutorial") abre um aviso que recomenda
   continuar; "Continuar" é o botão principal e o que recebe o foco.
 - O progresso fica em `perfis.tutorial.missao` (sem SQL novo).
+
+### Fazenda sem conjunto de critérios não pinta o mapa
+
+Pedido de 2026-11-18: o produtor que começa não deve ter critério definido
+automaticamente; o mapa só ganha cores depois que um agrônomo define o que é
+bom ou ruim.
+
+- Fazenda sem `criterio_id` usa `SEM_CRITERIO` (lib/criterios.js): nenhuma
+  faixa, talhões em cinza, e no lugar da legenda um aviso com botão para
+  Critérios. Antes, a tabela do config valia sozinha.
+- Conjunto aplicado continua herdando o config nos parâmetros que não
+  personalizou (um conjunto novo "nasce com a tabela de referência").
+- "Voltar ao padrão" virou "Tirar desta fazenda" (fica sem cores).
+- As fazendas que já existiam ganharam um conjunto "Referência inicial"
+  (`parametros = {}`, a mesma tabela de antes), aplicado pela migração
+  `20261118180000_fazenda_sem_criterio_nao_pinta.sql`, para não perderem as
+  cores. Fazendas de exemplo ficam de fora.
+- Tutorial: fase 8 "Critérios" explica isso e, só para a fazenda de exemplo,
+  cria um conjunto pronto com um clique. Primeiros passos ganharam "Definir
+  os critérios (agrônomo)".

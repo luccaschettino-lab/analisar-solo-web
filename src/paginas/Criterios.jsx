@@ -143,7 +143,7 @@ export default function Criterios() {
       await aplicarCriterioNaFazenda(fazendaSelecionada.id, idCriterio)
       aplicarFazenda({ ...fazendaSelecionada, criterio_id: idCriterio })
       await recarregarCriterio()
-      mostrarAviso(idCriterio ? 'Conjunto aplicado nesta fazenda.' : 'Fazenda voltou ao padrão do sistema.')
+      mostrarAviso(idCriterio ? 'Conjunto aplicado nesta fazenda.' : 'Conjunto retirado: a fazenda ficou sem critério e o mapa sem cores.')
     } catch (e) {
       mostrarAviso(e.message)
     } finally {
@@ -171,8 +171,9 @@ export default function Criterios() {
               por isso são conjuntos nomeados, e não uma tabela só.
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Parâmetro que você não personalizar continua usando a tabela preliminar do sistema, e a
-              legenda do mapa diz isso.
+              <strong>Sem um conjunto aplicado, a fazenda fica sem cores no mapa:</strong> o sistema não decide sozinho o que é
+              bom ou ruim. Quem define é o agrônomo. Um conjunto novo já nasce com a tabela de referência do sistema; ajuste o que
+              for preciso e aplique na fazenda. Parâmetro que você não personalizar segue essa tabela.
             </p>
           </div>
         </header>
@@ -213,17 +214,34 @@ export default function Criterios() {
           </button>
         </div>
 
+        {fazendaSelecionada && !fazendaSelecionada.criterio_id && (
+          <p
+            role="status"
+            className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200"
+          >
+            <strong>{fazendaSelecionada.nome}</strong> ainda não tem critério, por isso o mapa dela fica sem cores.{' '}
+            {criterios.length === 0
+              ? 'Crie um conjunto em + Novo e aplique nesta fazenda.'
+              : 'Escolha um conjunto abaixo e clique em "Aplicar nesta fazenda".'}
+          </p>
+        )}
+
         {fazendaSelecionada && aberto && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-noite-900">
             <span className="text-xs text-slate-600 dark:text-slate-400">
               Em <strong>{fazendaSelecionada.nome}</strong>:{' '}
-              {emVigor ? 'este conjunto está em vigor.' : 'usando o padrão do sistema ou outro conjunto.'}
+              {emVigor
+                ? 'este conjunto está em vigor.'
+                : fazendaSelecionada.criterio_id
+                  ? 'outro conjunto está em vigor.'
+                  : 'nenhum conjunto em vigor, o mapa fica sem cores.'}
             </span>
             <div className="ml-auto flex gap-2">
               <button
                 type="button"
                 onClick={() => aplicarNaFazenda(aberto.id)}
                 disabled={emVigor || aplicando || !editor}
+                data-tutorial="aplicar-criterio"
                 className={BOTAO_PRIMARIO}
               >
                 Aplicar nesta fazenda
@@ -235,7 +253,7 @@ export default function Criterios() {
                   disabled={aplicando || !editor}
                   className={BOTAO}
                 >
-                  Voltar ao padrão
+                  Tirar desta fazenda
                 </button>
               )}
             </div>
@@ -310,8 +328,8 @@ export default function Criterios() {
 
         {!carregando && criterios.length === 0 && (
           <p className="mt-6 rounded-md border border-slate-200 bg-white px-3 py-4 text-sm text-slate-600 dark:border-white/10 dark:bg-noite-900 dark:text-slate-400">
-            Nenhum conjunto ainda. Crie o primeiro em <strong>+ Novo</strong>: ele nasce usando a
-            tabela do sistema em tudo, e você personaliza só os parâmetros que quiser mudar.
+            Nenhum conjunto ainda. Crie o primeiro em <strong>+ Novo</strong>: ele nasce com a tabela de referência do
+            sistema em tudo, você personaliza só os parâmetros que quiser mudar e depois aplica na fazenda.
           </p>
         )}
       </div>
@@ -319,7 +337,7 @@ export default function Criterios() {
       {confirmandoApagar && (
         <ConfirmarExclusao
           titulo={`Apagar o conjunto "${confirmandoApagar.nome}"?`}
-          descricao="As fazendas que usam este conjunto voltam ao padrão do sistema. Não há como desfazer."
+          descricao="As fazendas que usam este conjunto ficam sem critério, e o mapa delas sem cores. Não há como desfazer."
           rotuloBotao="Apagar"
           aoFechar={() => setConfirmandoApagar(null)}
           aoConfirmar={confirmarApagar}

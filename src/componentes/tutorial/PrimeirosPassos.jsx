@@ -48,6 +48,11 @@ export default function PrimeirosPassos({ acoes }) {
         ['Digitar', () => acoes.irPara('/dados')],
       ],
     },
+    {
+      titulo: 'Definir os critérios (agrônomo)',
+      feito: naPropria && Boolean(fazendaSelecionada.criterio_id),
+      fazer: [['Abrir Critérios', () => acoes.irPara('/criterios')]],
+    },
     { titulo: 'Ver o mapa de calor', feito: naPropria && dicaVista('filtros'), fazer: [['Abrir Filtros', () => acoes.irPara('/filtros')]] },
   ]
   const feitos = passos.filter((p) => p.feito).length

@@ -83,7 +83,7 @@ export default function EditorParametro({ chave, criterio, aoMudar, problemas, s
         <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200">{rotuloComUnidade(chave)}</h4>
         <span className="text-xs text-slate-500 dark:text-slate-400">
           {origem === ORIGEM.CRITERIO && 'personalizado'}
-          {origem === ORIGEM.CONFIG && 'padrão do sistema'}
+          {origem === ORIGEM.CONFIG && 'tabela de referência'}
           {origem === ORIGEM.SEM_CLASSIFICACAO && 'sem classificação'}
         </span>
       </div>

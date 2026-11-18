@@ -45,7 +45,7 @@ const DICAS = [
     combina: (caminho) => caminho === '/criterios',
     titulo: 'Critérios',
     texto:
-      'Aqui se define o que é baixo, ideal ou alto em cada parâmetro. Já vem um padrão; mude só se o seu agrônomo usar outras faixas.',
+      'Aqui o agrônomo define o que é baixo, ideal ou alto em cada parâmetro e aplica o conjunto na fazenda. Sem conjunto aplicado, o mapa fica sem cores.',
   },
   {
     chave: 'gleba',

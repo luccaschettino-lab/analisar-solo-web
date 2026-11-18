@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { faixasParaLegenda } from '../../lib/coloracao.js'
 import { HACHURA_FUNDO, HACHURA_TRACO } from '../../config/mapa.js'
 import { rotuloComUnidade } from '../../lib/parametros.js'
@@ -32,8 +34,34 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
   // No celular começa recolhida: 224 px de legenda sobre uma tela de 360 tapam
   // justamente o mapa que ela explica. Em tela larga fica sempre aberta.
   const [aberta, setAberta] = useState(false)
+  const { semCriterio, parametrosDoCriterio, editor } = useFazendaAtual()
 
-  const faixas = faixasParaLegenda(chaveParametro, criterio?.parametros ?? null)
+  // Sem conjunto de critérios a fazenda não classifica nada: no lugar da
+  // legenda, o porquê do mapa sem cor e onde resolver.
+  if (semCriterio) {
+    return (
+      <aside
+        role="status"
+        className={`vidro-forte absolute right-2 z-[1100] w-[min(18rem,calc(100%-1rem))] rounded-lg border border-amber-300 p-3 shadow-painel dark:border-amber-400/40 md:right-3 ${
+          elevada ? 'bottom-44 md:bottom-8' : 'bottom-8'
+        }`}
+      >
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Sem critério de interpretação</p>
+        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+          O mapa só ganha cores quando alguém define o que é baixo, ideal e alto em cada parâmetro. Isso é papel do agrônomo,
+          em <strong>Critérios</strong>, porque depende da cultura, do solo e do laboratório.
+        </p>
+        <Link
+          to="/criterios"
+          className="mt-2 inline-block rounded-md bg-solo-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-solo-800 dark:bg-solo-600"
+        >
+          {editor ? 'Definir os critérios' : 'Ver os critérios'}
+        </Link>
+      </aside>
+    )
+  }
+
+  const faixas = faixasParaLegenda(chaveParametro, criterio?.parametros ?? parametrosDoCriterio)
   if (faixas.length === 0) return null
 
   return (

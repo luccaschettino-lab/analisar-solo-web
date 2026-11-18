@@ -233,5 +233,18 @@ ok('criarColoracao sem 3o argumento e igual a com null',
    criarColoracao(analisesPh, filtroPh)('t1').cor === criarColoracao(analisesPh, filtroPh, null)('t1').cor)
 ok('limiarDe sem 2o argumento e igual a com null', limiarDe('ca') === limiarDe('ca', null))
 
+console.log('\n=== fazenda sem conjunto de criterios nao classifica ===')
+{
+  const { SEM_CRITERIO, faixasEfetivas: fe, origemDasFaixas: od, ORIGEM: O } = await import('../src/lib/criterios.js')
+  const { temFaixas, faixasParaLegenda } = await import('../src/lib/coloracao.js')
+  ok('sem criterio: nenhuma faixa no pH', fe('ph_h2o', SEM_CRITERIO) === null)
+  ok('sem criterio: origem propria', od('ph_h2o', SEM_CRITERIO) === O.SEM_CRITERIO)
+  ok('sem criterio: legenda vazia', faixasParaLegenda('ph_h2o', SEM_CRITERIO).length === 0 && !temFaixas('ph_h2o', SEM_CRITERIO))
+  const semCor = criarColoracao(analisesPh, filtroPh, SEM_CRITERIO)('t1')
+  const comCor = criarColoracao(analisesPh, filtroPh, {})('t1')
+  ok('sem criterio: o talhao nao ganha a cor do nivel', semCor?.cor !== comCor?.cor, `${semCor?.cor} vs ${comCor?.cor}`)
+  ok('conjunto vazio aplicado = tabela de referencia', fe('ph_h2o', {})?.length === fe('ph_h2o', null)?.length)
+}
+
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)
 process.exit(falhas === 0 ? 0 : 1)

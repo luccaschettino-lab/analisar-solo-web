@@ -7,8 +7,13 @@ import { useCriterioDaFazenda } from '../hooks/useCriterioDaFazenda.js'
 import { useFiltroMapa } from '../paginas/painel/useFiltroMapa.js'
 import { anosDisponiveis, criarColoracao } from '../lib/coloracao.js'
 import { podeEditar } from '../lib/permissoes.js'
+import { SEM_CRITERIO } from '../lib/criterios.js'
 
 const FazendaContext = createContext(null)
+
+// Conjunto aplicado ainda carregando: vale só a semente. Constante, para não
+// criar um objeto novo a cada render e recalcular a coloração à toa.
+const SO_SEMENTE = Object.freeze({})
 
 /**
  * Estado da fazenda aberta, compartilhado entre a barra lateral e as páginas.
@@ -56,7 +61,11 @@ export function FazendaProvider({ children }) {
   } = useCriterioDaFazenda(fazendaSelecionada?.criterio_id ?? null)
 
   // O que a classificação consome é o mapa de parâmetros, não o registro.
-  const parametrosDoCriterio = criterio?.parametros ?? null
+  // Fazenda sem conjunto aplicado não classifica nada (SEM_CRITERIO): o mapa
+  // só pinta depois que o agrônomo define o que é bom ou ruim. Enquanto o
+  // conjunto aplicado carrega, vale a semente ({}), que é o que ele herda.
+  const semCriterio = Boolean(fazendaSelecionada) && !fazendaSelecionada.criterio_id
+  const parametrosDoCriterio = semCriterio ? SEM_CRITERIO : (criterio?.parametros ?? SO_SEMENTE)
 
   const anos = useMemo(() => anosDisponiveis(analisesDaFazenda), [analisesDaFazenda])
   const { filtro, definirFiltro } = useFiltroMapa(anos)
@@ -126,6 +135,7 @@ export function FazendaProvider({ children }) {
 
       criterio,
       parametrosDoCriterio,
+      semCriterio,
       carregandoCriterio,
       erroCriterio,
       recarregarCriterio,
@@ -147,7 +157,7 @@ export function FazendaProvider({ children }) {
       fazendas, carregandoFazendas, erroFazendas, aplicarFazenda, removerFazenda,
       idSelecionada, fazendaSelecionada, selecionarFazenda, hierarquia,
       analisesDaFazenda, carregandoAnalises, erroAnalises, recarregarAnalises, anos,
-      criterio, parametrosDoCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
+      criterio, parametrosDoCriterio, semCriterio, carregandoCriterio, erroCriterio, recarregarCriterio,
       filtro, definirFiltro, coloracao, selecionado, pedidoDeDesenho, formFazenda, pedidoDeAcao,
     ],
   )

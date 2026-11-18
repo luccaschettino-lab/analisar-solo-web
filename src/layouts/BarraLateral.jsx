@@ -580,7 +580,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
-          <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/criterios" tutorial="criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
           {/* Ajuda: o que é cada coisa, com busca; dali também se revê o
               tutorial. */}
           <ItemNav to="/ajuda" Icone={IconeAjuda} rotulo="Ajuda" onClick={aoNavegar} compacta={compacta} />
