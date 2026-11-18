@@ -27,7 +27,7 @@ const MUNDO = [
  * está fora do talhão fica coberto por uma máscara da cor do fundo — sobra só
  * o talhão recortado.
  */
-export default function MapaDoTalhao({ geometria, dados, indice }) {
+export default function MapaDoTalhao({ geometria, dados, indice, children }) {
   const [mapa, setMapa] = useState(null)
   const camadas = useRef({ contorno: null, raster: null, mascara: null })
   const aoCriarMapa = useCallback((m) => setMapa(m), [])
@@ -57,8 +57,27 @@ export default function MapaDoTalhao({ geometria, dados, indice }) {
     }).addTo(mapa)
     camadas.current.contorno = contorno
     mapa.invalidateSize()
-    mapa.fitBounds(contorno.getBounds(), { padding: [32, 32], animate: false })
+    mapa.fitBounds(contorno.getBounds(), { padding: [40, 40], animate: false })
   }, [mapa, geometria])
+
+  // O container muda de tamanho depois de o mapa nascer (layout da página,
+  // painel lateral, janela redimensionada). Sem reenquadrar, o talhão ficava
+  // pequeno e num canto, enquadrado para o tamanho de antes.
+  useEffect(() => {
+    if (!mapa || typeof ResizeObserver === 'undefined') return
+    const observador = new ResizeObserver(() => {
+      mapa.invalidateSize()
+      const contorno = camadas.current.contorno
+      if (contorno) mapa.fitBounds(contorno.getBounds(), { padding: [40, 40], animate: false })
+    })
+    observador.observe(mapa.getContainer())
+    return () => observador.disconnect()
+  }, [mapa])
+
+  function recentralizar() {
+    const contorno = camadas.current.contorno
+    if (mapa && contorno) mapa.fitBounds(contorno.getBounds(), { padding: [40, 40] })
+  }
 
   // Camada do índice: refeita ao trocar de cena ou de índice.
   useEffect(() => {
@@ -76,9 +95,21 @@ export default function MapaDoTalhao({ geometria, dados, indice }) {
     camadas.current.contorno?.bringToFront()
   }, [mapa, dados, indice])
 
+  // `children`: o que flutua sobre o mapa (escolha do índice, legenda, aviso
+  // de cálculo), posicionado por quem usa.
   return (
-    <div className="h-96 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+    <div className="relative h-full overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
       <Mapa aoCriarMapa={aoCriarMapa} />
+      {children}
+      <button
+        type="button"
+        onClick={recentralizar}
+        title="Centralizar no talhão"
+        aria-label="Centralizar no talhão"
+        className="vidro absolute bottom-8 right-3 z-[1000] rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+      >
+        ⌖ Centralizar
+      </button>
     </div>
   )
 }
