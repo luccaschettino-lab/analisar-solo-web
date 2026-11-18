@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { calcularIndicesCbers } from '../../dados/indicesCbers.js'
 import { calcularIndicesSentinel } from '../../dados/sentinel.js'
+import { guardarIndicesDoTalhao } from '../../dados/indicesTalhao.js'
 
 const CALCULAR = { cbers: calcularIndicesCbers, sentinel: calcularIndicesSentinel }
 
@@ -24,6 +25,9 @@ export function calcularComCache(fonte, talhaoId, cenaId, geometria) {
   const pedido = (CALCULAR[fonte] ?? calcularIndicesSentinel)(cenaId, geometria)
     .then((dados) => {
       cache.set(chave, dados)
+      // O resumo vai para o banco: da próxima vez (e para toda a fazenda) o
+      // gráfico da evolução abre sem recalcular.
+      guardarIndicesDoTalhao(talhaoId, fonte, dados)
       return dados
     })
     .catch((e) => {

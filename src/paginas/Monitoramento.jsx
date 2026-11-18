@@ -3,6 +3,7 @@ import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { useCenasCbers, SATELITES } from './monitoramento/useCenasCbers.js'
 import { useIndicesCbers, calcularComCache, resultadoGuardado } from './monitoramento/useIndicesCbers.js'
 import GraficoDoMes from './monitoramento/GraficoDoMes.jsx'
+import { listarIndicesDoTalhao } from '../dados/indicesTalhao.js'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
 import MapaDoTalhao from './monitoramento/MapaDoTalhao.jsx'
 import { distribuicaoPorFaixa, faixasDoIndice } from '../lib/rasterIndice.js'
@@ -38,8 +39,12 @@ const INDICES = [
   },
 ]
 
-// Janela do "carregar com um clique": 2 meses.
-const DIAS_DO_LOTE = 60
+const PERIODOS = [
+  [30, '1 mês'],
+  [60, '2 meses'],
+  [120, '4 meses'],
+  [365, '1 ano'],
+]
 
 // Sem índice: só a imagem de satélite do mapa de fundo, recortada no talhão.
 const SEM_INDICE = 'imagem'
@@ -189,11 +194,14 @@ export default function Monitoramento() {
   }
   const satelite = SATELITES[fonte]
 
-  // "Carregar os últimos 2 meses": calcula de uma vez todas as imagens dos
-  // últimos 60 dias (3 por vez, para não sobrecarregar a função). Os resultados ficam
-  // no mesmo cache da escolha de data — depois, trocar de data é na hora.
+  // Período da barra do tempo, do gráfico e do "carregar com um clique".
+  // 12 meses de Sentinel-2 são ~100 imagens: numa barra estreita as bolinhas
+  // grudavam. Começa em 2 meses (~20 imagens).
+  const [periodo, setPeriodo] = useState(60)
+  const rotuloDoPeriodo = { 30: 'o último mês', 60: 'os últimos 2 meses', 120: 'os últimos 4 meses', 365: 'o último ano' }[periodo]
   const [lote, setLote] = useState(null) // { feitos, total, falhas }
   const [, setVersaoSerie] = useState(0)
+  const [guardados, setGuardados] = useState([]) // resumos já no banco
   useEffect(() => {
     setLote(null)
   }, [talhaoId, fonte])
@@ -208,19 +216,45 @@ export default function Monitoramento() {
   const talhao = talhoes.find((t) => t.id === talhaoId) ?? null
   const geometria = talhao?.geometria ?? null
   const { cenas, carregando, erro } = useCenasCbers(talhaoId, geometria, fonte)
-  const cenaSelecionada = cenas.find((cena) => cena.id === cenaAtivaId) ?? cenas.at(-1) ?? null
+  // A data escolhida fica dentro do período; fora dele, vale a mais recente.
+  const limitePeriodo = Date.now() - periodo * 86400000
+  const visiveis = cenas.filter((c) => Date.parse(c.data) >= limitePeriodo)
+  const cenaSelecionada = visiveis.find((cena) => cena.id === cenaAtivaId) ?? visiveis.at(-1) ?? null
   const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria, fonte)
 
-  const fimMes = new Date()
-  const inicioMes = new Date(fimMes.getTime() - DIAS_DO_LOTE * 86400000)
-  const cenasDoMes = cenas.filter((c) => Date.parse(c.data) >= inicioMes.getTime())
+  // Resumos já guardados no banco (qualquer pessoa da fazenda que calculou):
+  // o gráfico abre com eles, sem recalcular.
+  useEffect(() => {
+    let ativo = true
+    setGuardados([])
+    if (!talhaoId) return
+    listarIndicesDoTalhao(talhaoId, fonte)
+      .then((lista) => ativo && setGuardados(lista))
+      .catch(() => {})
+    return () => {
+      ativo = false
+    }
+  }, [talhaoId, fonte])
 
-  async function carregarMes() {
-    if (!geometria || cenasDoMes.length === 0 || (lote && lote.feitos < lote.total)) return
-    const fila = [...cenasDoMes]
+  const fimPeriodo = new Date()
+  const inicioPeriodo = new Date(fimPeriodo.getTime() - periodo * 86400000)
+  const noPeriodo = (iso) => Date.parse(iso) >= inicioPeriodo.getTime()
+  const cenasDoPeriodo = cenas.filter((c) => noPeriodo(c.data))
+  const guardadoPorCena = new Map(guardados.map((g) => [g.cena_id, g]))
+  const resumoDe = (cenaId) => {
+    const d = geometria ? resultadoGuardado(fonte, talhaoId, cenaId, geometria) : null
+    if (d) return { estatisticas: d.estatisticas, qualidade: d.qualidade }
+    return guardadoPorCena.get(cenaId) ?? null
+  }
+  const faltando = cenasDoPeriodo.filter((c) => !resumoDe(c.id))
+
+  async function carregarPeriodo() {
+    if (!geometria || faltando.length === 0 || (lote && lote.feitos < lote.total)) return
+    const fila = [...faltando]
+    const total = fila.length
     let feitos = 0
     let falhas = 0
-    setLote({ feitos, total: fila.length, falhas })
+    setLote({ feitos, total, falhas })
     const trabalhar = async () => {
       while (fila.length) {
         const cena = fila.shift()
@@ -230,21 +264,30 @@ export default function Monitoramento() {
           falhas++
         }
         feitos++
-        setLote({ feitos, total: cenasDoMes.length, falhas })
+        setLote({ feitos, total, falhas })
         setVersaoSerie((v) => v + 1)
       }
     }
     await Promise.all([trabalhar(), trabalhar(), trabalhar()])
   }
 
-  const pontosDoMes = cenasDoMes
-    .map((c) => {
-      const d = geometria ? resultadoGuardado(fonte, talhaoId, c.id, geometria) : null
-      if (!d) return null
-      const q = d.qualidade
-      return { id: c.id, data: c.data, media: d.estatisticas?.[indiceAtivo]?.media ?? null, limpoPct: q.pixelsNoTalhao ? (q.validos / q.pixelsNoTalhao) * 100 : 0 }
+  // Pontos do gráfico: tudo o que já foi calculado no período (banco ou agora).
+  const datasDasCenas = new Map(cenas.map((c) => [c.id, c.data]))
+  const idsNoPeriodo = new Set([...cenasDoPeriodo.map((c) => c.id), ...guardados.filter((g) => noPeriodo(g.data)).map((g) => g.cena_id)])
+  const pontosDoPeriodo = [...idsNoPeriodo]
+    .map((id) => {
+      const r = resumoDe(id)
+      if (!r) return null
+      const q = r.qualidade
+      return {
+        id,
+        data: datasDasCenas.get(id) ?? guardadoPorCena.get(id)?.data,
+        media: r.estatisticas?.[indiceAtivo]?.media ?? null,
+        limpoPct: q?.pixelsNoTalhao ? (q.validos / q.pixelsNoTalhao) * 100 : 0,
+      }
     })
-    .filter(Boolean)
+    .filter((p) => p?.data)
+    .sort((a, b) => Date.parse(a.data) - Date.parse(b.data))
 
   useEffect(() => {
     if (cenas.length > 0 && !cenas.some((cena) => cena.id === cenaAtivaId)) {
@@ -360,20 +403,49 @@ export default function Monitoramento() {
               {geometria && !carregando && !erro && cenas.length === 0 && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do {satelite.nome} para este talhão.</p>
               )}
-              <SeletorDeData cenas={cenas} selecionadaId={cenaSelecionada?.id} aoSelecionar={(cena) => setCenaAtivaId(cena.id)} />
+              {cenas.length > 0 && (
+                <div role="radiogroup" aria-label="Período" className="mb-3 flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
+                  {PERIODOS.map(([dias, rotuloPeriodo]) => (
+                    <button
+                      key={dias}
+                      type="button"
+                      role="radio"
+                      aria-checked={periodo === dias}
+                      onClick={() => setPeriodo(dias)}
+                      className={`flex-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
+                        periodo === dias
+                          ? 'bg-white text-slate-900 shadow-sm dark:bg-noite-800 dark:text-slate-100'
+                          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {rotuloPeriodo}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {cenas.length > 0 && cenasDoPeriodo.length === 0 && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem neste período. Escolha um período maior.</p>
+              )}
+              <SeletorDeData
+                cenas={cenasDoPeriodo}
+                selecionadaId={cenaSelecionada?.id}
+                aoSelecionar={(cena) => setCenaAtivaId(cena.id)}
+              />
               {geometria && !carregando && cenas.length > 0 && (
                 <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
                   <button
                     type="button"
-                    onClick={() => void carregarMes()}
-                    disabled={cenasDoMes.length === 0 || Boolean(lote && lote.feitos < lote.total)}
+                    onClick={() => void carregarPeriodo()}
+                    disabled={faltando.length === 0 || Boolean(lote && lote.feitos < lote.total)}
                     className="w-full rounded-md bg-solo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-solo-600 dark:hover:bg-solo-700"
                   >
                     {lote && lote.feitos < lote.total
                       ? `Carregando ${lote.feitos} de ${lote.total} imagens…`
-                      : cenasDoMes.length === 0
-                        ? `Nenhuma imagem nos últimos ${DIAS_DO_LOTE} dias`
-                        : `⚡ Carregar os últimos 2 meses (${cenasDoMes.length} ${cenasDoMes.length === 1 ? 'imagem' : 'imagens'})`}
+                      : cenasDoPeriodo.length === 0
+                        ? 'Nenhuma imagem neste período'
+                        : faltando.length === 0
+                          ? '✓ Período todo carregado'
+                          : `⚡ Carregar ${rotuloDoPeriodo} (${faltando.length} ${faltando.length === 1 ? 'imagem' : 'imagens'})`}
                   </button>
                   {lote && lote.feitos === lote.total && (
                     <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -384,14 +456,14 @@ export default function Monitoramento() {
               )}
             </Cartao>
 
-            {lote && pontosDoMes.length > 0 && !semIndice && (
-              <Cartao titulo={`${info.rotulo} médio nos últimos 2 meses`}>
+            {pontosDoPeriodo.length > 0 && !semIndice && (
+              <Cartao titulo={`${info.rotulo} médio em ${rotuloDoPeriodo}`}>
                 <GraficoDoMes
-                  pontos={pontosDoMes}
+                  pontos={pontosDoPeriodo}
                   rotulo={info.rotulo}
                   selecionadaId={cenaSelecionada?.id}
-                  inicio={inicioMes}
-                  fim={fimMes}
+                  inicio={inicioPeriodo}
+                  fim={fimPeriodo}
                   aoEscolher={(id) => setCenaAtivaId(id)}
                 />
               </Cartao>
