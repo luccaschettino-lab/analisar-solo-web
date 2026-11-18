@@ -57,6 +57,18 @@ function escaparRotulo(texto) {
   })[caractere])
 }
 
+// Polígono com preenchimento transparente continua clicável por dentro, não
+// só na borda: `pointer-events: all` vale para a área toda, seja qual for a
+// opacidade do preenchimento. Recebe a camada geoJSON (grupo) ou um path.
+function manterClicavel(camada) {
+  const aplicar = (c) => {
+    const el = c.getElement?.()
+    if (el) el.style.pointerEvents = 'all'
+  }
+  if (camada.eachLayer) camada.eachLayer(aplicar)
+  else aplicar(camada)
+}
+
 /**
  * Desenha talhões e glebas sobre o mapa.
  *
@@ -395,11 +407,13 @@ export function useGeometrias(
         estilo = { ...base, color: registro.cor, fillColor: info.cor, fillOpacity: 0.02, dashArray: null }
       }
 
-      // Mesmo motivo do 0.02 acima: zero de verdade tiraria o clique do
-      // meio do talhão, não só a cor.
-      if (!mostrarCor) estilo.fillOpacity = 0.02
+      // Cor desligada: preenchimento zero de verdade — nem o 0.02 acima,
+      // que ainda tingia o satélite. O clique no meio segue funcionando por
+      // `manterClicavel`.
+      if (!mostrarCor) estilo.fillOpacity = 0
 
       registro.camada.setStyle(estilo)
+      manterClicavel(registro.camada)
       registro.camada.setTooltipContent(
         conteudoTooltip
           ? conteudoTooltip(registro.talhao, info)
@@ -429,11 +443,15 @@ export function useGeometrias(
         ? { ...ESTILO_GLEBA_DESTACADA, fillColor: registro.cor }
         : { ...ESTILO_GLEBA, fillColor: registro.cor }
       if (registro.ponto) estilo.radius = ativo ? RAIO_PONTO_GLEBA + 3 : RAIO_PONTO_GLEBA
+      // Gleba de área também perde o preenchimento com a cor desligada; o
+      // ponto continua cheio, senão viraria só um anel.
+      if (!mostrarCor && !registro.ponto) estilo.fillOpacity = 0
 
       registro.camada.setStyle(estilo)
+      manterClicavel(registro.camada)
       if (ativo) registro.camada.bringToFront()
     }
-  }, [mapa, selecionado, glebas, revisao])
+  }, [mapa, selecionado, glebas, revisao, mostrarCor])
 
   /**
    * Mapa de calor: uma superfície contínua por interpolação (IDW), cobrindo
