@@ -179,6 +179,28 @@ const SECOES = [
     ],
   },
   {
+    id: 'exportar',
+    titulo: 'Exportar',
+    itens: [
+      [
+        'O que dá para exportar?',
+        'Tudo da fazenda: uma planilha Excel (glebas com todos os parâmetros, interpretação, talhões, análises, pontos de amostra, resumo do satélite, comparação de safras e critérios), os mapas de talhões, glebas e pontos (KML para o Google Earth, Shapefile para QGIS e softwares de agricultura de precisão, GeoJSON), as imagens de NDVI, EVI, SAVI e NDWI de cada talhão e as fotos do perfil do solo. Em Exportar, marque o que quer e clique em "Exportar e baixar".',
+      ],
+      [
+        'Como a planilha vem organizada?',
+        'A aba Resumo traz a logo, os dados da fazenda, o critério usado e a legenda das cores. Na aba Glebas, cada linha é uma gleba numa safra e numa profundidade; cada valor vem pintado com a cor do nível (vermelho, laranja, verde), igual ao mapa. Todas as colunas têm filtro, e o cabeçalho fica parado ao rolar.',
+      ],
+      [
+        'Posso exportar só uma parte?',
+        'Pode. No Recorte, escolha os talhões, as safras e as profundidades; vale para tudo o que sair. Quem tem acesso à fazenda, mesmo só para ver, pode exportar.',
+      ],
+      [
+        'Como abro as imagens de satélite?',
+        'No ZIP, a pasta Satelite tem um arquivo .kmz: abra no Google Earth e ligue ou desligue cada índice na lista à esquerda. As mesmas imagens também vão soltas, em PNG. O sistema usa a imagem mais recente sem nuvem de cada talhão, ou a mais perto da data que você escolher.',
+      ],
+    ],
+  },
+  {
     id: 'criterios',
     titulo: 'Critérios',
     itens: [

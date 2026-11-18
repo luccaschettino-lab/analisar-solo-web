@@ -100,6 +100,17 @@ function IconeMonitoramento(props) {
   )
 }
 
+// Bandeja com a seta saindo para baixo: baixar/exportar.
+function IconeExportar(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  )
+}
+
 function IconeAjuda(props) {
   return (
     <svg {...PROPRIEDADES_ICONE} {...props}>
@@ -575,6 +586,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             </div>
           )}
           <ItemNav to="/monitoramento" tutorial="monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/exportar" tutorial="exportar" Icone={IconeExportar} rotulo="Exportar" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Ajustes" compacta={compacta} />
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao

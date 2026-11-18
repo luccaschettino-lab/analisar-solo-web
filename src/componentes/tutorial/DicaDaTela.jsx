@@ -41,6 +41,13 @@ const DICAS = [
       'Escolha o talhão e a data na barra do tempo; prefira as datas com bolinha verde, que têm pouca nuvem. O NDVI mostra o vigor da lavoura.',
   },
   {
+    chave: 'exportar',
+    combina: (caminho) => caminho === '/exportar',
+    titulo: 'Exportar',
+    texto:
+      'Marque o que quer levar (planilha, mapas, imagens de satélite, fotos) e, se quiser, recorte por talhão, safra e profundidade. Sai tudo num arquivo só.',
+  },
+  {
     chave: 'criterios',
     combina: (caminho) => caminho === '/criterios',
     titulo: 'Critérios',

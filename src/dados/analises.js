@@ -60,6 +60,20 @@ export async function listarAnalisesDaFazenda(fazendaId) {
   return (linhas ?? []).map(({ talhoes, ...analise }) => analise)
 }
 
+/** Todas as análises da fazenda com todos os campos (exportação). */
+export async function listarAnalisesCompletasDaFazenda(fazendaId) {
+  const linhas = checar(
+    await paginarTudo(() =>
+      supabase
+        .from('analises')
+        .select(`${CAMPOS}, talhoes!inner(fazenda_id)`, { count: 'exact' })
+        .eq('talhoes.fazenda_id', fazendaId),
+    ),
+    'Falha ao carregar as análises para exportar',
+  )
+  return (linhas ?? []).map(({ talhoes, ...analise }) => analise).sort(ordenar)
+}
+
 // Mora em lib/ para poder ser usado sem carregar o cliente do Supabase; segue
 // exportado daqui porque é por aqui que as telas sempre importaram.
 export { montarPayload } from '../lib/payloadAnalise.js'

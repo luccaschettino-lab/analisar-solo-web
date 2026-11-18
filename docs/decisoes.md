@@ -881,3 +881,24 @@ campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
 - Divisas retas: dentro de cada campo a divisão usa um ponto por amostra (a
   média das coletas, onde fica a análise), não um por coleta — some o
   zigue-zague entre coletas vizinhas, e a análise fica sempre dentro da gleba.
+
+## 2026-11-18 — Exportar
+
+- Item "Exportar" na barra, abaixo do Monitoramento. Qualquer pessoa com acesso
+  à fazenda (inclusive só leitura) exporta: é só uma cópia do que ela já vê.
+- Recorte por talhões, safras e profundidades, que vale para tudo.
+- Planilha (ExcelJS, carregado só ao exportar): capa com a logo do Moinho,
+  dados da fazenda, critério e legenda; aba Glebas com UMA LINHA POR GLEBA ×
+  SAFRA × PROFUNDIDADE e cada valor pintado pela cor do nível (tom claro);
+  mais Interpretação, Talhões, Análises, Pontos, Satélite (resumos guardados),
+  Comparação de safras e Critérios. Cabeçalho fixo e filtro em todas as abas.
+  A gleba de cada análise é a que contém o ponto da análise.
+- Mapas: KML (uma pasta por camada), Shapefile (uma pasta por camada; todos os
+  polígonos convertidos para MultiPolygon, porque o shp-write perde feições
+  quando os tipos se misturam) e GeoJSON. A gleba leva a análise mais recente
+  da camada mais rasa como atributos.
+- Satélite: para cada talhão, a imagem Sentinel-2 mais recente com ≥ 80% do
+  talhão sem nuvem (ou a mais perto de uma data), em KMZ (GroundOverlay por
+  índice) e PNG soltos.
+- Fotos do perfil: pasta por talhão/gleba, safra e profundidade no nome.
+- Sai um arquivo só: o .xlsx quando é só a planilha, senão um ZIP com LEIA-ME.
