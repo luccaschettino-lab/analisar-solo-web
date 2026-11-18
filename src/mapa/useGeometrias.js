@@ -551,14 +551,17 @@ export function useGeometrias(
     if (!mostrarPontosAmostra) return
 
     const codigoPorTalhao = new Map(talhoes.map((talhao) => [talhao.id, talhao.codigo]))
+    // Ponto ligado a uma gleba leva o talhão dela no rótulo: o ponto da 14-51
+    // que caiu do outro lado da divisa se chama 14-51, não 12-51.
+    const talhaoDaGleba = new Map((glebasParaHachura ?? glebas).map((g) => [g.id, g.talhao_id]))
     // Com o filtro completo, a bolinha ganha a cor da amostra dela; sem filtro,
     // fica como sempre foi (verde = ainda sem gleba, cinza = já numa gleba).
     const corPeloFiltro =
       mostrarCor && coloracao ? criarCorDosPontos(pontosAmostra, coloracao, CINZA_HACHURA) : null
     const camada = L.layerGroup()
     pontosAmostra.forEach((ponto, indice) => {
-      const codigoTalhao = codigoPorTalhao.get(ponto.talhao_id)
-      if (codigoTalhao == null) return
+      if (!codigoPorTalhao.has(ponto.talhao_id)) return
+      const codigoTalhao = codigoPorTalhao.get(talhaoDaGleba.get(ponto.gleba_id)) ?? codigoPorTalhao.get(ponto.talhao_id)
       const coordenadas = latLngDoPonto(ponto.geometria)
       if (!coordenadas) return
 
@@ -585,7 +588,7 @@ export function useGeometrias(
       marcadoresPontoAmostra.current?.remove()
       marcadoresPontoAmostra.current = null
     }
-  }, [mapa, talhoes, pontosAmostra, mostrarPontosAmostra, coloracao, mostrarCor])
+  }, [mapa, talhoes, glebas, glebasParaHachura, pontosAmostra, mostrarPontosAmostra, coloracao, mostrarCor])
 
   // Dá acesso à camada Leaflet de um item, para o Geoman editar aquela
   // geometria em vez de ligar o modo de edição global do mapa.
