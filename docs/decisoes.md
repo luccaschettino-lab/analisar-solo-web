@@ -856,3 +856,20 @@ Pedido de 2026-11-18: imagens semanais. O CBERS-4A MUX passa a cada ~31 dias
 - Partes comuns aos dois satélites em `_shared/indicesComuns.js`.
 - A tela tem o seletor "Satélite" (Sentinel-2 padrão, escolha guardada no
   navegador). A resposta das duas funções tem o mesmo formato.
+
+### Glebas automáticas respeitam os campos do talhão
+
+Pedido de 2026-11-19: a gleba 10-17 (07/11) descia em zigue-zague para o
+campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
+(os campos entre as estradas), mas a divisão pelo ponto mais próximo
+(Voronoi) olhava o talhão inteiro.
+
+- `dividirTalhaoPorPontos` divide cada parte do talhão à parte: cada ponto
+  pertence à parte que o contém (ou à mais próxima, se caiu na estrada);
+  parte com pontos é dividida só entre eles; parte sem ponto vai inteira para
+  a amostra do ponto mais próximo (escolha do responsável: o talhão continua
+  todo coberto).
+- Talhão desenhado como um bloco só não tem os carreadores no desenho: nele a
+  divisão continua como antes. Para respeitar as estradas, o talhão precisa
+  ser desenhado com os campos separados.
+- Glebas já existentes: refeitas pelo "Ajustar glebas já criadas ao talhão".

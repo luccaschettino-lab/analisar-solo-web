@@ -221,6 +221,44 @@ assert.equal(comManual.atualizacoes.length, 0)
 assert.deepEqual(comManual.talhoesIgnorados, ['9'])
 console.log('pontos de coleta: glebas preenchem o talhão, sem vão, e recálculo respeita glebas manuais OK')
 
+// --- Talhão em várias partes (campos entre carreadores): a divisão não atravessa a estrada ---
+{
+  const ret = (x0, y0, x1, y1) => [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]
+  // Campo A em cima, campo B embaixo, uma estrada de ~20 m entre eles, e um
+  // campo C pequeno à direita, sem ponto nenhum.
+  const talhaoPartes = {
+    id: 'tp',
+    codigo: '10',
+    geometria: {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'MultiPolygon', coordinates: [ret(-49.01, -10.0045, -49.0, -10.0), ret(-49.01, -10.01, -49.0, -10.0047), ret(-48.999, -10.003, -48.998, -10.002)] },
+    },
+  }
+  const campoA = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: ret(-49.01, -10.0045, -49.0, -10.0) } }
+  const pontosCampos = [
+    // amostra 17: todos no campo A, colados na estrada
+    ...[-49.008, -49.005, -49.002].map((lng, i) => pt(`a${i}`, 'tp', -10.0044, lng, { id: 17 })),
+    // amostras 22 e 23: no campo B, longe da estrada
+    pt('b1', 'tp', -10.009, -49.008, { id: 22 }),
+    pt('b2', 'tp', -10.009, -49.002, { id: 23 }),
+    // um ponto da 22 caído na estrada: vai para a parte mais próxima (B)
+    pt('b3', 'tp', -10.00461, -49.006, { id: 22 }),
+  ]
+  const r = agruparPontosEmGlebas(pontosCampos, [talhaoPartes])
+  const g17 = r.glebas.find((g) => g.codigo === '10-17')
+  const areaA = areaEmHectares(campoA)
+  assert.ok(Math.abs(g17.areaHa - areaA - areaEmHectares({ type: 'Polygon', coordinates: ret(-48.999, -10.003, -48.998, -10.002) })) / areaA < 0.01,
+    `a 17 fica com o campo A inteiro (e o campo C, mais perto dela): ${g17.areaHa} ha`)
+  for (const id of ['b1', 'b2']) {
+    assert.ok(!booleanPointInPolygon(pontosCampos.find((p) => p.id === id).geometria, g17.geometria), `ponto ${id} do campo B fora da 17`)
+  }
+  const soma = r.glebas.reduce((t, g) => t + g.areaHa, 0)
+  const total = areaEmHectares(talhaoPartes.geometria)
+  assert.ok(Math.abs(soma - total) / total < 0.005, 'as glebas continuam cobrindo o talhão inteiro, sem vão')
+  console.log('pontos de coleta: divisão respeita os campos do talhão (não atravessa o carreador) OK')
+}
+
 // --- Cor dos pontos de coleta segundo o filtro ---
 import { criarCorDosPontos } from '../src/lib/pontosDeColeta.js'
 const ptc = (id, talhao, gleba, lat, lng) => ({ id, talhao_id: talhao, gleba_id: gleba, geometria: pontoFeature(lat, lng) })
