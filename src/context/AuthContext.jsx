@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { MENSAGEM_SEM_SERVIDOR } from '../dados/cliente.js'
 
 const AuthContext = createContext(null)
 
@@ -90,12 +91,12 @@ function traduzirErro(erro) {
   if (/password should be at least/i.test(msg)) return 'A senha precisa ter no mínimo 8 caracteres, com letras e números.'
   if (/unable to validate email/i.test(msg)) return 'E-mail inválido.'
   if (/rate limit|too many requests/i.test(msg)) return 'Muitas tentativas. Aguarde um minuto.'
-  // Falha de rede mostra o endereço tentado. Sem isso, um erro de digitação na
-  // URL do Supabase vira "sem conexão" genérico, e a causa só aparece no
-  // console do navegador — foi exatamente o que aconteceu com um `.supabase.com`
-  // no lugar de `.supabase.co` na primeira publicação.
+  // Falha de rede: para quem usa, a mensagem de manutenção; o endereço tentado
+  // vai para o console, porque um erro de digitação na URL do Supabase (já
+  // aconteceu: `.supabase.com` no lugar de `.supabase.co`) dá o mesmo erro.
   if (/failed to fetch|networkerror/i.test(msg)) {
-    return `Sem conexão com o servidor (${servidorConfigurado()}).`
+    console.error(`Sem conexão com o servidor (${servidorConfigurado()}).`)
+    return MENSAGEM_SEM_SERVIDOR
   }
   return msg || 'Não foi possível concluir a operação.'
 }

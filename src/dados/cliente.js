@@ -2,6 +2,11 @@ import { supabase } from '../lib/supabase.js'
 
 export { supabase }
 
+// Mostrada quando o navegador não alcança o Supabase (projeto pausado, fora do
+// ar ou sem internet). Usada aqui e no login (AuthContext).
+export const MENSAGEM_SEM_SERVIDOR =
+  'O site está pausado para manutenção. Entre em contato com o suporte.'
+
 // O PostgREST devolve o codigo do Postgres em error.code. Traduzimos so o que
 // o usuario pode resolver; o resto sobe com a mensagem original, que e melhor
 // que um "erro desconhecido" generico na hora de depurar.
@@ -27,7 +32,7 @@ function traduzir(erro, contexto) {
   // `raise exception` das nossas funções SQL (mesclar_talhoes,
   // criar_gleba_com_pontos): a mensagem já foi escrita para quem usa o app.
   if (codigo === 'P0001' && msg) return msg
-  if (/failed to fetch|networkerror/i.test(msg)) return 'Sem conexão com o servidor.'
+  if (/failed to fetch|networkerror/i.test(msg)) return MENSAGEM_SEM_SERVIDOR
 
   return contexto ? `${contexto}: ${msg}` : msg || 'Não foi possível concluir a operação.'
 }
