@@ -77,15 +77,25 @@ function Campo({ p, valor, aoMudar, desabilitado, sugestao }) {
   )
 }
 
-export default function CamposParametros({ valores, aoMudar, desabilitado, sugestoes = null }) {
+/**
+ * `cartoes`: cada grupo num cartão próprio, em grade de 2–3 colunas — o
+ * formato da entrada manual em duas colunas, onde a grade de 6 não cabe.
+ */
+export default function CamposParametros({ valores, aoMudar, desabilitado, sugestoes = null, cartoes = false }) {
   return (
-    <div className="space-y-5">
+    <div className={cartoes ? 'space-y-4' : 'space-y-5'}>
       {GRUPOS.map((grupo) => (
-        <fieldset key={grupo.chave} disabled={desabilitado}>
-          <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <fieldset
+          key={grupo.chave}
+          disabled={desabilitado}
+          className={cartoes ? 'rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5' : ''}
+        >
+          <legend
+            className={`text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 ${cartoes ? 'float-left mb-3 w-full' : 'mb-2'}`}
+          >
             {grupo.rotulo}
           </legend>
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className={`grid gap-3 ${cartoes ? 'clear-both grid-cols-2 sm:grid-cols-3' : 'sm:grid-cols-3 lg:grid-cols-6'}`}>
             {parametrosDoGrupo(grupo.chave).map((p) => (
               <Campo
                 key={p.chave}

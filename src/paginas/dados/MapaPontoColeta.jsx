@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import Mapa from '../../mapa/Mapa.jsx'
 import { paraFeature } from '../../lib/geo.js'
-import { focarGeometria } from '../../mapa/enquadrar.js'
 import { ESTILO_CONTORNO_TALHAO } from '../../config/mapa.js'
 
 const ICONE_PONTO = L.divIcon({
@@ -21,7 +20,7 @@ const ICONE_PONTO = L.divIcon({
  * recentraliza, mas não apaga um ponto já marcado — só o próprio clique faz
  * isso, pra não perder o que a pessoa já marcou por engano.
  */
-export default function MapaPontoColeta({ talhao, ponto, aoEscolherPonto }) {
+export default function MapaPontoColeta({ talhao, ponto, aoEscolherPonto, className = 'h-56' }) {
   const [mapa, setMapa] = useState(null)
   const marcadorRef = useRef(null)
   const contornoRef = useRef(null)
@@ -41,7 +40,8 @@ export default function MapaPontoColeta({ talhao, ponto, aoEscolherPonto }) {
     if (!f?.geometry) return
 
     contornoRef.current = L.geoJSON(f, { style: { ...ESTILO_CONTORNO_TALHAO, fill: false } }).addTo(mapa)
-    focarGeometria(mapa, talhao.geometria)
+    mapa.invalidateSize()
+    mapa.fitBounds(contornoRef.current.getBounds(), { padding: [32, 32], animate: false })
   }, [mapa, talhao])
 
   useEffect(() => {
@@ -70,9 +70,26 @@ export default function MapaPontoColeta({ talhao, ponto, aoEscolherPonto }) {
       })
   }, [mapa, ponto])
 
+  // O container muda de tamanho depois de o mapa nascer (layout em duas
+  // colunas): reenquadra o talhão, senão ele fica pequeno num canto.
+  useEffect(() => {
+    if (!mapa || typeof ResizeObserver === 'undefined') return
+    const observador = new ResizeObserver(() => {
+      mapa.invalidateSize()
+      if (contornoRef.current) mapa.fitBounds(contornoRef.current.getBounds(), { padding: [32, 32], animate: false })
+    })
+    observador.observe(mapa.getContainer())
+    return () => observador.disconnect()
+  }, [mapa])
+
   return (
-    <div className="h-56 overflow-hidden rounded-md border border-slate-300 dark:border-white/15">
+    <div className={`relative overflow-hidden rounded-lg border border-slate-300 dark:border-white/15 ${className}`}>
       <Mapa aoCriarMapa={setMapa} />
+      {talhao && (
+        <p className="vidro pointer-events-none absolute left-3 top-3 z-[1000] rounded-md px-2.5 py-1 text-xs font-medium text-slate-700 shadow dark:text-slate-200">
+          {ponto ? 'Ponto marcado · arraste para ajustar' : 'Clique no talhão para marcar o ponto'}
+        </p>
+      )}
     </div>
   )
 }
