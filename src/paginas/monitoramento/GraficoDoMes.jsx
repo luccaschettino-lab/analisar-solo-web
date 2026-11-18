@@ -9,7 +9,7 @@ const dataCurta = (iso) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-d
 const num = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 /**
- * Evolução do índice no último mês: uma série só (o índice escolhido), um
+ * Evolução do índice nos últimos 2 meses: uma série só (o índice escolhido), um
  * ponto por imagem, valor = média do talhão. Linha fina ligando só as datas
  * com leitura; data toda nublada vira uma marca cinza no rodapé — sem valor
  * inventado. Clicar num ponto abre a data no mapa.
@@ -43,7 +43,7 @@ export default function GraficoDoMes({ pontos, rotulo, selecionadaId, inicio, fi
 
   return (
     <div className="relative">
-      <svg viewBox={`0 0 ${L} ${A}`} className="w-full" role="img" aria-label={`${rotulo} médio do talhão por data, no último mês`}>
+      <svg viewBox={`0 0 ${L} ${A}`} className="w-full" role="img" aria-label={`${rotulo} médio do talhão por data, nos últimos 2 meses`}>
         {/* grade e eixos recessivos */}
         {marcasY.map((v) => (
           <g key={v}>

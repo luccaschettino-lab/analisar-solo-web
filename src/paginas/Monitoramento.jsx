@@ -38,6 +38,9 @@ const INDICES = [
   },
 ]
 
+// Janela do "carregar com um clique": 2 meses.
+const DIAS_DO_LOTE = 60
+
 // Sem índice: só a imagem de satélite do mapa de fundo, recortada no talhão.
 const SEM_INDICE = 'imagem'
 
@@ -186,8 +189,8 @@ export default function Monitoramento() {
   }
   const satelite = SATELITES[fonte]
 
-  // "Carregar o último mês": calcula de uma vez todas as imagens dos últimos
-  // 30 dias (3 por vez, para não sobrecarregar a função). Os resultados ficam
+  // "Carregar os últimos 2 meses": calcula de uma vez todas as imagens dos
+  // últimos 60 dias (3 por vez, para não sobrecarregar a função). Os resultados ficam
   // no mesmo cache da escolha de data — depois, trocar de data é na hora.
   const [lote, setLote] = useState(null) // { feitos, total, falhas }
   const [, setVersaoSerie] = useState(0)
@@ -209,7 +212,7 @@ export default function Monitoramento() {
   const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria, fonte)
 
   const fimMes = new Date()
-  const inicioMes = new Date(fimMes.getTime() - 30 * 86400000)
+  const inicioMes = new Date(fimMes.getTime() - DIAS_DO_LOTE * 86400000)
   const cenasDoMes = cenas.filter((c) => Date.parse(c.data) >= inicioMes.getTime())
 
   async function carregarMes() {
@@ -369,8 +372,8 @@ export default function Monitoramento() {
                     {lote && lote.feitos < lote.total
                       ? `Carregando ${lote.feitos} de ${lote.total} imagens…`
                       : cenasDoMes.length === 0
-                        ? 'Nenhuma imagem nos últimos 30 dias'
-                        : `⚡ Carregar o último mês (${cenasDoMes.length} ${cenasDoMes.length === 1 ? 'imagem' : 'imagens'})`}
+                        ? `Nenhuma imagem nos últimos ${DIAS_DO_LOTE} dias`
+                        : `⚡ Carregar os últimos 2 meses (${cenasDoMes.length} ${cenasDoMes.length === 1 ? 'imagem' : 'imagens'})`}
                   </button>
                   {lote && lote.feitos === lote.total && (
                     <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -382,7 +385,7 @@ export default function Monitoramento() {
             </Cartao>
 
             {lote && pontosDoMes.length > 0 && !semIndice && (
-              <Cartao titulo={`${info.rotulo} médio no último mês`}>
+              <Cartao titulo={`${info.rotulo} médio nos últimos 2 meses`}>
                 <GraficoDoMes
                   pontos={pontosDoMes}
                   rotulo={info.rotulo}
