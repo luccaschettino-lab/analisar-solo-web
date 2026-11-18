@@ -57,8 +57,9 @@ const DICAS = [
 
 export default function DicaDaTela() {
   const { pathname } = useLocation()
-  const { carregado, boasVindasAberta, dicaVista, marcarDica } = useTutorial()
-  if (!carregado || boasVindasAberta) return null
+  const { carregado, boasVindasAberta, dicaVista, marcarDica, missao } = useTutorial()
+  // Durante o tutorial guiado, quem fala é o cartão da missão.
+  if (!carregado || boasVindasAberta || missao) return null
   const dica = DICAS.find((d) => d.combina(pathname))
   if (!dica || dicaVista(dica.chave)) return null
 

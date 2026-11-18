@@ -173,6 +173,7 @@ export default function ImportarPontos() {
 
       <label
         htmlFor="importar-pontos"
+        data-tutorial="importar-pontos"
         className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed border-slate-300 px-4 py-8 text-center hover:border-solo-500 dark:border-white/15 dark:hover:border-solo-500"
       >
         <span aria-hidden="true" className="text-2xl">📍</span>
@@ -263,6 +264,7 @@ export default function ImportarPontos() {
               <button
                 type="button"
                 onClick={() => void criarGlebasAutomaticas()}
+                data-tutorial="criar-glebas"
                 disabled={Boolean(criandoGlebas) || plano.novas.length === 0}
                 aria-busy={Boolean(criandoGlebas)}
                 className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600"
@@ -364,6 +366,7 @@ export default function ImportarPontos() {
               <button
                 type="button"
                 onClick={() => void gravar()}
+                data-tutorial="importar-pontos"
                 disabled={gravando || totalAImportar === 0}
                 aria-busy={gravando}
                 className="rounded-md bg-solo-700 px-3 py-2 text-sm font-medium text-white hover:bg-solo-800 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-solo-600 dark:hover:bg-solo-700 dark:disabled:bg-slate-600"

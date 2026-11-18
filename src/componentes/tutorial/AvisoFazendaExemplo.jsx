@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Modal from '../Modal.jsx'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 import { excluirFazenda } from '../../dados/fazendas.js'
+import { useTutorial } from '../../context/TutorialContext.jsx'
 
 /**
  * Faixa no topo enquanto a fazenda de exemplo está aberta: lembra que os
@@ -12,11 +13,12 @@ import { excluirFazenda } from '../../dados/fazendas.js'
 export default function AvisoFazendaExemplo() {
   const { fazendaSelecionada, fazendas, selecionarFazenda, removerFazenda, setFormFazenda } = useFazendaAtual()
   const navegar = useNavigate()
+  const { missao } = useTutorial()
   const [confirmando, setConfirmando] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
   const [erro, setErro] = useState('')
 
-  if (!fazendaSelecionada?.exemplo) return null
+  if (!fazendaSelecionada?.exemplo || missao) return null
   const outra = fazendas.find((f) => !f.exemplo)
 
   async function excluir() {

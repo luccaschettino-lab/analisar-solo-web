@@ -23,16 +23,20 @@ const SECOES = [
         'Fazenda → talhões → pontos de amostra (que viram as glebas) → análises → mapa. Cada passo usa o anterior: sem talhão não há onde pôr os pontos, e sem gleba o laudo não sabe a que lugar pertence cada amostra. A lista "Primeiros passos", na barra lateral, mostra o que falta.',
       ],
       [
+        'Como funciona o tutorial guiado?',
+        'São 9 fases, como num jogo: um cartão no canto da tela diz a tarefa, o botão certo pisca, e a fase só avança quando você a conclui. Você monta uma fazenda de exemplo inteira: cria a fazenda, marca a sede, importa os talhões e os pontos (o próprio tutorial entrega os arquivos), digita uma análise, recebe o laudo e lê o mapa, a comparação e o satélite. O botão "–" minimiza o cartão.',
+      ],
+      [
         'O que é a fazenda de exemplo?',
-        'Uma fazenda com dados fictícios (4 talhões, 24 glebas e análises de duas safras) para você conhecer o sistema sem cadastrar nada. Aparece com uma faixa amarela no topo. Pode mexer à vontade, e o botão "Excluir exemplo" a remove sem tocar nas suas fazendas.',
+        'É a fazenda que você monta no tutorial guiado, com dados fictícios. Fora do tutorial, ela aparece com uma faixa amarela no topo. Pode mexer à vontade, e o botão "Excluir exemplo" a remove sem tocar nas suas fazendas.',
       ],
       [
         'Dá para deixar a tela clara?',
         'Dá. O site abre no tema escuro, mas o botão de sol/lua no canto superior direito, ao lado de "Sair", troca entre escuro e claro. A escolha fica guardada neste navegador.',
       ],
       [
-        'Como vejo o tutorial de novo?',
-        'Pelo botão "Ver o tutorial de novo", no topo desta página. As boas-vindas abrem, e as dicas de cada tela e os primeiros passos voltam a aparecer.',
+        'Como faço o tutorial de novo?',
+        'Pelo botão "Ver o tutorial de novo", no topo desta página. As boas-vindas abrem e, no fim delas, o tutorial guiado começa outra vez. As dicas de cada tela e os primeiros passos também voltam.',
       ],
     ],
   },

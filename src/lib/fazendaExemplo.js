@@ -6,8 +6,10 @@ import { areaEmHectares, pontoFeature } from './geo.js'
  *
  * Tudo aqui é determinístico (gerador com semente fixa): duas fazendas de
  * exemplo saem iguais, e os testes conferem números exatos. Nada disto grava
- * no banco — quem grava é `dados/fazendaExemplo.js`, pelos mesmos caminhos que
- * o produtor usa (talhão, pontos de amostra, glebas automáticas, análises).
+ * no banco. No tutorial guiado (`MissaoTutorial.jsx`) a própria pessoa monta a
+ * fazenda: baixa o KML dos talhões e o GeoJSON dos pontos gerados aqui (ao
+ * redor da sede que ela marcou), importa pelas telas de sempre, digita uma
+ * análise, e as demais chegam por `dados/fazendaExemplo.js`.
  *
  * O desenho: quatro talhões retangulares de ~85 ha numa grade 2×2, cada um
  * com seis amostras compostas de cinco pontos (24 glebas), e análises de duas
@@ -60,21 +62,30 @@ function retangulo(oeste, sul, leste, norte) {
   }
 }
 
-function limitesDoTalhao({ coluna, linha }) {
-  const oeste = ORIGEM.lng + coluna * (LARGURA + VAO)
-  const norte = ORIGEM.lat - linha * (ALTURA + VAO)
+function limitesDoTalhao({ coluna, linha }, origem = ORIGEM) {
+  const oeste = origem.lng + coluna * (LARGURA + VAO)
+  const norte = origem.lat - linha * (ALTURA + VAO)
   return { oeste, leste: oeste + LARGURA, norte, sul: norte - ALTURA }
 }
 
 /** Sede: um pouco a sudoeste da grade. */
-export function sedeExemplo() {
-  return { lat: ORIGEM.lat - 2 * (ALTURA + VAO) - 0.0015, lng: ORIGEM.lng - 0.0015 }
+export function sedeExemplo(origem = ORIGEM) {
+  return { lat: origem.lat - 2 * (ALTURA + VAO) - 0.0015, lng: origem.lng - 0.0015 }
+}
+
+/**
+ * Origem da grade para uma sede já marcada (o inverso de `sedeExemplo`): no
+ * tutorial guiado, os talhões nascem logo a nordeste de onde a pessoa marcou
+ * a sede, para aparecerem onde ela está olhando.
+ */
+export function origemPelaSede(sede) {
+  return { lat: sede.lat + 2 * (ALTURA + VAO) + 0.0015, lng: sede.lng + 0.0015 }
 }
 
 /** Os quatro talhões, prontos para `criarTalhao`. */
-export function talhoesExemplo() {
+export function talhoesExemplo(origem = ORIGEM) {
   return TALHOES.map((t) => {
-    const { oeste, sul, leste, norte } = limitesDoTalhao(t)
+    const { oeste, sul, leste, norte } = limitesDoTalhao(t, origem)
     const geometria = retangulo(oeste, sul, leste, norte)
     return { codigo: t.codigo, nome: t.nome, cor: t.cor, geometria, areaHa: areaEmHectares(geometria) }
   })
@@ -86,12 +97,12 @@ export function talhoesExemplo() {
  * centro da célula e quatro em volta. A amostra é numerada de 1 a 24 na
  * fazenda inteira, como num laudo.
  */
-export function pontosExemplo() {
+export function pontosExemplo(origem = ORIGEM) {
   const sorteio = gerador(20261118)
   const porTalhao = new Map()
   let amostra = 0
   for (const t of TALHOES) {
-    const { oeste, norte } = limitesDoTalhao(t)
+    const { oeste, norte } = limitesDoTalhao(t, origem)
     const lista = []
     for (let linha = 0; linha < 2; linha++) {
       for (let coluna = 0; coluna < 3; coluna++) {
@@ -110,6 +121,49 @@ export function pontosExemplo() {
     porTalhao.set(t.codigo, lista)
   }
   return porTalhao
+}
+
+/**
+ * Arquivo KML dos talhões, como o Google Earth exporta. O nome "Lote 1 - Sede"
+ * é o padrão que a importação já entende (código 1, nome Sede).
+ */
+export function kmlDosTalhoes(origem) {
+  const placemarks = talhoesExemplo(origem)
+    .map((t) => {
+      const anel = t.geometria.geometry.coordinates[0].map(([lng, lat]) => `${lng},${lat},0`).join(' ')
+      return `    <Placemark><name>Lote ${t.codigo} - ${t.nome}</name><Polygon><outerBoundaryIs><LinearRing><coordinates>${anel}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`
+    })
+    .join('\n')
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <name>Talhões da fazenda do tutorial</name>\n${placemarks}\n  </Document>\n</kml>\n`
+}
+
+/** GeoJSON dos pontos de amostra, com o número da amostra no campo `amostra`. */
+export function geojsonDosPontos(origem) {
+  const features = [...pontosExemplo(origem).values()].flat().map((p) => ({
+    type: 'Feature',
+    properties: { amostra: p.propriedades.amostra },
+    geometry: p.geometria.geometry,
+  }))
+  return JSON.stringify({ type: 'FeatureCollection', features }, null, 1)
+}
+
+/**
+ * A análise que a pessoa digita à mão no tutorial guiado (fase das análises).
+ * O resto chega "do laboratório" e pula esta, pela chave única do banco.
+ */
+export const ANALISE_GUIADA = {
+  talhao: '1',
+  amostra: '1',
+  safra: SAFRAS_EXEMPLO[1],
+  profundidade: '0-20',
+  valores: [
+    ['pH em água', '5,2'],
+    ['P', '8,5'],
+    ['K', '48'],
+    ['Ca²⁺', '1,8'],
+    ['Mg²⁺', '0,6'],
+    ['Matéria orgânica', '2,4'],
+  ],
 }
 
 /** Número da amostra a partir do código da gleba ("2-8" → 8). */

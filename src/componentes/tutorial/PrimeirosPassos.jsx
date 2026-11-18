@@ -16,9 +16,9 @@ import { useTutorial } from '../../context/TutorialContext.jsx'
 export default function PrimeirosPassos({ acoes }) {
   const { fazendas, carregandoFazendas, fazendaSelecionada, editor, talhoes, glebas, analisesDaFazenda, carregando } =
     useFazendaAtual()
-  const { carregado, passosFechados, fecharPassos, dicaVista } = useTutorial()
+  const { carregado, passosFechados, fecharPassos, dicaVista, missao } = useTutorial()
 
-  if (!carregado || passosFechados || carregandoFazendas) return null
+  if (!carregado || passosFechados || carregandoFazendas || missao) return null
   const temPropria = fazendas.some((f) => !f.exemplo)
   const naPropria = fazendaSelecionada && !fazendaSelecionada.exemplo
   if (temPropria && !(naPropria && editor)) return null

@@ -796,3 +796,24 @@ automáticas → análises). Dados determinísticos (`lib/fazendaExemplo.js`):
 comparação de anos, duas glebas sem análise para a hachura. Se um passo
 falha, a fazenda é apagada inteira. Excluir o exemplo não pede a senha das
 exclusões reais.
+
+### Tutorial guiado em fases (substitui o exemplo pronto)
+
+Pedido de 2026-11-18: "tutorial de jogo", em que só se passa de fase
+concluindo a tarefa. A fazenda de exemplo deixou de ser criada pronta: quem
+a monta é a pessoa, em 9 fases (`MissaoTutorial.jsx`), e o atalho "ver um
+exemplo pronto" saiu a pedido.
+
+- Fases: criar a fazenda → marcar a sede → importar os talhões (KML gerado
+  ao redor da sede marcada) → abrir um talhão → importar os pontos (GeoJSON
+  gerado) e criar as glebas → digitar uma análise (o cartão dá os valores) e
+  "receber o laudo" com as demais → pintar o mapa em Filtros → abrir Comparar
+  anos → abrir Monitoramento.
+- Cada fase é detectada pelo estado real (fazenda nova que não existia ao
+  começar, sede gravada, ≥ 4 talhões, talhão selecionado, ≥ 24 glebas, ≥ 1
+  análise, filtro completo, 6 s na tela de comparação/satélite).
+- O botão da fase pisca (`data-tutorial` + anel âmbar); a barra lateral
+  fica aberta durante o tutorial.
+- Pular (nas boas-vindas ou "Sair do tutorial") abre um aviso que recomenda
+  continuar; "Continuar" é o botão principal e o que recebe o foco.
+- O progresso fica em `perfis.tutorial.missao` (sem SQL novo).

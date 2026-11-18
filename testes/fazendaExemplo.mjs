@@ -61,3 +61,34 @@ const phs = analises.filter((a) => a.profundidade === '0-20').map((a) => a.ph_h2
 assert.ok(Math.max(...phs) - Math.min(...phs) > 0.8, 'pH varia pela fazenda')
 
 console.log('fazenda de exemplo: talhões, pontos, 24 glebas e análises coerentes OK')
+
+// --- Tutorial guiado: arquivos gerados ao redor da sede ---
+{
+  const { origemPelaSede, kmlDosTalhoes, geojsonDosPontos } = await import('../src/lib/fazendaExemplo.js')
+  const { candidatosDoKml, sugerirCodigoNome } = await import('../src/lib/kml.js')
+  const sedeMarcada = { lat: -20.75, lng: -42.88 }
+  const origem = origemPelaSede(sedeMarcada)
+  const sedeDeVolta = sedeExemplo(origem)
+  assert.ok(Math.abs(sedeDeVolta.lat - sedeMarcada.lat) < 1e-9 && Math.abs(sedeDeVolta.lng - sedeMarcada.lng) < 1e-9, 'origem é o inverso da sede')
+
+  const candidatos = candidatosDoKml(kmlDosTalhoes(origem))
+  assert.equal(candidatos.length, 4)
+  assert.deepEqual(candidatos.map((c) => sugerirCodigoNome(c.nomeOriginal)), [
+    { codigo: '1', nome: 'Sede' },
+    { codigo: '2', nome: 'Chapada' },
+    { codigo: '3', nome: 'Baixada' },
+    { codigo: '4', nome: 'Córrego' },
+  ])
+  const t1 = candidatos[0].geometria
+  assert.ok(!booleanPointInPolygon([sedeMarcada.lng, sedeMarcada.lat], t1), 'sede fora do talhão')
+  const [lng0, lat0] = t1.geometry.coordinates[0][0]
+  assert.ok(Math.abs(lng0 - sedeMarcada.lng) < 0.01 && Math.abs(lat0 - sedeMarcada.lat) < 0.03, 'talhões nascem perto da sede')
+
+  const colecao = JSON.parse(geojsonDosPontos(origem))
+  assert.equal(colecao.features.length, 120)
+  assert.equal(new Set(colecao.features.map((f) => f.properties.amostra)).size, 24)
+  for (const f of colecao.features) {
+    assert.ok(candidatos.some((c) => booleanPointInPolygon(f.geometry, c.geometria)), 'todo ponto cai num talhão do KML')
+  }
+  console.log('tutorial guiado: KML e GeoJSON gerados ao redor da sede e lidos pela importação OK')
+}

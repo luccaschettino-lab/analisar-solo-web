@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from '../Modal.jsx'
+import ConfirmarPular from './ConfirmarPular.jsx'
 import { useTutorial } from '../../context/TutorialContext.jsx'
 import { useFazendaAtual } from '../../context/FazendaContext.jsx'
-import { criarFazendaExemplo } from '../../dados/fazendaExemplo.js'
 import { NIVEIS } from '../../config/parametros.js'
 
 const FLUXO = [
@@ -25,7 +25,7 @@ function Passo1() {
         Prefere a tela clara? O botão <span aria-hidden="true">☀</span> no canto superior direito troca entre tema escuro e
         claro.
       </p>
-      <p>Em 1 minuto mostramos como tudo se encaixa. Dá para pular e rever depois em <strong>Ajuda → Ver o tutorial de novo</strong>.</p>
+      <p>Primeiro, uma visão rápida de como tudo se encaixa. Depois, você mesmo monta uma fazenda de exemplo, fase por fase.</p>
     </div>
   )
 }
@@ -72,127 +72,67 @@ function Passo3() {
         <strong>Verde é o ideal</strong>; laranja e vermelho afastam do ideal, para menos ou para mais. Área{' '}
         <strong>listrada</strong> é onde não há medição: o sistema não inventa valor.
       </p>
-      <p>
-        Em <strong>Comparar anos</strong> você vê o que mudou entre safras, e em <strong>Monitoramento</strong> o vigor da
-        lavoura pelo satélite.
-      </p>
     </div>
   )
 }
 
-function Passo4({ temExemplo, criando, progresso, erro, aoCriarExemplo, aoAbrirExemplo, aoCadastrar }) {
+function Passo4() {
   return (
     <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-      <p>Como você quer começar?</p>
-      <button
-        type="button"
-        onClick={temExemplo ? aoAbrirExemplo : aoCriarExemplo}
-        disabled={criando}
-        className="w-full rounded-lg border-2 border-solo-600 bg-solo-50 px-4 py-3 text-left transition hover:bg-solo-100 disabled:opacity-70 dark:border-solo-500 dark:bg-solo-500/10 dark:hover:bg-solo-500/20"
-      >
-        <span className="block font-semibold text-solo-800 dark:text-solo-300">
-          {criando ? 'Montando a fazenda de exemplo…' : temExemplo ? 'Abrir a fazenda de exemplo' : 'Explorar uma fazenda de exemplo'}
-        </span>
-        <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-400">
-          {criando
-            ? progresso
-            : 'Quatro talhões com análises de duas safras, todos fictícios, para você mexer à vontade. Dá para excluir quando quiser.'}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={aoCadastrar}
-        disabled={criando}
-        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-left transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/5"
-      >
-        <span className="block font-semibold text-slate-800 dark:text-slate-100">Cadastrar a minha fazenda</span>
-        <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
-          A lista de primeiros passos, na barra lateral, vai guiando você.
-        </span>
-      </button>
-      {erro && (
-        <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
-          {erro}
-        </p>
-      )}
+      <p>
+        Agora é com você. Em <strong>9 fases</strong>, você monta uma fazenda de exemplo com dados fictícios: cria a fazenda,
+        importa os talhões e os pontos de amostra, lança uma análise e lê o mapa.
+      </p>
+      <p>
+        Um cartão no canto da tela diz o que fazer em cada fase, e o botão certo fica piscando. A fase só avança quando você
+        conclui a tarefa. Leva uns 10 minutos.
+      </p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Os arquivos de que você precisa o próprio tutorial entrega.</p>
     </div>
   )
 }
 
-const TITULOS = ['Bem-vindo ao Moinho', 'Como funciona', 'Lendo o mapa', 'Por onde começar']
+const TITULOS = ['Bem-vindo ao Moinho', 'Como funciona', 'Lendo o mapa', 'Tutorial guiado']
 
-/** Boas-vindas do primeiro acesso, em quatro telas curtas. */
+/**
+ * Boas-vindas do primeiro acesso: três telas de visão geral e o convite para
+ * o tutorial guiado. Pular (botão, Esc ou clique fora) passa antes por um
+ * aviso que recomenda continuar.
+ */
 export default function BoasVindas() {
-  const { boasVindasAberta, concluirBoasVindas } = useTutorial()
-  const { fazendas, aplicarFazenda, selecionarFazenda, setFormFazenda } = useFazendaAtual()
+  const { boasVindasAberta, concluirBoasVindas, iniciarMissao } = useTutorial()
+  const { fazendas, carregandoFazendas } = useFazendaAtual()
   const navegar = useNavigate()
   const [passo, setPasso] = useState(0)
-  const [criando, setCriando] = useState(false)
-  const [progresso, setProgresso] = useState('')
-  const [erro, setErro] = useState('')
+  const [querPular, setQuerPular] = useState(false)
 
   if (!boasVindasAberta) return null
 
-  const exemplo = fazendas.find((f) => f.exemplo)
-
   function encerrar() {
     setPasso(0)
-    setErro('')
+    setQuerPular(false)
     concluirBoasVindas()
   }
 
-  // Esc, clique fora, "Pular": não interrompe a criação do exemplo no meio.
-  function fechar() {
-    if (!criando) encerrar()
-  }
-
-  async function criarExemplo() {
-    setErro('')
-    setCriando(true)
-    try {
-      const fazenda = await criarFazendaExemplo(setProgresso)
-      aplicarFazenda(fazenda)
-      selecionarFazenda(fazenda.id)
-      setCriando(false)
-      navegar('/')
-      encerrar()
-    } catch (e) {
-      setErro(e.message)
-      setCriando(false)
-    }
-  }
-
-  function abrirExemplo() {
-    selecionarFazenda(exemplo.id)
+  function comecar() {
+    iniciarMissao(fazendas.map((f) => f.id))
     navegar('/')
     encerrar()
   }
 
-  function cadastrar() {
-    setFormFazenda('nova')
-    navegar('/')
-    encerrar()
+  if (querPular) {
+    return <ConfirmarPular aoContinuar={() => setQuerPular(false)} aoPular={encerrar} />
   }
 
   const ultimo = passo === TITULOS.length - 1
 
   return (
-    <Modal titulo={TITULOS[passo]} aoFechar={fechar} largura="max-w-lg">
+    <Modal titulo={TITULOS[passo]} aoFechar={() => setQuerPular(true)} largura="max-w-lg">
       <div className="min-h-[13rem]">
         {passo === 0 && <Passo1 />}
         {passo === 1 && <Passo2 />}
         {passo === 2 && <Passo3 />}
-        {passo === 3 && (
-          <Passo4
-            temExemplo={Boolean(exemplo)}
-            criando={criando}
-            progresso={progresso}
-            erro={erro}
-            aoCriarExemplo={criarExemplo}
-            aoAbrirExemplo={abrirExemplo}
-            aoCadastrar={cadastrar}
-          />
-        )}
+        {passo === 3 && <Passo4 />}
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-2">
@@ -205,29 +145,19 @@ export default function BoasVindas() {
             />
           ))}
         </div>
-        <div className="flex gap-2">
-          {passo === 0 ? (
-            <button type="button" onClick={fechar} className="rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10">
-              Pular
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setPasso((p) => p - 1)}
-              disabled={criando}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10"
-            >
-              Voltar
-            </button>
-          )}
+        {/* O botão de avançar vem primeiro no código: é o que recebe o foco
+            ao abrir, então Enter avança em vez de pular. */}
+        <div className="flex flex-row-reverse gap-2">
           {ultimo ? (
+            // Só com a lista de fazendas carregada: ela é o "antes", e a fazenda
+            // nova que aparecer depois é a do tutorial.
             <button
               type="button"
-              onClick={fechar}
-              disabled={criando}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-white/10"
+              onClick={comecar}
+              disabled={carregandoFazendas}
+              className="rounded-md bg-solo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-solo-800 disabled:opacity-60 dark:bg-solo-600 dark:hover:bg-solo-700"
             >
-              Agora não
+              Começar o tutorial
             </button>
           ) : (
             <button
@@ -238,6 +168,22 @@ export default function BoasVindas() {
               Próximo
             </button>
           )}
+          {passo > 0 && (
+            <button
+              type="button"
+              onClick={() => setPasso((p) => p - 1)}
+              className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+            >
+              Voltar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setQuerPular(true)}
+            className="rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10"
+          >
+            Pular
+          </button>
         </div>
       </div>
     </Modal>

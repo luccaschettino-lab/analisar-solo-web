@@ -133,7 +133,7 @@ const MARCA_ATIVO =
   "before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:rounded-full before:bg-solo-600 before:content-[''] dark:before:bg-solo-400"
 
 /** Ícone + rótulo, na mesma linha — o padrão de todo item da barra. */
-function ItemNav({ to, Icone, rotulo, onClick, compacta = false, end = false, extra = null }) {
+function ItemNav({ to, Icone, rotulo, onClick, compacta = false, end = false, extra = null, tutorial }) {
   return (
     <NavLink
       to={to}
@@ -141,6 +141,7 @@ function ItemNav({ to, Icone, rotulo, onClick, compacta = false, end = false, ex
       onClick={onClick}
       title={compacta ? rotulo : undefined}
       aria-label={rotulo}
+      data-tutorial={tutorial}
       className={({ isActive }) =>
         `${ITEM_NAV} ${compacta ? 'justify-center px-0' : ''} ${isActive ? `${ATIVO} ${MARCA_ATIVO}` : INATIVO}`
       }
@@ -163,10 +164,11 @@ function Secao({ titulo, compacta, primeira = false }) {
 }
 
 /** Subitem (ex.: as duas formas de lançar análise), alinhado ao texto do pai. */
-function SubItem({ ativo, onClick, children }) {
+function SubItem({ ativo, onClick, children, tutorial }) {
   return (
     <button
       onClick={onClick}
+      data-tutorial={tutorial}
       aria-current={ativo ? 'page' : undefined}
       className={`flex w-full items-center gap-2 rounded-md py-1.5 pl-[2.375rem] pr-2 text-left text-sm transition ${FOCO} ${
         ativo
@@ -356,6 +358,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             {editor && (
               <button
                 onClick={() => pedirAcao('marcar-sede')}
+                data-tutorial="marcar-sede"
                 className={`rounded px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 ${FOCO}`}
               >
                 Marcar sede
@@ -387,6 +390,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
 
         <button
           onClick={novaFazenda}
+          data-tutorial="nova-fazenda"
           className={`mt-1.5 rounded px-1 py-0.5 text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10 ${FOCO}`}
         >
           + Nova fazenda
@@ -501,6 +505,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
                   </button>
                   <button
                     onClick={() => pedirAcao('importar-arquivo')}
+                    data-tutorial="importar-talhoes"
                     className={`${ITEM} w-auto text-xs font-medium text-solo-700 hover:bg-solo-50 dark:text-solo-400 dark:hover:bg-solo-500/10`}
                   >
                     Importar talhões
@@ -531,18 +536,19 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
           )}
 
           {compacta && <ItemNav to="/" end Icone={IconeMapa} rotulo="Mapa" onClick={aoNavegar} compacta />}
-          <ItemNav to="/filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} compacta={compacta} />
-          <ItemNav to="/comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/filtros" tutorial="filtros" Icone={IconeFiltro} rotulo="Filtros" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/comparar" tutorial="comparar" Icone={IconeComparar} rotulo="Comparar anos" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Dados" compacta={compacta} />
           {compacta ? (
-            <ItemNav to="/dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta />
+            <ItemNav to="/dados" tutorial="dados" Icone={IconeDados} rotulo="Dados" onClick={aoNavegar} compacta />
           ) : (
             // Recolhido: clicar mostra as formas de lançar dados, sem sair da
             // tela atual. Abre sozinho quando se está em Dados.
             <button
               type="button"
               onClick={() => setDadosAberto((a) => !a)}
+              data-tutorial="dados"
               aria-expanded={dadosVisivel}
               className={`${ITEM_NAV} ${naDados ? `${ATIVO} ${MARCA_ATIVO}` : INATIVO}`}
             >
@@ -557,18 +563,18 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
               qual está aberta. */}
           {!compacta && dadosVisivel && (
             <div className="flex flex-col gap-0.5">
-              <SubItem ativo={naDados && !['pdf', 'pontos'].includes(abaDados)} onClick={() => irPara('/dados')}>
+              <SubItem tutorial="dados-manual" ativo={naDados && !['pdf', 'pontos'].includes(abaDados)} onClick={() => irPara('/dados')}>
                 Entrada manual
               </SubItem>
               <SubItem ativo={naDados && abaDados === 'pdf'} onClick={() => irPara('/dados?aba=pdf')}>
                 Importar laudo PDF
               </SubItem>
-              <SubItem ativo={naDados && abaDados === 'pontos'} onClick={() => irPara('/dados?aba=pontos')}>
+              <SubItem tutorial="dados-pontos" ativo={naDados && abaDados === 'pontos'} onClick={() => irPara('/dados?aba=pontos')}>
                 Pontos de amostra
               </SubItem>
             </div>
           )}
-          <ItemNav to="/monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/monitoramento" tutorial="monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Ajustes" compacta={compacta} />
           {/* Onde se define o que e bom ou ruim. Sem guard de papel: quem nao

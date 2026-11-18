@@ -63,6 +63,14 @@ export function TutorialProvider({ children }) {
       marcarDica: (chave) => atualizar((t) => ({ ...t, dicas: { ...(t.dicas ?? {}), [chave]: true } })),
       passosFechados: Boolean(tutorial?.passosFechadosEm),
       fecharPassos: () => atualizar((t) => ({ ...t, passosFechadosEm: new Date().toISOString() })),
+      // Tutorial guiado (fases): { fase, fazendaId, idsAntes, concluidaEm }.
+      // `fase` nula ou missão concluída = fora do tutorial.
+      missao: tutorial?.missao?.fase && !tutorial.missao.concluidaEm ? tutorial.missao : null,
+      iniciarMissao: (idsAntes) =>
+        atualizar((t) => ({ ...t, missao: { fase: 1, fazendaId: null, idsAntes, iniciadaEm: new Date().toISOString() } })),
+      atualizarMissao: (patch) => atualizar((t) => ({ ...t, missao: { ...(t.missao ?? {}), ...patch } })),
+      encerrarMissao: (motivo) =>
+        atualizar((t) => ({ ...t, missao: { ...(t.missao ?? {}), concluidaEm: new Date().toISOString(), motivo } })),
       // "Ver tutorial de novo": dicas e primeiros passos voltam, e as
       // boas-vindas abrem na hora.
       recomecar: () => {

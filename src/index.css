@@ -242,6 +242,32 @@ body {
   fill: #050b16;
 }
 
+/*
+ * Tutorial guiado: o botão que a fase manda clicar pulsa com um anel âmbar
+ * (cor que não existe em nenhum outro lugar da interface, para não confundir
+ * com seleção). O atributo é posto por MissaoTutorial.jsx.
+ */
+[data-destaque-tutorial] {
+  position: relative;
+  border-radius: 0.5rem;
+  animation: pulso-tutorial 1.3s ease-in-out infinite;
+}
+@keyframes pulso-tutorial {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 3px #f59e0b, 0 0 0 9px rgba(245, 158, 11, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-destaque-tutorial] {
+    animation: none;
+    box-shadow: 0 0 0 3px #f59e0b;
+  }
+}
+
 /* Monitoramento: mapa fixo no talhão, sem zoom nem arrasto. */
 .mapa-fixo .leaflet-control-zoom {
   display: none;

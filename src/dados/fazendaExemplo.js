@@ -1,87 +1,58 @@
 import { supabase, checar } from './cliente.js'
-import { criarFazenda, excluirFazenda } from './fazendas.js'
-import { criarTalhao } from './talhoes.js'
-import { criarPontosColetaEmLote, criarGlebaComPontosColeta } from './pontosColeta.js'
-import { criarAnalisesEmLote } from './analises.js'
-import { agruparPontosEmGlebas } from '../lib/pontosDeColeta.js'
-import {
-  NOME_FAZENDA_EXEMPLO,
-  sedeExemplo,
-  talhoesExemplo,
-  pontosExemplo,
-  analisesExemplo,
-} from '../lib/fazendaExemplo.js'
+import { criarAnalisesEmLote, listarIdentidadesDaFazenda } from './analises.js'
+import { listarPontosColetaDaFazenda } from './pontosColeta.js'
+import { analisesExemplo } from '../lib/fazendaExemplo.js'
+import { chaveDeDuplicidade } from '../lib/importacaoLaudo.js'
 
 /**
- * Cria a fazenda de exemplo na conta de quem está logado, pelos mesmos
- * caminhos do uso real: fazenda → talhões → pontos de amostra → glebas
- * automáticas → análises. Se qualquer passo falhar, a fazenda é apagada
- * (talhões, pontos, glebas e análises vão junto, em cascata) — não sobra
- * exemplo pela metade.
- *
- * `aoProgredir(texto)` recebe o passo atual, para a tela mostrar.
- * Devolve a fazenda criada (com `papel` e `exemplo`).
+ * A fazenda criada no tutorial guiado vira "de exemplo": ganha a faixa de
+ * dados fictícios e fica fora dos primeiros passos.
  */
-export async function criarFazendaExemplo(aoProgredir) {
-  aoProgredir?.('Criando a fazenda…')
-  const fazenda = await criarFazenda({ nome: NOME_FAZENDA_EXEMPLO, municipio: 'Sorriso', uf: 'MT' })
-  try {
-    const sede = sedeExemplo()
-    const marcada = checar(
-      await supabase
-        .from('fazendas')
-        .update({ exemplo: true, sede_lat: sede.lat, sede_lng: sede.lng })
-        .eq('id', fazenda.id)
-        .select()
-        .single(),
-      'Falha ao marcar a fazenda de exemplo',
-    )
+export async function marcarFazendaComoExemplo(id) {
+  return checar(
+    await supabase.from('fazendas').update({ exemplo: true }).eq('id', id).select().single(),
+    'Falha ao marcar a fazenda do tutorial',
+  )
+}
 
-    aoProgredir?.('Desenhando os talhões…')
-    const talhoes = []
-    for (const t of talhoesExemplo()) {
-      talhoes.push(await criarTalhao({ fazendaId: fazenda.id, ...t }))
-    }
-
-    aoProgredir?.('Importando os pontos de amostra…')
-    const porCodigo = pontosExemplo()
-    const pontos = []
-    for (const talhao of talhoes) {
-      pontos.push(...(await criarPontosColetaEmLote(talhao.id, porCodigo.get(talhao.codigo) ?? [])))
-    }
-
-    const { glebas: grupos } = agruparPontosEmGlebas(pontos, talhoes)
-    const pontoPorId = new Map(pontos.map((p) => [p.id, p]))
-    const codigoDoTalhao = new Map(talhoes.map((t) => [t.id, t.codigo]))
-    for (const [i, g] of grupos.entries()) {
-      aoProgredir?.(`Criando as glebas (${i + 1} de ${grupos.length})…`)
-      await criarGlebaComPontosColeta({
-        talhaoId: g.talhaoId,
-        codigo: g.codigo,
-        nome: null,
-        geometria: g.geometria,
-        areaHa: g.areaHa,
-        pontosColetaIds: g.pontoIds,
-      })
-    }
-
-    const payloads = analisesExemplo(
-      grupos.map((g) => ({
-        codigo: g.codigo,
-        talhaoId: g.talhaoId,
-        codigoTalhao: codigoDoTalhao.get(g.talhaoId),
-        pontos: g.pontoIds.map((id) => pontoPorId.get(id)?.geometria?.geometry?.coordinates).filter(Boolean),
-      })),
-    )
-    await criarAnalisesEmLote(payloads, (feitas, total) => aoProgredir?.(`Lançando as análises (${feitas} de ${total})…`))
-
-    return { ...fazenda, ...marcada, papel: 'proprietario' }
-  } catch (e) {
-    try {
-      await excluirFazenda(fazenda.id)
-    } catch {
-      // Sem permissão ou sem rede: o erro original é o que importa contar.
-    }
-    throw new Error(`Não foi possível criar a fazenda de exemplo. ${e.message}`)
+/**
+ * "O laboratório mandou o laudo": depois que a pessoa digita uma análise no
+ * tutorial, as demais entram de uma vez — fictícias, nas posições das glebas
+ * que ela mesma criou. A que ela digitou (mesmo talhão, safra, profundidade e
+ * nº de amostra) é pulada, nunca sobrescrita.
+ *
+ * `talhoes` e `glebas` vêm do contexto da fazenda. Devolve quantas entraram.
+ */
+export async function receberLaudoExemplo(fazendaId, talhoes, glebas, aoProgredir) {
+  const [pontos, existentes] = await Promise.all([
+    listarPontosColetaDaFazenda(fazendaId),
+    listarIdentidadesDaFazenda(fazendaId),
+  ])
+  const codigoDoTalhao = new Map(talhoes.map((t) => [t.id, t.codigo]))
+  const pontosDaGleba = new Map()
+  for (const p of pontos) {
+    if (!p.gleba_id) continue
+    if (!pontosDaGleba.has(p.gleba_id)) pontosDaGleba.set(p.gleba_id, [])
+    pontosDaGleba.get(p.gleba_id).push(p.geometria?.geometry?.coordinates)
   }
+
+  const jaGravadas = new Set(
+    existentes.map((a) =>
+      chaveDeDuplicidade({ talhaoId: a.talhao_id, anoSafra: a.ano_safra, profundidade: a.profundidade, numeroAmostraLab: a.numero_amostra_lab }),
+    ),
+  )
+  const payloads = analisesExemplo(
+    glebas.map((g) => ({
+      codigo: g.codigo,
+      talhaoId: g.talhao_id,
+      codigoTalhao: codigoDoTalhao.get(g.talhao_id),
+      pontos: (pontosDaGleba.get(g.id) ?? []).filter(Boolean),
+    })),
+  ).filter(
+    (a) =>
+      !jaGravadas.has(
+        chaveDeDuplicidade({ talhaoId: a.talhao_id, anoSafra: a.ano_safra, profundidade: a.profundidade, numeroAmostraLab: a.numero_amostra_lab }),
+      ),
+  )
+  return criarAnalisesEmLote(payloads, aoProgredir)
 }
