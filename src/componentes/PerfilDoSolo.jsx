@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Modal from '../../componentes/Modal.jsx'
-import ConfirmarExclusao from '../../componentes/ConfirmarExclusao.jsx'
-import { useFazendaAtual } from '../../context/FazendaContext.jsx'
-import { listarFotosDoTalhao, enviarFotoDoTalhao, removerFotoDoTalhao } from '../../dados/fotosTalhao.js'
-import { urlAssinada } from '../../dados/fotos.js'
-import { reduzirImagem } from '../../lib/imagem.js'
-import { anoSafraDaData } from '../../lib/laudoUfv.js'
+import Modal from './Modal.jsx'
+import ConfirmarExclusao from './ConfirmarExclusao.jsx'
+import { useFazendaAtual } from '../context/FazendaContext.jsx'
+import { listarFotosDaGleba, enviarFotoDaGleba, removerFotoDaGleba } from '../dados/fotosGleba.js'
+import { urlAssinada } from '../dados/fotos.js'
+import { reduzirImagem } from '../lib/imagem.js'
+import { anoSafraDaData } from '../lib/laudoUfv.js'
 
 const PROFUNDIDADES = ['0-20', '20-40', '40-60']
 const FORMATO_SAFRA = /^\d{2}-\d{2}$/
@@ -15,7 +15,7 @@ const safraDeHoje = () => anoSafraDaData(new Date().toISOString().slice(0, 10))
 const porSafra = (a, b) => b.localeCompare(a) // mais recente primeiro ("25-26" > "24-25")
 
 /** Uma profundidade: a miniatura da foto, ou o espaço para enviar. */
-function Faixa({ profundidade, foto, url, editor, ocupado, aoEscolher, aoAbrir }) {
+function Faixa({ profundidade, foto, url, editor, ocupado, aoEscolher, aoAbrir, grande }) {
   const entrada = useRef(null)
   return (
     <li className="flex items-stretch gap-2">
@@ -39,7 +39,7 @@ function Faixa({ profundidade, foto, url, editor, ocupado, aoEscolher, aoAbrir }
         <button
           type="button"
           onClick={aoAbrir}
-          className="relative h-20 min-w-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-noite-950"
+          className={`relative ${grande ? 'h-40' : 'h-20'} min-w-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-noite-950`}
           title={`Ver a foto de ${profundidade} cm`}
         >
           {url ? (
@@ -56,12 +56,12 @@ function Faixa({ profundidade, foto, url, editor, ocupado, aoEscolher, aoAbrir }
           type="button"
           onClick={() => entrada.current?.click()}
           disabled={Boolean(ocupado)}
-          className="flex h-20 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-slate-300 text-xs font-medium text-slate-500 hover:border-solo-500 hover:text-solo-700 disabled:opacity-60 dark:border-white/15 dark:text-slate-400 dark:hover:border-solo-500 dark:hover:text-solo-300"
+          className={`flex ${grande ? 'h-40' : 'h-20'} min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-slate-300 text-xs font-medium text-slate-500 hover:border-solo-500 hover:text-solo-700 disabled:opacity-60 dark:border-white/15 dark:text-slate-400 dark:hover:border-solo-500 dark:hover:text-solo-300`}
         >
           {ocupado || <><span aria-hidden="true">📷</span> Adicionar foto</>}
         </button>
       ) : (
-        <span className="flex h-20 min-w-0 flex-1 items-center justify-center rounded-md border border-dashed border-slate-300 text-xs text-slate-400 dark:border-white/15">
+        <span className={`flex ${grande ? 'h-40' : 'h-20'} min-w-0 flex-1 items-center justify-center rounded-md border border-dashed border-slate-300 text-xs text-slate-400 dark:border-white/15`}>
           sem foto
         </span>
       )}
@@ -72,14 +72,15 @@ function Faixa({ profundidade, foto, url, editor, ocupado, aoEscolher, aoAbrir }
 }
 
 /**
- * Fotos do perfil do solo do talhão (0-20, 20-40 e 40-60 cm), por safra.
+ * Fotos do perfil do solo da GLEBA (0-20, 20-40 e 40-60 cm), por safra.
  *
  * Empilhadas de cima para baixo, como o perfil: quem olha lê a coluna de solo.
  * Cada safra tem as suas, para comparar o antes e o depois — a mesma lógica
- * das análises. Começa na safra mais recente que tem foto.
+ * das análises. Começa na safra mais recente que tem foto. Aparece no painel
+ * da gleba no mapa e na aba Foto da página da gleba (`grande`).
  */
-export default function FotosDoTalhao({ talhao }) {
-  const { fazendaSelecionada, editor, anos } = useFazendaAtual()
+export default function PerfilDoSolo({ gleba, fazendaId, editor, grande = false }) {
+  const { anos } = useFazendaAtual()
   const [fotos, setFotos] = useState([])
   const [urls, setUrls] = useState({})
   const [carregando, setCarregando] = useState(true)
@@ -96,14 +97,14 @@ export default function FotosDoTalhao({ talhao }) {
     setErro('')
     setFotos([])
     setUrls({})
-    listarFotosDoTalhao(talhao.id)
+    listarFotosDaGleba(gleba.id)
       .then((lista) => ativo && setFotos(lista))
       .catch((e) => ativo && setErro(e.message))
       .finally(() => ativo && setCarregando(false))
     return () => {
       ativo = false
     }
-  }, [talhao.id])
+  }, [gleba.id])
 
   // Safras para escolher: as que já têm foto, as das análises e a de hoje.
   const safras = useMemo(() => {
@@ -142,9 +143,9 @@ export default function FotosDoTalhao({ talhao }) {
       const { blob } = await reduzirImagem(arquivo)
       setOcupado((o) => ({ ...o, [profundidade]: 'Enviando…' }))
       const anterior = daSafra[profundidade]
-      const foto = await enviarFotoDoTalhao({
-        fazendaId: fazendaSelecionada.id,
-        talhaoId: talhao.id,
+      const foto = await enviarFotoDaGleba({
+        fazendaId,
+        glebaId: gleba.id,
         anoSafra: safra,
         profundidade,
         blob,
@@ -160,7 +161,7 @@ export default function FotosDoTalhao({ talhao }) {
 
   async function remover() {
     const foto = removendo
-    await removerFotoDoTalhao({ id: foto.id, caminho: foto.caminho })
+    await removerFotoDaGleba({ id: foto.id, caminho: foto.caminho })
     setFotos((lista) => lista.filter((f) => f.id !== foto.id))
     setRemovendo(null)
     setAberta(null)
@@ -178,7 +179,7 @@ export default function FotosDoTalhao({ talhao }) {
   const quantas = Object.keys(daSafra).length
 
   return (
-    <section className="mt-3 border-t border-slate-200 pt-2.5 dark:border-white/10" aria-label="Fotos do perfil do solo">
+    <section className={grande ? '' : 'mt-3 border-t border-slate-200 pt-2.5 dark:border-white/10'} aria-label="Fotos do perfil do solo">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Perfil do solo</h3>
         {novaSafra === null ? (
@@ -233,6 +234,7 @@ export default function FotosDoTalhao({ talhao }) {
               ocupado={ocupado[p]}
               aoEscolher={(arquivo) => void enviar(p, arquivo)}
               aoAbrir={() => setAberta(p)}
+              grande={grande}
             />
           ))}
         </ol>
@@ -246,10 +248,10 @@ export default function FotosDoTalhao({ talhao }) {
       )}
 
       {fotoAberta && (
-        <Modal titulo={`Talhão ${talhao.codigo} · ${aberta} cm · safra ${safra}`} aoFechar={() => setAberta(null)} largura="max-w-3xl">
+        <Modal titulo={`Gleba ${gleba.codigo} · ${aberta} cm · safra ${safra}`} aoFechar={() => setAberta(null)} largura="max-w-3xl">
           <img
             src={urls[fotoAberta.caminho]}
-            alt={`Perfil do solo do talhão ${talhao.codigo}, ${aberta} cm, safra ${safra}`}
+            alt={`Perfil do solo da gleba ${gleba.codigo}, ${aberta} cm, safra ${safra}`}
             className="max-h-[65vh] w-full rounded-md bg-slate-100 object-contain dark:bg-noite-950"
           />
           <div className="mt-3 flex flex-wrap items-center gap-2">

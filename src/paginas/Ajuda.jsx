@@ -73,7 +73,7 @@ const SECOES = [
       ],
       [
         'Como coloco as fotos do perfil do solo?',
-        'Clique no talhão no mapa. No painel dele, em "Perfil do solo", há um espaço para cada profundidade (0-20, 20-40 e 40-60 cm), empilhados como o perfil. Toque no espaço para enviar a foto (no celular, abre a câmera). As fotos são guardadas por safra: escolha a safra no seletor, ou "Outra safra…" para uma que ainda não está na lista. Clicando na foto ela abre grande, com as opções de trocar e remover.',
+        'Cada gleba tem as suas. Clique na gleba no mapa (ou abra a página dela, aba Foto). Em "Perfil do solo" há um espaço para cada profundidade (0-20, 20-40 e 40-60 cm), empilhados como o perfil. Toque no espaço para enviar a foto (no celular, abre a câmera). As fotos são guardadas por safra: escolha a safra no seletor, ou "Outra safra…" para uma que ainda não está na lista. Clicando na foto ela abre grande, com as opções de trocar e remover.',
       ],
       ['Posso juntar dois talhões?', 'Sim, em "Mesclar talhões", na barra lateral. Glebas, pontos e análises dos talhões juntados passam para o talhão que fica.'],
     ],

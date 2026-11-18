@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ehPonto } from '../../lib/geo.js'
-import FotosDoTalhao from './FotosDoTalhao.jsx'
+import PerfilDoSolo from '../../componentes/PerfilDoSolo.jsx'
+import { useFazendaAtual } from '../../context/FazendaContext.jsx'
 
 function formatarArea(ha) {
   if (ha == null) return null
@@ -34,6 +35,7 @@ export default function PainelDetalhe({
   aoExcluir,
   aoFechar,
 }) {
+  const { fazendaSelecionada } = useFazendaAtual()
   if (!item) return null
 
   const ponto = ehPonto(item.geometria)
@@ -75,9 +77,11 @@ export default function PainelDetalhe({
         )}
       </dl>
 
-      {/* Fotos do perfil do solo (0-20, 20-40, 40-60 cm), por safra. A chave
-          zera o estado ao trocar de talhão. */}
-      {tipo === 'talhao' && <FotosDoTalhao key={item.id} talhao={item} />}
+      {/* Fotos do perfil do solo da gleba (0-20, 20-40, 40-60 cm), por safra.
+          A chave zera o estado ao trocar de gleba. */}
+      {tipo === 'gleba' && fazendaSelecionada && (
+        <PerfilDoSolo key={item.id} gleba={item} fazendaId={fazendaSelecionada.id} editor={editor} />
+      )}
 
       {/* Fora do bloco de permissão: consultar análises é leitura, e um
           leitor tem tanto direito a isso quanto um proprietário. */}
