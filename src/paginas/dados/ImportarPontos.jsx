@@ -72,6 +72,7 @@ export default function ImportarPontos() {
       jaExistem: grupos.length - novas.length,
       semCodigo,
       emPedacos: novas.filter((g) => g.pedacos > 1).length,
+      entreTalhoes: novas.filter((g) => g.talhoes > 1),
       totalPontos: importados.length,
     }
   }, [importados, talhoes, glebas])
@@ -207,7 +208,9 @@ export default function ImportarPontos() {
               Os pontos que têm o mesmo código no arquivo são coletas da mesma amostra. Posso ler os {plano.totalPontos} pontos
               importados e criar uma gleba para cada código, no talhão onde eles estão (talhão 7, código 12 → gleba{' '}
               <span className="font-mono">7-12</span>). As glebas dividem o talhão entre si: cada parte do talhão fica com a gleba
-              do ponto mais próximo, então juntas elas preenchem o talhão inteiro, sem vão.
+              do ponto mais próximo, então juntas elas preenchem o talhão inteiro, sem vão. Se alguns pontos de uma amostra caíram
+              do outro lado da divisa, a gleba atravessa os talhões e continua uma só, com o código do talhão onde está a maior
+              parte dos pontos.
             </p>
           </div>
 
@@ -220,6 +223,13 @@ export default function ImportarPontos() {
               <li>
                 {plano.emPedacos} {plano.emPedacos === 1 ? 'gleba fica' : 'glebas ficam'} em mais de um pedaço, porque os pontos
                 dela se alternam com os de outras
+              </li>
+            )}
+            {plano.entreTalhoes.length > 0 && (
+              <li>
+                {plano.entreTalhoes.length === 1 ? 'A gleba' : 'As glebas'}{' '}
+                <span className="font-mono">{plano.entreTalhoes.map((g) => g.codigo).join(', ')}</span>{' '}
+                {plano.entreTalhoes.length === 1 ? 'atravessa' : 'atravessam'} a divisa entre talhões
               </li>
             )}
             {plano.jaExistem > 0 && (

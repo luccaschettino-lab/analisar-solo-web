@@ -266,6 +266,7 @@ export default function ModaisDoPainel({
       {item.editandoDados === 'gleba' && item.itemSelecionado && (
         <FormGleba
           talhao={item.talhaoPai}
+          talhoesPermitidos={item.talhoesDaGleba}
           gleba={item.itemSelecionado}
           aoFechar={item.fecharEdicaoDados}
           aoSalvar={(gleba) => {

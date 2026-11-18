@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
-import { paraFeature, ehPonto, pontoRotulo, latLngDoPonto } from '../lib/geo.js'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import { paraFeature, ehPonto, pontoRotulo, latLngDoPonto, talhoesOcupadosPelaGleba } from '../lib/geo.js'
 import { variarLuminosidade } from '../lib/cor.js'
 import { garantirHachura, PREENCHIMENTO_HACHURA } from './hachura.js'
 import { conteudoTooltipTalhao } from './tooltipTalhao.js'
@@ -129,6 +130,20 @@ export function useGeometrias(
   // luminosidade entre as glebas do mesmo talhão — é o que deixa cada uma
   // reconhecível sem precisar passar o mouse uma a uma.
   const corPorTalhao = useMemo(() => new Map(talhoes.map((t) => [t.id, t.cor])), [talhoes])
+
+  // Glebas que ocupam mais de um talhão (amostra com pontos dos dois lados da
+  // divisa). Recorte geométrico: calculado só quando o cadastro muda, não a
+  // cada troca de filtro.
+  const glebasEntreTalhoes = useMemo(() => {
+    const lista = []
+    for (const gleba of glebasParaHachura ?? glebas) {
+      const pai = talhoes.find((t) => t.id === gleba.talhao_id)
+      if (!pai) continue
+      const ocupados = talhoesOcupadosPelaGleba(gleba.geometria, pai, talhoes)
+      if (ocupados.length > 1) lista.push({ gleba, outros: ocupados.slice(1).map((t) => t.id) })
+    }
+    return lista
+  }, [glebas, glebasParaHachura, talhoes])
 
   const corPorGleba = useMemo(() => {
     const glebasPorTalhao = new Map()
@@ -470,7 +485,7 @@ export function useGeometrias(
     camadaGlebasSemDado.current = null
 
     if (mostrarCor && coloracao) {
-      const talhoesComDado = []
+      const entradas = new Map() // talhão -> { geometry, pontos }
       const amostrasPorTalhao = new Map()
       for (const talhao of talhoes) {
         const info = coloracao(talhao.id)
@@ -482,9 +497,22 @@ export function useGeometrias(
         const pontos = info.pontos
           .map((p) => ({ lat: p.lat, lng: p.lng, valor: posicaoDoNivel(p.nivel) }))
           .filter((p) => p.lat != null && p.lng != null && p.valor != null)
-        talhoesComDado.push({ geometry, pontos })
+        entradas.set(talhao.id, { geometry, pontos: [...pontos] })
         amostrasPorTalhao.set(talhao.id, pontos)
       }
+
+      // Gleba que atravessa a divisa: a amostra dela é de um talhão, mas o
+      // pedaço do outro lado também foi medido por ela. Entra no cálculo do
+      // talhão vizinho — senão aquele pedaço sairia com a cor das glebas de
+      // lá, que nunca coletaram nele.
+      for (const { gleba, outros } of glebasEntreTalhoes) {
+        const amostras = amostrasPorTalhao.get(gleba.talhao_id)
+        if (!amostras?.length) continue
+        const feature = paraFeature(gleba.geometria)
+        const dela = amostras.filter((a) => booleanPointInPolygon([a.lng, a.lat], feature))
+        for (const talhaoId of outros) entradas.get(talhaoId)?.pontos.push(...dela)
+      }
+      const talhoesComDado = [...entradas.values()]
 
       const raster = criarCamadaCalor(talhoesComDado)
       if (raster) camadaCalor.current = raster.addTo(mapa)
@@ -512,7 +540,7 @@ export function useGeometrias(
       camadaGlebasSemDado.current?.remove()
       camadaGlebasSemDado.current = null
     }
-  }, [mapa, talhoes, glebas, glebasParaHachura, coloracao, mostrarCor])
+  }, [mapa, talhoes, glebas, glebasParaHachura, glebasEntreTalhoes, coloracao, mostrarCor])
 
   useEffect(() => {
     if (!mapa) return

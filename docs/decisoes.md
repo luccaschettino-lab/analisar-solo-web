@@ -746,3 +746,29 @@ A camada "Satélite (Google) · provisório" usava um endereço não oficial (`m
 | **Funções do Planet saem do repositório** (`planet-buscar-cenas`, `planet-mosaicos`); a terceira publicada, `planet-teste-visual`, nunca esteve no repositório. As três são apagadas no painel junto com o segredo `PLANET_API_KEY`. | Nenhuma tela as usava desde que o monitoramento passou ao CBERS-4A. Função publicada sem uso é porta aberta e gasta a cota da conta Planet. |
 
 Ordem: o app novo (sem `gleba_id`) foi publicado antes do SQL; o app antigo contava por essa coluna e quebraria se ela saísse primeiro.
+
+### Gleba de amostra atravessa a divisa entre talhões
+
+Pedido de 2026-11-18. A amostra 51 tinha 9 pontos no talhão 14 e 1 ponto do
+outro lado da divisa, no talhão 12; virou duas glebas (14-51 e 12-51). O
+mesmo com a 63 (6 pontos no 15, 4 no 17). O responsável escolheu, entre
+"talhão da maioria" e "gleba atravessa talhões", a segunda: **a gleba segue a
+amostra, não o talhão.**
+
+- A gleba continua tendo UM talhão (`talhao_id`): o da maioria dos pontos
+  (empate: o de código menor). Dono, permissão e código ("14-51") vêm dele.
+- Os pontos ligados podem estar em outro talhão da mesma fazenda. A regra do
+  banco passou de "mesmo talhão" para "mesma fazenda"
+  (`20261118120000_gleba_atravessa_talhoes.sql`).
+- Mesmo número em talhões diferentes só vira uma gleba se os pontos estiverem
+  a até 500 m uns dos outros (`DISTANCIA_MAXIMA_ENTRE_TALHOES_M`). Separa a
+  amostra que cruza a divisa (190–300 m nos dados reais) da numeração que
+  recomeça em cada talhão.
+- Desenho: cada talhão é dividido entre os pontos que caem nele (Voronoi,
+  como antes) e os pedaços da mesma gleba são unidos. O "Ajustar glebas" trava
+  junto o talhão vizinho de uma gleba que não pode ser refeita, para não abrir
+  vão.
+- Editar o desenho vale contra todos os talhões que a gleba já ocupa.
+- Mapa de calor: a amostra da gleba entra também no cálculo do talhão vizinho
+  que ela ocupa; a cor dos pontos procura a análise em todos os talhões dos
+  pontos da gleba.

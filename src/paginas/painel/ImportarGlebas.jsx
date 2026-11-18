@@ -135,8 +135,9 @@ export default function ImportarGlebas({ fazendaId, talhoes, glebas, aoFechar, a
           const livres = (await listarPontosColetaDaFazenda(fazendaId)).filter((p) => !p.gleba_id)
           const usados = new Set()
           for (const [i, gleba] of comArea.entries()) {
-            // Só pontos do mesmo talhão da gleba: o banco recusa ligar de outro.
-            const candidatos = livres.filter((p) => p.talhao_id === gleba.talhao_id && !usados.has(p.id))
+            // Qualquer talhão da fazenda: a gleba pode atravessar a divisa, e o
+            // ponto que cai dentro dela do outro lado também é dela.
+            const candidatos = livres.filter((p) => !usados.has(p.id))
             const ids = pontosNaGleba(candidatos, gleba.geometria).map((p) => p.id)
             pontosLigados += await vincularPontosColetaAGleba(gleba.id, ids)
             ids.forEach((id) => usados.add(id))
@@ -245,7 +246,7 @@ export default function ImportarGlebas({ fazendaId, talhoes, glebas, aoFechar, a
               <span>
                 Ligar a cada gleba os pontos de amostra que caem dentro dela
                 <span className="block text-slate-400 dark:text-slate-500">
-                  Só pontos do mesmo talhão e que ainda não pertencem a outra gleba. Vale para glebas de área; ponto não liga nada.
+                  Só pontos que ainda não pertencem a outra gleba. Vale para glebas de área; ponto não liga nada.
                 </span>
               </span>
             </label>

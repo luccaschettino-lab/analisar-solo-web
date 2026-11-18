@@ -90,6 +90,12 @@ export default function RecalcularGlebas() {
               se alternam com os de outras
             </li>
           )}
+          {plano.entreTalhoes > 0 && (
+            <li>
+              {plano.entreTalhoes} {plano.entreTalhoes === 1 ? 'gleba atravessa' : 'glebas atravessam'} a divisa entre talhões, porque
+              tem pontos de amostra dos dois lados
+            </li>
+          )}
           {plano.talhoesIgnorados.length > 0 && (
             <li className="text-amber-700 dark:text-amber-300">
               Talhão {plano.talhoesIgnorados.join(', ')}: tem glebas desenhadas à mão junto com as de pontos, então foi deixado como está

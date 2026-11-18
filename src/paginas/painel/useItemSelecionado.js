@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGeometrias } from '../../mapa/useGeometrias.js'
 import { focarGeometria } from '../../mapa/enquadrar.js'
-import { primeiraFeature, areaEmHectares, avaliarContencao, CONTENCAO, mesmaGeometria } from '../../lib/geo.js'
+import {
+  primeiraFeature,
+  areaEmHectares,
+  avaliarContencaoNosTalhoes,
+  talhoesOcupadosPelaGleba,
+  nomeDosTalhoes,
+  CONTENCAO,
+  mesmaGeometria,
+} from '../../lib/geo.js'
 import { SNAP_DISTANCIA } from '../../config/mapa.js'
 import { planejarDivisa } from '../../lib/divisaCompartilhada.js'
 import { atualizarTalhao, excluirTalhao, resumoCascataTalhao } from '../../dados/talhoes.js'
@@ -80,6 +88,13 @@ export function useItemSelecionado({
     selecionado?.tipo === 'gleba' && itemSelecionado
       ? (talhoes.find((t) => t.id === itemSelecionado.talhao_id) ?? null)
       : null
+  // Onde a gleba pode ficar: o talhão dela e os que ela já atravessa (gleba
+  // de amostra com pontos dos dois lados da divisa).
+  const geometriaGlebaSelecionada = selecionado?.tipo === 'gleba' ? itemSelecionado?.geometria : null
+  const talhoesDaGleba = useMemo(
+    () => (geometriaGlebaSelecionada ? talhoesOcupadosPelaGleba(geometriaGlebaSelecionada, talhaoPai, talhoes) : []),
+    [geometriaGlebaSelecionada, talhaoPai, talhoes],
+  )
   const editandoGeometria = Boolean(editandoChave) && editandoChave === chaveSelecionada
 
   const limparSelecao = useCallback(() => setSelecionado(null), [setSelecionado])
@@ -275,14 +290,16 @@ export function useItemSelecionado({
     // A mesma regra de quando a gleba é criada: tem que ficar dentro do talhão
     // (com a tolerância da divisa). Sem isto dava para gravar uma gleba para
     // fora, e depois nem o nome dela podia ser editado, porque "Editar dados"
-    // aplica esta regra. `nao_verificavel` não bloqueia.
+    // aplica esta regra. `nao_verificavel` não bloqueia. A gleba que já
+    // atravessa a divisa pode continuar nos talhões que ocupa.
     if (selecionado.tipo === 'gleba' && talhaoPai?.geometria) {
-      const contencao = avaliarContencao(feature, talhaoPai.geometria)
+      const contencao = avaliarContencaoNosTalhoes(feature, talhoesDaGleba.map((t) => t.geometria))
+      const onde = nomeDosTalhoes(talhoesDaGleba)
       if (contencao.situacao === CONTENCAO.FORA) {
         mostrarAviso(
           contencao.areaForaHa != null
-            ? `Não gravei: ${contencao.areaForaHa.toLocaleString('pt-BR')} ha (${Math.max(1, Math.round(contencao.fracaoFora * 100))}%) da gleba ficariam fora do talhão ${talhaoPai.codigo}. Traga os vértices de volta para dentro e grave de novo.`
-            : `Não gravei: o ponto ficaria fora do talhão ${talhaoPai.codigo}. Traga-o de volta para dentro e grave de novo.`,
+            ? `Não gravei: ${contencao.areaForaHa.toLocaleString('pt-BR')} ha (${Math.max(1, Math.round(contencao.fracaoFora * 100))}%) da gleba ficariam fora do ${onde}. Traga os vértices de volta para dentro e grave de novo.`
+            : `Não gravei: o ponto ficaria fora do ${onde}. Traga-o de volta para dentro e grave de novo.`,
         )
         return
       }
@@ -290,9 +307,11 @@ export function useItemSelecionado({
 
     // Divisa compartilhada: num talhão dividido, o vértice que a pessoa moveu
     // costuma ser também da gleba ao lado. Mexer só em uma abre buraco entre as
-    // duas, então pergunta antes de gravar.
+    // duas, então pergunta antes de gravar. Vizinhas: as glebas dos talhões que
+    // esta ocupa, inclusive as que vêm de outro talhão e atravessam para cá.
     if (selecionado.tipo === 'gleba' && itemSelecionado?.geometria) {
-      const vizinhas = glebas.filter((g) => g.talhao_id === itemSelecionado.talhao_id && g.id !== itemSelecionado.id)
+      const idsTalhoes = new Set(talhoesDaGleba.map((t) => t.id))
+      const vizinhas = glebas.filter((g) => idsTalhoes.has(g.talhao_id) && g.id !== itemSelecionado.id)
       const plano = planejarDivisa({ antes: itemSelecionado.geometria, depois: feature, vizinhas })
       if (plano) {
         setDivisaPendente({ feature, areaHa, plano })
@@ -361,6 +380,7 @@ export function useItemSelecionado({
     selecionado,
     itemSelecionado,
     talhaoPai,
+    talhoesDaGleba,
     selecionarEFocar,
     focarSelecionado,
     // Seleciona sem mover o mapa. Usado logo após criar uma geometria: nesse

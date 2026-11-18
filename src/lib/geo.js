@@ -2,6 +2,8 @@ import area from '@turf/area'
 import booleanWithin from '@turf/boolean-within'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import difference from '@turf/difference'
+import intersect from '@turf/intersect'
+import bbox from '@turf/bbox'
 import { featureCollection } from '@turf/helpers'
 
 // O banco guarda sempre uma Feature GeoJSON completa em `geometria`, nunca uma
@@ -144,6 +146,85 @@ export function avaliarContencao(geoGleba, geoTalhao) {
     // Nao e motivo para impedir o cadastro.
     return semResposta
   }
+}
+
+function caixasSeTocam(a, b) {
+  return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3])
+}
+
+/**
+ * Talhoes que a gleba (como esta gravada) ocupa: o dela e os outros em que
+ * cai mais que a tolerancia da divisa. A gleba criada a partir dos pontos de
+ * amostra atravessa a divisa quando a amostra atravessa — e editar o desenho
+ * dela nao pode exigir que ela caiba so no talhao-pai.
+ */
+export function talhoesOcupadosPelaGleba(geoGleba, talhaoPai, talhoes) {
+  const ocupados = talhaoPai ? [talhaoPai] : []
+  const gleba = paraFeature(geoGleba)
+  const tipo = gleba?.geometry?.type
+  if (tipo !== 'Polygon' && tipo !== 'MultiPolygon') return ocupados
+  try {
+    const areaGleba = area(gleba)
+    const caixa = bbox(gleba)
+    if (!(areaGleba > 0)) return ocupados
+    for (const talhao of talhoes) {
+      if (talhao.id === talhaoPai?.id) continue
+      const geo = paraFeature(talhao.geometria)
+      const t = geo?.geometry?.type
+      if (t !== 'Polygon' && t !== 'MultiPolygon') continue
+      if (!caixasSeTocam(caixa, bbox(geo))) continue
+      const comum = intersect(featureCollection([gleba, geo]))
+      if (comum && area(comum) / areaGleba > TOLERANCIA_FORA) ocupados.push(talhao)
+    }
+  } catch {
+    // Geometria degenerada: fica so o talhao-pai, a regra de sempre.
+  }
+  return ocupados
+}
+
+/**
+ * `avaliarContencao` contra varios talhoes juntos: o que conta como fora e o
+ * que nao cai em nenhum deles. Com um talhao so, e exatamente a regra de
+ * sempre.
+ */
+export function avaliarContencaoNosTalhoes(geoGleba, geometriasTalhoes) {
+  const validas = geometriasTalhoes.filter(Boolean)
+  if (validas.length <= 1) return avaliarContencao(geoGleba, validas[0])
+
+  const semResposta = { situacao: CONTENCAO.NAO_VERIFICAVEL, fracaoFora: null, areaForaHa: null }
+  const gleba = paraFeature(geoGleba)
+  if (!gleba?.geometry) return semResposta
+  try {
+    if (gleba.geometry.type === 'Point') {
+      return validas.some((t) => booleanPointInPolygon(gleba, paraFeature(t)))
+        ? { situacao: CONTENCAO.DENTRO, fracaoFora: 0, areaForaHa: 0 }
+        : { situacao: CONTENCAO.FORA, fracaoFora: 1, areaForaHa: null }
+    }
+    const areaGleba = area(gleba)
+    if (!Number.isFinite(areaGleba) || areaGleba <= 0) return semResposta
+    let sobra = gleba
+    for (const t of validas) {
+      sobra = difference(featureCollection([sobra, paraFeature(t)]))
+      if (!sobra) return { situacao: CONTENCAO.DENTRO, fracaoFora: 0, areaForaHa: 0 }
+    }
+    const areaFora = area(sobra)
+    if (!Number.isFinite(areaFora)) return semResposta
+    const fracaoFora = areaFora / areaGleba
+    return {
+      situacao: fracaoFora <= TOLERANCIA_FORA ? CONTENCAO.DENTRO : CONTENCAO.FORA,
+      fracaoFora,
+      areaForaHa: Math.round((areaFora / 10000) * 100) / 100,
+    }
+  } catch {
+    return semResposta
+  }
+}
+
+/** "talhão 12" ou "talhões 12 e 14", para as mensagens de contenção. */
+export function nomeDosTalhoes(talhoes) {
+  const codigos = talhoes.map((t) => t.codigo)
+  if (codigos.length <= 1) return `talhão ${codigos[0] ?? ''}`.trim()
+  return `talhões ${codigos.slice(0, -1).join(', ')} e ${codigos[codigos.length - 1]}`
 }
 
 /**

@@ -3,7 +3,7 @@ import { descartarPedacosMinusculos, AREA_MINIMA_DO_PEDACO_M2 } from '../src/lib
 import {
   CONTENCAO, TOLERANCIA_FORA,
   avaliarContencao, glebaDentroDoTalhao, pontoFeature, areaEmHectares,
-  combinarGeometrias,
+  combinarGeometrias, avaliarContencaoNosTalhoes, talhoesOcupadosPelaGleba, nomeDosTalhoes,
 } from '../src/lib/geo.js'
 
 let falhas = 0
@@ -149,6 +149,24 @@ console.log('\n=== descartarPedacosMinusculos: fiapos da divisão do talhão ===
   const poligono = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: grande } }
   ok('Polygon e ponto passam direto', descartarPedacosMinusculos(poligono) === poligono)
   ok('o limite é de 100 m²', AREA_MINIMA_DO_PEDACO_M2 === 100)
+}
+
+console.log('\nGleba que atravessa a divisa: contenção contra vários talhões')
+{
+  const ta = { id: 'a', codigo: '12', geometria: quadrado(-49.01, -10.01, -49.0, -10.0) }
+  const tb = { id: 'b', codigo: '14', geometria: quadrado(-49.0, -10.01, -48.99, -10.0) }
+  const tc = { id: 'c', codigo: '20', geometria: quadrado(-48.9, -9.9, -48.89, -9.89) }
+  const atravessa = quadrado(-49.002, -10.008, -48.997, -10.004)
+  const ocupados = talhoesOcupadosPelaGleba(atravessa, tb, [ta, tb, tc])
+  ok('ocupa o talhão dela e o vizinho, nessa ordem', ocupados.map((t) => t.id).join() === 'b,a')
+  ok('só contra o talhão dela, está fora', avaliarContencaoNosTalhoes(atravessa, [tb.geometria]).situacao === CONTENCAO.FORA)
+  ok('contra os dois que ocupa, está dentro', avaliarContencaoNosTalhoes(atravessa, ocupados.map((t) => t.geometria)).situacao === CONTENCAO.DENTRO)
+  ok(
+    'saindo pelo outro lado continua fora',
+    avaliarContencaoNosTalhoes(quadrado(-48.995, -10.008, -48.985, -10.004), ocupados.map((t) => t.geometria)).situacao === CONTENCAO.FORA,
+  )
+  ok('nome para a mensagem', nomeDosTalhoes(ocupados) === 'talhões 14 e 12')
+  ok('gleba inteira no 14 ocupa só o 14', talhoesOcupadosPelaGleba(quadrado(-48.998, -10.008, -48.996, -10.004), tb, [ta, tb, tc]).length === 1)
 }
 
 console.log(`\n${falhas === 0 ? 'TODOS OS TESTES PASSARAM' : falhas + ' FALHA(S)'}`)

@@ -3,10 +3,11 @@ import Modal from '../../componentes/Modal.jsx'
 import { Campo, BotaoPrincipal, Aviso } from '../../componentes/formulario.jsx'
 import { criarGleba, atualizarGleba } from '../../dados/glebas.js'
 import { criarGlebaComPontosColeta } from '../../dados/pontosColeta.js'
-import { areaEmHectares, avaliarContencao, CONTENCAO, ehPonto } from '../../lib/geo.js'
+import { areaEmHectares, avaliarContencaoNosTalhoes, nomeDosTalhoes, CONTENCAO, ehPonto } from '../../lib/geo.js'
 
 export default function FormGleba({
   talhao,
+  talhoesPermitidos,
   gleba,
   geometria,
   pontosColetaIds,
@@ -37,8 +38,12 @@ export default function FormGleba({
    * `nao_verificavel` não bloqueia: não saber conferir é diferente de saber
    * que está errado.
    */
-  const contencao = avaliarContencao(geo, talhao?.geometria)
+  // Na edição, a gleba que atravessa a divisa (amostra com pontos nos dois
+  // talhões) vale contra todos os talhões que ela já ocupa.
+  const permitidos = talhoesPermitidos?.length ? talhoesPermitidos : talhao ? [talhao] : []
+  const contencao = avaliarContencaoNosTalhoes(geo, permitidos.map((t) => t.geometria))
   const foraDoTalhao = contencao.situacao === CONTENCAO.FORA
+  const onde = nomeDosTalhoes(permitidos)
 
   async function enviar(evento) {
     evento.preventDefault()
@@ -57,8 +62,8 @@ export default function FormGleba({
     if (foraDoTalhao) {
       setErro(
         ponto
-          ? `Este ponto está fora do talhão ${talhao.codigo}. Reposicione-o dentro do talhão para salvar.`
-          : `Esta sub-área está fora do talhão ${talhao.codigo}. Redesenhe-a dentro do talhão para salvar.`,
+          ? `Este ponto está fora do ${onde}. Reposicione-o dentro para salvar.`
+          : `Esta sub-área está fora do ${onde}. Redesenhe-a dentro para salvar.`,
       )
       return
     }
@@ -112,12 +117,12 @@ export default function FormGleba({
             className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200"
           >
             <p className="font-medium">
-              {ponto ? 'Este ponto está' : 'Esta sub-área está'} fora do talhão {talhao.codigo}.
+              {ponto ? 'Este ponto está' : 'Esta sub-área está'} fora do {onde}.
             </p>
             <p className="mt-1">
               {ponto
-                ? 'Feche esta janela e marque o ponto dentro do talhão.'
-                : `Fora do talhão: ${(contencao.fracaoFora * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% da sub-área${contencao.areaForaHa ? ` (${contencao.areaForaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha)` : ''}. Feche esta janela e redesenhe dentro do talhão.`}
+                ? `Feche esta janela e marque o ponto dentro do ${onde}.`
+                : `Fora do ${onde}: ${(contencao.fracaoFora * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% da sub-área${contencao.areaForaHa ? ` (${contencao.areaForaHa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha)` : ''}. Feche esta janela e redesenhe dentro.`}
             </p>
           </div>
         )}

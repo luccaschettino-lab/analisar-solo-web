@@ -95,21 +95,35 @@ export function dividirTalhaoPorPontos(geometriaTalhao, pontos) {
 
   const resultado = new Map()
   for (const [chave, partes] of celulasPorChave) {
-    let geometria = partes[0]
-    if (partes.length > 1) {
-      try {
-        geometria = union(featureCollection(partes))
-      } catch {
-        continue
-      }
-    }
-    if (!geometria) continue
-    const feature = descartarPedacosMinusculos({ type: 'Feature', properties: {}, geometry: geometria.geometry })
-    resultado.set(chave, {
-      geometria: feature,
-      areaHa: areaEmHectares(feature),
-      pedacos: feature.geometry.type === 'MultiPolygon' ? feature.geometry.coordinates.length : 1,
-    })
+    const unida = unirPartes(partes)
+    if (unida) resultado.set(chave, unida)
   }
   return resultado
+}
+
+/**
+ * Une pedaços de uma mesma gleba numa geometria só: as células de Voronoi
+ * dentro de um talhão, ou as partes de uma gleba que atravessa a divisa entre
+ * talhões (cada talhão dividido à parte). Pedaços vizinhos viram um polígono;
+ * os que não se tocam ficam num MultiPolygon. Devolve
+ * `{ geometria, areaHa, pedacos }`, ou `null` se a união falhar.
+ */
+export function unirPartes(partes) {
+  const validas = partes.filter(Boolean)
+  if (validas.length === 0) return null
+  let geometria = validas[0]
+  if (validas.length > 1) {
+    try {
+      geometria = union(featureCollection(validas))
+    } catch {
+      return null
+    }
+  }
+  if (!geometria) return null
+  const feature = descartarPedacosMinusculos({ type: 'Feature', properties: {}, geometry: geometria.geometry })
+  return {
+    geometria: feature,
+    areaHa: areaEmHectares(feature),
+    pedacos: feature.geometry.type === 'MultiPolygon' ? feature.geometry.coordinates.length : 1,
+  }
 }
