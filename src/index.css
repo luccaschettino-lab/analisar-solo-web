@@ -228,3 +228,16 @@ body {
 .raster-pixelado {
   image-rendering: pixelated;
 }
+
+/*
+ * Monitoramento: tudo fora do talhão coberto com a cor do fundo da página,
+ * para ficar só o talhão recortado. Cores literais pelo mesmo motivo do
+ * `.dark body` acima (slate-100 e noite-950).
+ */
+.leaflet-container path.mascara-talhao {
+  fill: #f1f5f9;
+  fill-opacity: 1;
+}
+.dark .leaflet-container path.mascara-talhao {
+  fill: #050b16;
+}
