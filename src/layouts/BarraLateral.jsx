@@ -3,6 +3,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { glebasDoTalhao } from '../hooks/useHierarquia.js'
 import { ROTULO_PAPEL } from '../lib/permissoes.js'
+import { useTutorial } from '../context/TutorialContext.jsx'
+import PrimeirosPassos from '../componentes/tutorial/PrimeirosPassos.jsx'
 
 const FOCO = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-solo-500'
 const ITEM = `flex w-full items-center gap-2 rounded px-2 py-2 text-left text-sm transition md:py-1.5 ${FOCO}`
@@ -99,6 +101,16 @@ function IconeMonitoramento(props) {
   )
 }
 
+function IconeAjuda(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  )
+}
+
 function IconeCriterios(props) {
   return (
     <svg {...PROPRIEDADES_ICONE} {...props}>
@@ -189,6 +201,8 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
     selecionado, setSelecionado, setPedidoDeDesenho,
     setFormFazenda, setPedidoDeAcao,
   } = useFazendaAtual()
+
+  const { recomecar: recomecarTutorial } = useTutorial()
 
   const temSede = fazendaSelecionada?.sede_lat != null && fazendaSelecionada?.sede_lng != null
 
@@ -564,7 +578,31 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
           <ItemNav to="/criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
+          {/* Rever o tutorial: boas-vindas de novo, dicas e primeiros passos
+              voltam a aparecer. */}
+          <button
+            type="button"
+            onClick={() => { recomecarTutorial(); aoNavegar?.() }}
+            title={compacta ? 'Tutorial' : undefined}
+            aria-label="Tutorial"
+            className={`${ITEM_NAV} ${compacta ? 'justify-center px-0' : ''} ${INATIVO}`}
+          >
+            <IconeAjuda aria-hidden="true" className="h-[18px] w-[18px] shrink-0" />
+            {!compacta && <span className="min-w-0 flex-1 truncate text-left">Tutorial</span>}
+          </button>
         </div>
+
+        {!compacta && (
+          <PrimeirosPassos
+            acoes={{
+              novaFazenda,
+              marcarSede: () => pedirAcao('marcar-sede'),
+              desenharTalhao: pedirDesenhoDeTalhao,
+              importarTalhoes: () => pedirAcao('importar-arquivo'),
+              irPara,
+            }}
+          />
+        )}
       </div>
     </nav>
   )

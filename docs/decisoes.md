@@ -772,3 +772,27 @@ amostra, não o talhão.**
 - Mapa de calor: a amostra da gleba entra também no cálculo do talhão vizinho
   que ela ocupa; a cor dos pontos procura a análise em todos os talhões dos
   pontos da gleba.
+
+### Tutorial de primeiro acesso e fazenda de exemplo
+
+Pedido de 2026-11-18. Três peças, escolhidas por serem as que ajudam sem
+atrapalhar quem já sabe usar (tour com destaque piscando em cima do mapa foi
+descartado: quebra fácil sobre o Leaflet e todo mundo pula):
+
+- **Boas-vindas** (4 telas) no primeiro acesso, terminando em "explorar a
+  fazenda de exemplo" ou "cadastrar a minha".
+- **Primeiros passos** na barra lateral, que se marcam sozinhos olhando os
+  dados (fazenda, sede, talhões, glebas, análises, Filtros). Só para a fazenda
+  da própria pessoa e só para quem pode editar.
+- **Dica na primeira visita** de cada tela.
+
+O progresso fica em `perfis.tutorial` (banco), não no navegador: vale em
+qualquer aparelho. "Ajustes → Tutorial" recomeça tudo.
+
+A **fazenda de exemplo** é criada na conta da pessoa, com `fazendas.exemplo =
+true`, pelos mesmos caminhos do uso real (talhões → pontos → glebas
+automáticas → análises). Dados determinísticos (`lib/fazendaExemplo.js`):
+4 talhões, 24 glebas, 2 safras × 2 profundidades, calcário no talhão 2 para a
+comparação de anos, duas glebas sem análise para a hachura. Se um passo
+falha, a fazenda é apagada inteira. Excluir o exemplo não pede a senha das
+exclusões reais.

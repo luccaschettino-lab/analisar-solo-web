@@ -4,6 +4,10 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { FazendaProvider } from '../context/FazendaContext.jsx'
 import AlternadorTema from '../componentes/AlternadorTema.jsx'
 import BarraLateral from './BarraLateral.jsx'
+import { TutorialProvider } from '../context/TutorialContext.jsx'
+import BoasVindas from '../componentes/tutorial/BoasVindas.jsx'
+import DicaDaTela from '../componentes/tutorial/DicaDaTela.jsx'
+import AvisoFazendaExemplo from '../componentes/tutorial/AvisoFazendaExemplo.jsx'
 import iconeMarca from '../assets/marca/moinho-icone.jpg'
 
 export default function LayoutApp() {
@@ -50,6 +54,7 @@ export default function LayoutApp() {
 
   return (
     <FazendaProvider>
+      <TutorialProvider>
       <div className="flex h-full flex-col">
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-noite-950 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -119,11 +124,17 @@ export default function LayoutApp() {
 
           {/* min-h-0 e min-w-0 deixam o filho encolher dentro do flex; sem
               isso o mapa e as tabelas largas estouram o container. */}
-          <main className="min-h-0 min-w-0 flex-1">
-            <Outlet />
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <AvisoFazendaExemplo />
+            <div className="min-h-0 flex-1">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>
+      <BoasVindas />
+      <DicaDaTela />
+      </TutorialProvider>
     </FazendaProvider>
   )
 }
