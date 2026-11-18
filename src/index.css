@@ -241,3 +241,11 @@ body {
 .dark .leaflet-container path.mascara-talhao {
   fill: #050b16;
 }
+
+/* Monitoramento: mapa fixo no talhão, sem zoom nem arrasto. */
+.mapa-fixo .leaflet-control-zoom {
+  display: none;
+}
+.mapa-fixo.leaflet-container {
+  cursor: default;
+}

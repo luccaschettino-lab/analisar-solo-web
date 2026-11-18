@@ -13,6 +13,12 @@ function aneisLatLng(geometry) {
   return poligonos.flatMap((aneis) => aneis.map((anel) => anel.map(([lng, lat]) => [lat, lng])))
 }
 
+// Talhão inteiro na tela, com folga em cima para a escolha do índice, que
+// flutua no canto superior.
+function enquadrar(mapa, contorno) {
+  mapa.fitBounds(contorno.getBounds(), { paddingTopLeft: [24, 64], paddingBottomRight: [24, 24], animate: false })
+}
+
 // Limites da projeção do mapa (Web Mercator vai até ~85°).
 const MUNDO = [
   [-85, -180],
@@ -31,6 +37,17 @@ export default function MapaDoTalhao({ geometria, dados, indice, children }) {
   const [mapa, setMapa] = useState(null)
   const camadas = useRef({ contorno: null, raster: null, mascara: null })
   const aoCriarMapa = useCallback((m) => setMapa(m), [])
+
+  // Mapa fixo: mostra o talhão inteiro e não se mexe — nem arrastar, nem zoom
+  // (roda, toque, duplo clique, teclado). Zoom fracionário para o talhão
+  // preencher o espaço em vez de pular para o nível inteiro de baixo.
+  useEffect(() => {
+    if (!mapa) return
+    for (const controle of ['dragging', 'touchZoom', 'doubleClickZoom', 'scrollWheelZoom', 'boxZoom', 'keyboard']) {
+      mapa[controle]?.disable()
+    }
+    mapa.options.zoomSnap = 0
+  }, [mapa])
 
   // Contorno, máscara e enquadramento: refeitos só quando troca o talhão.
   useEffect(() => {
@@ -57,7 +74,7 @@ export default function MapaDoTalhao({ geometria, dados, indice, children }) {
     }).addTo(mapa)
     camadas.current.contorno = contorno
     mapa.invalidateSize()
-    mapa.fitBounds(contorno.getBounds(), { padding: [40, 40], animate: false })
+    enquadrar(mapa, contorno)
   }, [mapa, geometria])
 
   // O container muda de tamanho depois de o mapa nascer (layout da página,
@@ -67,17 +84,11 @@ export default function MapaDoTalhao({ geometria, dados, indice, children }) {
     if (!mapa || typeof ResizeObserver === 'undefined') return
     const observador = new ResizeObserver(() => {
       mapa.invalidateSize()
-      const contorno = camadas.current.contorno
-      if (contorno) mapa.fitBounds(contorno.getBounds(), { padding: [40, 40], animate: false })
+      if (camadas.current.contorno) enquadrar(mapa, camadas.current.contorno)
     })
     observador.observe(mapa.getContainer())
     return () => observador.disconnect()
   }, [mapa])
-
-  function recentralizar() {
-    const contorno = camadas.current.contorno
-    if (mapa && contorno) mapa.fitBounds(contorno.getBounds(), { padding: [40, 40] })
-  }
 
   // Camada do índice: refeita ao trocar de cena ou de índice.
   useEffect(() => {
@@ -99,17 +110,8 @@ export default function MapaDoTalhao({ geometria, dados, indice, children }) {
   // de cálculo), posicionado por quem usa.
   return (
     <div className="relative h-full overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-      <Mapa aoCriarMapa={aoCriarMapa} />
+      <Mapa aoCriarMapa={aoCriarMapa} className="mapa-fixo" />
       {children}
-      <button
-        type="button"
-        onClick={recentralizar}
-        title="Centralizar no talhão"
-        aria-label="Centralizar no talhão"
-        className="vidro absolute bottom-8 right-3 z-[1000] rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-      >
-        ⌖ Centralizar
-      </button>
     </div>
   )
 }
