@@ -166,7 +166,7 @@ const SECOES = [
     itens: [
       [
         'De onde vêm as imagens?',
-        'De dois satélites, que você escolhe no topo do painel. O Sentinel-2 (Europa, padrão) passa a cada 2 a 5 dias, com quadradinhos de 10 m e reflectância já corrigida da atmosfera; é o que dá imagem toda semana. O CBERS-4A (INPE) passa mais ou menos uma vez por mês, com 16 m. Na época de chuva, muitas imagens vêm nubladas, e nenhum satélite óptico enxerga através da nuvem.',
+        'Do satélite Sentinel-2 (Europa). Ele passa a cada 2 a 5 dias, com quadradinhos de 10 m e reflectância já corrigida da atmosfera; é o que dá imagem toda semana. Na época de chuva, muitas imagens vêm nubladas, e nenhum satélite óptico enxerga através da nuvem.',
       ],
       [
         'Qual índice uso?',

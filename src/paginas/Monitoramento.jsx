@@ -178,7 +178,8 @@ export default function Monitoramento() {
   // no navegador, para quem prefere o CBERS não precisar trocar toda vez.
   const [fonte, setFonte] = useState(() => {
     try {
-      return localStorage.getItem('moinho-satelite') === 'cbers' ? 'cbers' : 'sentinel'
+      const salvo = localStorage.getItem('moinho-satelite')
+      return SATELITES[salvo] && !SATELITES[salvo].oculto ? salvo : 'sentinel'
     } catch {
       return 'sentinel'
     }
@@ -193,6 +194,7 @@ export default function Monitoramento() {
     }
   }
   const satelite = SATELITES[fonte]
+  const satelitesVisiveis = Object.values(SATELITES).filter((s) => !s.oculto)
 
   // Período da barra do tempo, do gráfico e do "carregar com um clique".
   // 12 meses de Sentinel-2 são ~100 imagens: numa barra estreita as bolinhas
@@ -367,9 +369,9 @@ export default function Monitoramento() {
 
           {/* Painel */}
           <aside className="space-y-4 lg:min-h-0 lg:overflow-auto lg:pr-1">
-            <Cartao titulo="Satélite">
+            {satelitesVisiveis.length > 1 && <Cartao titulo="Satélite">
               <div role="radiogroup" aria-label="Satélite" className="grid grid-cols-2 gap-2">
-                {Object.values(SATELITES).map((s) => (
+                {satelitesVisiveis.map((s) => (
                   <button
                     key={s.chave}
                     type="button"
@@ -387,7 +389,7 @@ export default function Monitoramento() {
                   </button>
                 ))}
               </div>
-            </Cartao>
+            </Cartao>}
 
             <Cartao titulo="Data da imagem">
               {geometria && carregando && (

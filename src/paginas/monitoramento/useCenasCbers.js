@@ -5,7 +5,9 @@ import { listarCenasSentinel } from '../../dados/sentinel.js'
 /** Satélites do Monitoramento. A chave é o que vai na URL/estado. */
 export const SATELITES = {
   sentinel: { chave: 'sentinel', nome: 'Sentinel-2', resumo: 'a cada 2–5 dias · 10 m', listar: listarCenasSentinel },
-  cbers: { chave: 'cbers', nome: 'CBERS-4A', resumo: 'mensal · 16 m', listar: listarCenasCbers },
+  // Oculto no site desde 18/11/2026: o código fica, a decisão de manter ou
+  // tirar de vez está pendente. Para voltar a mostrar, é só tirar `oculto`.
+  cbers: { chave: 'cbers', nome: 'CBERS-4A', resumo: 'mensal · 16 m', listar: listarCenasCbers, oculto: true },
 }
 
 /** Datas com imagem do satélite escolhido sobre o talhão. */
