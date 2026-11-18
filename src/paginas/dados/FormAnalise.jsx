@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Campo, Aviso } from '../../componentes/formulario.jsx'
 import { PROFUNDIDADES, CHAVES_PARAMETROS } from '../../config/parametros.js'
 import { ehNumeroInvalido, paraTextoDeCampo } from '../../lib/numeros.js'
-import { pontoFeature, latLngDoPonto } from '../../lib/geo.js'
+import { pontoFeature, latLngDoPonto, glebaDentroDoTalhao } from '../../lib/geo.js'
+import { interpretarBusca } from '../../lib/busca.js'
 import { montarPayload, criarAnalise, atualizarAnalise } from '../../dados/analises.js'
 import SeletorTalhao from './SeletorTalhao.jsx'
 import MapaPontoColeta from './MapaPontoColeta.jsx'
@@ -17,6 +18,106 @@ const CARTAO = 'rounded-xl border border-slate-200 bg-white p-4 dark:border-whit
 const TITULO = 'mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400'
 const CAMPO =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-solo-600 focus:ring-2 focus:ring-solo-100 disabled:bg-slate-50 dark:border-white/15 dark:bg-noite-800 dark:text-slate-100 dark:focus:border-solo-500 dark:focus:ring-solo-500/30 dark:disabled:bg-white/5'
+
+const formatarPonto = (p) => (p ? `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}` : '')
+
+/**
+ * O ponto por coordenadas, a outra forma de marcar além do clique no mapa.
+ * Os dois ficam ligados: clicar preenche o campo, e digitar (Enter ou
+ * "Usar") move o ponto no mapa. Aceita o que a busca do mapa aceita
+ * ("-20.7546, -42.8825", "-20,7546 -42,8825"), avisa latitude e longitude
+ * trocadas e ponto fora do talhão — sem recusar, porque coletar na beira é
+ * legítimo.
+ */
+function CoordenadasDoPonto({ ponto, talhao, aoEscolher, desabilitado }) {
+  const [texto, setTexto] = useState(formatarPonto(ponto))
+  const [problema, setProblema] = useState(null) // { texto, trocar? }
+
+  // Clique ou arraste no mapa atualiza o campo.
+  useEffect(() => {
+    setTexto(formatarPonto(ponto))
+  }, [ponto])
+
+  const fora = ponto && talhao?.geometria && glebaDentroDoTalhao(pontoFeature(ponto.lat, ponto.lng), talhao.geometria) === false
+
+  function usar() {
+    const r = interpretarBusca(texto)
+    if (r.tipo === 'erro') return setProblema({ texto: r.motivo })
+    if (r.tipo !== 'coordenada') return setProblema({ texto: 'Digite a latitude e a longitude, por exemplo -20.7546, -42.8825.' })
+    if (r.invertidaProvavel) {
+      return setProblema({
+        texto: 'Parece que latitude e longitude estão trocadas (a primeira é a latitude, que no Brasil vai de +5 a −34).',
+        trocar: { lat: r.lng, lng: r.lat },
+      })
+    }
+    setProblema(null)
+    aoEscolher({ lat: r.lat, lng: r.lng })
+  }
+
+  return (
+    <div className="mt-3">
+      <label htmlFor="coordenadas-ponto" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        Ou digite as coordenadas
+      </label>
+      <div className="mt-1 flex gap-2">
+        <input
+          id="coordenadas-ponto"
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          value={texto}
+          onChange={(e) => {
+            setTexto(e.target.value)
+            setProblema(null)
+          }}
+          onKeyDown={(e) => {
+            // Enter aqui usa as coordenadas, não envia o formulário inteiro.
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              usar()
+            }
+          }}
+          placeholder="latitude, longitude  (ex.: -20.7546, -42.8825)"
+          disabled={desabilitado}
+          className={`${CAMPO} min-w-0 flex-1 tabular-nums`}
+        />
+        <button
+          type="button"
+          onClick={usar}
+          disabled={desabilitado || !texto.trim() || texto === formatarPonto(ponto)}
+          className="shrink-0 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
+        >
+          Usar
+        </button>
+      </div>
+      {problema ? (
+        <p role="alert" className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
+          {problema.texto}{' '}
+          {problema.trocar && (
+            <button
+              type="button"
+              onClick={() => {
+                setProblema(null)
+                aoEscolher(problema.trocar)
+              }}
+              className="font-semibold underline"
+            >
+              Trocar e usar
+            </button>
+          )}
+        </p>
+      ) : fora ? (
+        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
+          Este ponto fica fora do talhão {talhao.codigo}. Confira; dá para salvar assim.
+        </p>
+      ) : (
+        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+          Clicar no mapa preenche este campo; digitar e apertar Enter move o ponto. Graus decimais, como o GPS mostra.
+        </p>
+      )}
+    </div>
+  )
+}
 
 function valoresDe(analise) {
   const valores = {}
@@ -152,11 +253,7 @@ export default function FormAnalise({ selecao, emEdicao, aoSalvar, aoCancelarEdi
                 aoEscolherPonto={setPonto}
                 className="h-[22rem] lg:h-[calc(100vh-22rem)] lg:min-h-[20rem]"
               />
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {ponto
-                  ? `Ponto em ${ponto.lat.toFixed(5)}, ${ponto.lng.toFixed(5)}. Cada amostra marcada no seu lugar alimenta o mapa de calor.`
-                  : 'Cada amostra marcada no seu lugar alimenta o mapa de calor, mesmo várias no mesmo talhão.'}
-              </p>
+              <CoordenadasDoPonto ponto={ponto} talhao={selecao.talhao} aoEscolher={setPonto} desabilitado={bloqueado} />
             </div>
           ) : (
             <p className="mt-3 flex h-48 items-center justify-center rounded-lg border border-dashed border-slate-300 text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">

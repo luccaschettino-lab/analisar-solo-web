@@ -68,6 +68,8 @@ export default function MapaPontoColeta({ talhao, ponto, aoEscolherPonto, classN
         const { lat, lng } = e.target.getLatLng()
         aoEscolherRef.current?.({ lat, lng })
       })
+    // Ponto digitado por coordenadas pode cair fora da vista: o mapa vai até ele.
+    if (!mapa.getBounds().contains([ponto.lat, ponto.lng])) mapa.panTo([ponto.lat, ponto.lng])
   }, [mapa, ponto])
 
   // O container muda de tamanho depois de o mapa nascer (layout em duas
