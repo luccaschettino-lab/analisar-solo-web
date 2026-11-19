@@ -29,7 +29,7 @@ const CAMPO =
  */
 export default function Criterios() {
   const { usuario } = useAuth()
-  const { fazendaSelecionada, editor, recarregarCriterio, aplicarFazenda } = useFazendaAtual()
+  const { fazendaSelecionada, podeCriterio, recarregarCriterio, aplicarFazenda } = useFazendaAtual()
   const { criterios, carregando, erro, criar, salvar, excluir } = useCriterios()
   const { aviso, mostrar: mostrarAviso } = useAviso()
 
@@ -240,7 +240,7 @@ export default function Criterios() {
               <button
                 type="button"
                 onClick={() => aplicarNaFazenda(aberto.id)}
-                disabled={emVigor || aplicando || !editor}
+                disabled={emVigor || aplicando || !podeCriterio}
                 data-tutorial="aplicar-criterio"
                 className={BOTAO_PRIMARIO}
               >
@@ -250,7 +250,7 @@ export default function Criterios() {
                 <button
                   type="button"
                   onClick={() => aplicarNaFazenda(null)}
-                  disabled={aplicando || !editor}
+                  disabled={aplicando || !podeCriterio}
                   className={BOTAO}
                 >
                   Tirar desta fazenda
@@ -260,9 +260,9 @@ export default function Criterios() {
           </div>
         )}
 
-        {!editor && fazendaSelecionada && (
+        {!podeCriterio && fazendaSelecionada && (
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            Você tem acesso de leitura nesta fazenda, então não pode trocar o conjunto em vigor.
+            Só o proprietário ou o agrônomo da fazenda trocam o conjunto em vigor. Você pode criar e ajustar os seus conjuntos, mas não aplicá-los aqui.
           </p>
         )}
 

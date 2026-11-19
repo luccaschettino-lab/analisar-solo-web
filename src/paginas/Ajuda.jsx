@@ -51,7 +51,7 @@ const SECOES = [
       ],
       [
         'Quem pode mexer na fazenda?',
-        'Proprietário e editor cadastram e alteram tudo; leitor só vê. Quem cria a fazenda é o proprietário. O seu papel aparece embaixo do nome da fazenda, na barra lateral.',
+        'São quatro cargos. Proprietário: tudo, inclusive a equipe e excluir a fazenda. Agrônomo: edita tudo e define os critérios de interpretação. Editor: lança análises, desenha e sobe fotos, mas não mexe em critérios. Leitor: só vê e exporta. Quem cria a fazenda é o proprietário. O seu cargo aparece embaixo do nome da fazenda, na barra lateral.',
       ],
       [
         'Por que o sistema pede a minha senha para excluir?',

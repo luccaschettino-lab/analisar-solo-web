@@ -6,6 +6,7 @@ import Login from './paginas/Login.jsx'
 import Cadastro from './paginas/Cadastro.jsx'
 import EsqueciSenha from './paginas/EsqueciSenha.jsx'
 import NovaSenha from './paginas/NovaSenha.jsx'
+import Convite from './paginas/Convite.jsx'
 import NaoEncontrado from './paginas/NaoEncontrado.jsx'
 import ErroDeRota from './componentes/ErroDeRota.jsx'
 
@@ -20,6 +21,7 @@ const Dados = lazy(() => import('./paginas/Dados.jsx'))
 const Comparar = lazy(() => import('./paginas/Comparar.jsx'))
 const Monitoramento = lazy(() => import('./paginas/Monitoramento.jsx'))
 const Exportar = lazy(() => import('./paginas/Exportar.jsx'))
+const Equipe = lazy(() => import('./paginas/Equipe.jsx'))
 const Ajuda = lazy(() => import('./paginas/Ajuda.jsx'))
 const Criterios = lazy(() => import('./paginas/Criterios.jsx'))
 const GlebaDetalhe = lazy(() => import('./paginas/GlebaDetalhe.jsx'))
@@ -60,7 +62,11 @@ export const router = createHashRouter([
   {
     element: <LayoutPublico />,
     errorElement: <ErroDeRota />,
-    children: [{ path: '/nova-senha', element: <NovaSenha /> }],
+    // O convite também: serve a quem não tem conta e a quem já está logado.
+    children: [
+      { path: '/nova-senha', element: <NovaSenha /> },
+      { path: '/convite/:token', element: <Convite /> },
+    ],
   },
   {
     element: <RotaProtegida />,
@@ -76,6 +82,7 @@ export const router = createHashRouter([
           { path: '/monitoramento', element: comEspera(Monitoramento) },
           { path: '/exportar', element: comEspera(Exportar) },
           { path: '/criterios', element: comEspera(Criterios) },
+          { path: '/equipe', element: comEspera(Equipe) },
           { path: '/ajuda', element: comEspera(Ajuda) },
           { path: '/glebas/:id', element: comEspera(GlebaDetalhe) },
         ],

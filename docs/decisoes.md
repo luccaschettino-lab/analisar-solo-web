@@ -912,3 +912,20 @@ campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
   indicesCbers.js`, `_shared/tiffRecorte.js`, os testes e o host do INPE na CSP.
 - O Monitoramento usa só o Sentinel-2. A coluna `indices_talhao.fonte` fica
   (todas as linhas são 'sentinel'), caso entre outro satélite no futuro.
+
+## 2026-11-18 — Equipe da fazenda (P7)
+
+- Por fazenda: o proprietário gerencia em Ajustes > Equipe.
+- Quatro cargos: Proprietário (tudo + equipe + excluir; pode haver mais de
+  um), Agrônomo (edita tudo + critérios), Editor (dados, desenho, fotos; sem
+  critérios), Leitor (vê e exporta). Trocar o critério da fazenda passou a
+  exigir proprietário ou agrônomo (gatilho `validar_criterio_da_fazenda`).
+- Convite por LINK de uso único, com o cargo escolhido na hora, válido 7 dias
+  (`fazenda_convites`). Nada de e-mail: o do Supabase sai em inglês e com
+  limite baixo enquanto não há SMTP próprio. O proprietário copia o link ou
+  manda pelo WhatsApp.
+- A função `convite` (service role, verify_jwt desligado) valida o link; quem
+  não tem conta cria ali mesmo (e-mail já confirmado — o link é a prova); quem
+  tem entra e aceita. O cadastro público continua fechado.
+- Gatilho `manter_um_proprietario`: não deixa tirar nem rebaixar o último
+  proprietário (exceto em exclusão em cascata da fazenda ou da conta).

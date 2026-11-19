@@ -100,6 +100,18 @@ function IconeMonitoramento(props) {
   )
 }
 
+// Duas pessoas: a equipe da fazenda.
+function IconeEquipe(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
 // Bandeja com a seta saindo para baixo: baixar/exportar.
 function IconeExportar(props) {
   return (
@@ -208,7 +220,7 @@ function SubItem({ ativo, onClick, children, tutorial }) {
 export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }) {
   const {
     fazendas, carregandoFazendas, erroFazendas,
-    fazendaSelecionada, selecionarFazenda, editor,
+    fazendaSelecionada, selecionarFazenda, editor, proprietario,
     talhoes, glebas, carregando: carregandoHierarquia,
     selecionado, setSelecionado, setPedidoDeDesenho,
     setFormFazenda, setPedidoDeAcao,
@@ -593,6 +605,8 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
               e autor entra em leitura, e precisa — a cor do mapa dele sai
               daqui. */}
           <ItemNav to="/criterios" tutorial="criterios" Icone={IconeCriterios} rotulo="Critérios" onClick={aoNavegar} compacta={compacta} />
+          {/* Equipe: só o proprietário convida e muda cargos. */}
+          {proprietario && <ItemNav to="/equipe" Icone={IconeEquipe} rotulo="Equipe" onClick={aoNavegar} compacta={compacta} />}
           {/* Ajuda: o que é cada coisa, com busca; dali também se revê o
               tutorial. */}
           <ItemNav to="/ajuda" Icone={IconeAjuda} rotulo="Ajuda" onClick={aoNavegar} compacta={compacta} />

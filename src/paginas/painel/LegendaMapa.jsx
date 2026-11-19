@@ -34,7 +34,7 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
   // No celular começa recolhida: 224 px de legenda sobre uma tela de 360 tapam
   // justamente o mapa que ela explica. Em tela larga fica sempre aberta.
   const [aberta, setAberta] = useState(false)
-  const { semCriterio, parametrosDoCriterio, editor } = useFazendaAtual()
+  const { semCriterio, parametrosDoCriterio, podeCriterio } = useFazendaAtual()
 
   // Sem conjunto de critérios a fazenda não classifica nada: no lugar da
   // legenda, o porquê do mapa sem cor e onde resolver.
@@ -55,7 +55,7 @@ export default function LegendaMapa({ chaveParametro, anoSafra, profundidade, el
           to="/criterios"
           className="mt-2 inline-block rounded-md bg-solo-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-solo-800 dark:bg-solo-600"
         >
-          {editor ? 'Definir os critérios' : 'Ver os critérios'}
+          {podeCriterio ? 'Definir os critérios' : 'Ver os critérios'}
         </Link>
       </aside>
     )

@@ -6,7 +6,7 @@ import { useAnalisesDaFazenda } from '../hooks/useAnalisesDaFazenda.js'
 import { useCriterioDaFazenda } from '../hooks/useCriterioDaFazenda.js'
 import { useFiltroMapa } from '../paginas/painel/useFiltroMapa.js'
 import { anosDisponiveis, criarColoracao } from '../lib/coloracao.js'
-import { podeEditar } from '../lib/permissoes.js'
+import { podeEditar, podeDefinirCriterio, ehProprietario } from '../lib/permissoes.js'
 import { SEM_CRITERIO } from '../lib/criterios.js'
 
 const FazendaContext = createContext(null)
@@ -124,6 +124,8 @@ export function FazendaProvider({ children }) {
       fazendaSelecionada,
       selecionarFazenda,
       editor: podeEditar(fazendaSelecionada?.papel),
+      podeCriterio: podeDefinirCriterio(fazendaSelecionada?.papel),
+      proprietario: ehProprietario(fazendaSelecionada?.papel),
 
       ...hierarquia,
 

@@ -1,9 +1,15 @@
 // Espelha as policies de RLS do banco. O servidor e quem decide de verdade;
 // isto existe so para a interface nao oferecer um botao que vai falhar.
-// Se mudar aqui, mude tambem em supabase/migrations/*_rls.sql.
+// Se mudar aqui, mude tambem em supabase/migrations (pode_editar_fazenda,
+// pode_definir_criterio, e_proprietario_fazenda).
 
 export function podeEditar(papel) {
-  return papel === 'proprietario' || papel === 'editor'
+  return papel === 'proprietario' || papel === 'agronomo' || papel === 'editor'
+}
+
+/** Escolher ou tirar o critério de interpretação da fazenda. */
+export function podeDefinirCriterio(papel) {
+  return papel === 'proprietario' || papel === 'agronomo'
 }
 
 export function ehProprietario(papel) {
@@ -12,6 +18,15 @@ export function ehProprietario(papel) {
 
 export const ROTULO_PAPEL = {
   proprietario: 'Proprietário',
+  agronomo: 'Agrônomo',
   editor: 'Editor',
   leitor: 'Leitor',
 }
+
+/** Os cargos, na ordem de mais para menos acesso, com o que cada um faz. */
+export const CARGOS = [
+  { papel: 'proprietario', rotulo: 'Proprietário', faz: 'Tudo, inclusive convidar pessoas, mudar cargos e excluir a fazenda.' },
+  { papel: 'agronomo', rotulo: 'Agrônomo', faz: 'Edita tudo e define os critérios de interpretação. Não mexe na equipe.' },
+  { papel: 'editor', rotulo: 'Editor', faz: 'Lança análises, desenha talhões e glebas, sobe fotos. Não mexe em critérios.' },
+  { papel: 'leitor', rotulo: 'Leitor', faz: 'Só vê e exporta. Não altera nada.' },
+]
