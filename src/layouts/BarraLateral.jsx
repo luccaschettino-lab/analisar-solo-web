@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { PRAGAS_VISIVEL } from '../config/pragas.js'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
 import { glebasDoTalhao } from '../hooks/useHierarquia.js'
@@ -609,7 +610,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             </div>
           )}
           <ItemNav to="/monitoramento" tutorial="monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
-          <ItemNav to="/pragas" Icone={IconePragas} rotulo="Pragas" onClick={aoNavegar} compacta={compacta} />
+          {PRAGAS_VISIVEL && <ItemNav to="/pragas" Icone={IconePragas} rotulo="Pragas" onClick={aoNavegar} compacta={compacta} />}
           <ItemNav to="/exportar" tutorial="exportar" Icone={IconeExportar} rotulo="Exportar" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Ajustes" compacta={compacta} />

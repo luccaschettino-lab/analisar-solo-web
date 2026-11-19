@@ -9,6 +9,7 @@ import NovaSenha from './paginas/NovaSenha.jsx'
 import Convite from './paginas/Convite.jsx'
 import NaoEncontrado from './paginas/NaoEncontrado.jsx'
 import ErroDeRota from './componentes/ErroDeRota.jsx'
+import { PRAGAS_VISIVEL } from './config/pragas.js'
 
 // As telas de entrada vão no pacote inicial: são leves e são a primeira coisa
 // que aparece. O resto (mapa, gráficos, leitores de arquivo) só é baixado
@@ -81,7 +82,7 @@ export const router = createHashRouter([
           { path: '/dados', element: comEspera(Dados) },
           { path: '/comparar', element: comEspera(Comparar) },
           { path: '/monitoramento', element: comEspera(Monitoramento) },
-          { path: '/pragas', element: comEspera(Pragas) },
+          ...(PRAGAS_VISIVEL ? [{ path: '/pragas', element: comEspera(Pragas) }] : []),
           { path: '/exportar', element: comEspera(Exportar) },
           { path: '/criterios', element: comEspera(Criterios) },
           { path: '/equipe', element: comEspera(Equipe) },

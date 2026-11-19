@@ -1,3 +1,4 @@
+import { PRAGAS_VISIVEL } from '../config/pragas.js'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTutorial } from '../context/TutorialContext.jsx'
@@ -9,7 +10,7 @@ import { useTutorial } from '../context/TutorialContext.jsx'
  *
  * Ao mudar um comportamento do sistema, mude a resposta aqui também.
  */
-const SECOES = [
+const TODAS_AS_SECOES = [
   {
     id: 'comeco',
     titulo: 'Para começar',
@@ -51,7 +52,7 @@ const SECOES = [
       ],
       [
         'Quem pode mexer na fazenda?',
-        'São cinco cargos. Proprietário: tudo, inclusive a equipe e excluir a fazenda. Agrônomo: edita tudo e define os critérios de interpretação e os níveis de controle de pragas. Editor: lança análises e vistorias, desenha e sobe fotos, mas não mexe em critérios. Monitor: quem vai a campo; lança vistorias de pragas e laudos, sem desenhar talhões ou glebas. Leitor: só vê e exporta. Quem cria a fazenda é o proprietário. O seu cargo aparece embaixo do nome da fazenda, na barra lateral.',
+        'São cinco cargos. Proprietário: tudo, inclusive a equipe e excluir a fazenda. Agrônomo: edita tudo e define os critérios de interpretação. Editor: lança análises, desenha e sobe fotos, mas não mexe em critérios. Monitor: quem vai a campo; lança laudos, sem desenhar talhões ou glebas nem mexer em critérios. Leitor: só vê e exporta. Quem cria a fazenda é o proprietário. O seu cargo aparece embaixo do nome da fazenda, na barra lateral.',
       ],
       [
         'Por que o sistema pede a minha senha para excluir?',
@@ -178,7 +179,7 @@ const SECOES = [
       ],
     ],
   },
-  {
+  PRAGAS_VISIVEL && {
     id: 'pragas',
     titulo: 'Pragas e doenças',
     itens: [
@@ -263,6 +264,9 @@ const SECOES = [
     ],
   },
 ]
+
+// Seções desligadas (Pragas escondida) entram como `false`.
+const SECOES = TODAS_AS_SECOES.filter(Boolean)
 
 const semAcento = (texto) =>
   texto

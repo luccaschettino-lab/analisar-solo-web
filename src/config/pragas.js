@@ -18,6 +18,13 @@
  * e o agrônomo define um nível se quiser o semáforo.
  */
 
+/**
+ * Pragas fica escondida por enquanto (pedido de 2026-11-19): sem item no menu,
+ * sem rota e sem seção na Ajuda. O banco e o código ficam prontos; para
+ * mostrar de novo, é só trocar para true.
+ */
+export const PRAGAS_VISIVEL = false
+
 export const CULTURAS = [
   { chave: 'soja', rotulo: 'Soja' },
   { chave: 'cafe', rotulo: 'Café' },
