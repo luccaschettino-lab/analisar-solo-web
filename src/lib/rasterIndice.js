@@ -84,6 +84,31 @@ export function imagemDoIndice(resposta, chave) {
   return canvas.toDataURL('image/png')
 }
 
+/**
+ * Data URL PNG da COR REAL da cena (o "Sem filtro"): RGB que a função manda
+ * em `cor`, opaco dentro do talhão e transparente fora / sem dado. A nuvem
+ * aparece como nuvem. Null se a resposta não trouxer cor (cálculo antigo).
+ */
+export function imagemCorReal(resposta) {
+  if (!resposta?.cor) return null
+  const { colunas, linhas } = resposta.janela
+  const rgb = base64ParaBytes(resposta.cor)
+  const mascara = decodificarMascara(resposta.mascara)
+  const rgba = new Uint8ClampedArray(colunas * linhas * 4)
+  for (let i = 0; i < colunas * linhas; i++) {
+    if (mascara[i] === PIXEL.FORA || mascara[i] === PIXEL.SEM_DADO) continue
+    rgba[i * 4] = rgb[i * 3]
+    rgba[i * 4 + 1] = rgb[i * 3 + 1]
+    rgba[i * 4 + 2] = rgb[i * 3 + 2]
+    rgba[i * 4 + 3] = 255
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = colunas
+  canvas.height = linhas
+  canvas.getContext('2d').putImageData(new ImageData(rgba, colunas, linhas), 0, 0)
+  return canvas.toDataURL('image/png')
+}
+
 /** Percentual de cada faixa entre os pixels válidos, na ordem da legenda. */
 export function distribuicaoPorFaixa(resposta, chave) {
   const faixas = faixasDoIndice(chave)

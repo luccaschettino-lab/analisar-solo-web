@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import Mapa from '../../mapa/Mapa.jsx'
 import { paraFeature } from '../../lib/geo.js'
-import { imagemDoIndice } from '../../lib/rasterIndice.js'
+import { imagemDoIndice, imagemCorReal } from '../../lib/rasterIndice.js'
 
 // Anéis do talhão em [lat, lng], para a máscara: contorno externo e buracos
 // de cada parte. Com o preenchimento par-ímpar do SVG, o buraco do talhão
@@ -97,10 +97,15 @@ export default function MapaDoTalhao({ geometria, dados, indice, children }) {
     camadas.current.raster = null
     if (!dados) return
     const [oeste, sul, leste, norte] = dados.janela.bbox
-    const raster = L.imageOverlay(imagemDoIndice(dados, indice), [[sul, oeste], [norte, leste]], {
-      opacity: 0.9,
+    // 'imagem' (Sem filtro): a cor real da data, suavizada como uma foto.
+    // Índice: os pixels de 10 m como são, sem borrar.
+    const corReal = indice === 'imagem'
+    const url = corReal ? imagemCorReal(dados) : imagemDoIndice(dados, indice)
+    if (!url) return
+    const raster = L.imageOverlay(url, [[sul, oeste], [norte, leste]], {
+      opacity: corReal ? 1 : 0.9,
       interactive: false,
-      className: 'raster-pixelado',
+      className: corReal ? '' : 'raster-pixelado',
     }).addTo(mapa)
     camadas.current.raster = raster
     camadas.current.contorno?.bringToFront()

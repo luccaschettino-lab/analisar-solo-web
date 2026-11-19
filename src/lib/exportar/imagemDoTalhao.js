@@ -1,5 +1,5 @@
 import { paraFeature } from '../geo.js'
-import { imagemDoIndice, distribuicaoPorFaixa, faixasDoIndice } from '../rasterIndice.js'
+import { imagemDoIndice, imagemCorReal, distribuicaoPorFaixa, faixasDoIndice } from '../rasterIndice.js'
 import logoUrl from '../../assets/marca/moinho-completo.jpg'
 
 /**
@@ -197,6 +197,9 @@ export async function desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, in
   canvas.height = ALTURA
   const ctx = canvas.getContext('2d')
   const comIndice = Boolean(indice && dados?.indices?.[indice])
+  // Sem índice mas com a cena: a cor real daquela data por cima do fundo.
+  const corReal = !indice && Boolean(dados?.cor)
+  const comData = comIndice || corReal
 
   // Fundo da página
   ctx.fillStyle = '#ffffff'
@@ -214,14 +217,14 @@ export async function desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, in
     ctx.fillStyle = '#e2e8f0'
     ctx.fillRect(xTitulo - 14, 26, 2, 76)
   }
-  const nomeIndice = comIndice ? NOMES_INDICE[indice]?.[0] ?? indice.toUpperCase() : 'Imagem de satélite'
+  const nomeIndice = comIndice ? NOMES_INDICE[indice]?.[0] ?? indice.toUpperCase() : corReal ? 'Imagem real' : 'Imagem de satélite'
   ctx.fillStyle = TEXTO
   ctx.font = `800 40px ${FONTE}`
   ctx.fillText(textoAjustado(ctx, `Talhão ${talhao.codigo}${talhao.nome ? ` · ${talhao.nome}` : ''} — ${nomeIndice}`, LARGURA - xTitulo - MARGEM), xTitulo, 62)
   ctx.fillStyle = SUAVE
   ctx.font = `500 22px ${FONTE}`
   const dataTexto = data ? new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : null
-  const subtitulo = [`Fazenda ${fazenda.nome}`, comIndice && dataTexto ? `imagem de ${dataTexto}` : null, comIndice ? 'Sentinel-2' : null].filter(Boolean).join('  ·  ')
+  const subtitulo = [`Fazenda ${fazenda.nome}`, comData && dataTexto ? `imagem de ${dataTexto}` : null, comData ? 'Sentinel-2' : null].filter(Boolean).join('  ·  ')
   ctx.fillText(textoAjustado(ctx, subtitulo, LARGURA - xTitulo - MARGEM), xTitulo, 100)
 
   // ---- Mapa ----
@@ -244,19 +247,21 @@ export async function desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, in
     })
     ctx.closePath()
   }
-  ctx.fillStyle = comIndice ? 'rgba(15,23,42,0.55)' : 'rgba(15,23,42,0.35)'
+  ctx.fillStyle = comData ? 'rgba(15,23,42,0.55)' : 'rgba(15,23,42,0.35)'
   ctx.fill('evenodd')
 
-  if (comIndice) {
-    const img = await carregarImagem(imagemDoIndice(dados, indice))
+  if (comData) {
+    const img = await carregarImagem(corReal ? imagemCorReal(dados) : imagemDoIndice(dados, indice))
     const [oeste, sul, leste, norte] = dados.janela.bbox
     const [xa, ya] = px(oeste, norte)
     const [xb, yb] = px(leste, sul)
     ctx.save()
     caminhoDoTalhao(ctx, fundo.aneis, px)
     ctx.clip('evenodd')
-    ctx.imageSmoothingEnabled = false // pixel de 10 m como ele é, sem borrar
-    ctx.globalAlpha = 0.95
+    // Índice: pixel de 10 m como ele é, sem borrar. Cor real: suave, como foto.
+    ctx.imageSmoothingEnabled = corReal
+    ctx.imageSmoothingQuality = 'high'
+    ctx.globalAlpha = corReal ? 1 : 0.95
     ctx.drawImage(img, xa, ya, xb - xa, yb - ya)
     ctx.restore()
   }
@@ -360,6 +365,24 @@ export async function desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, in
       ctx.fillText(limpo >= 99.5 ? 'Talhão todo sem nuvem' : `Nuvem / sem leitura: ${Math.round(100 - limpo)}% do talhão`, LADO.x + 40, y + 19)
       y += 44
     }
+  } else if (corReal) {
+    rotuloLateral('Imagem real')
+    ctx.fillStyle = TEXTO
+    ctx.font = `700 26px ${FONTE}`
+    ctx.fillText(dataTexto ?? '', LADO.x, y + 22)
+    y += 44
+    ctx.font = `500 19px ${FONTE}`
+    for (const linha of ['O talhão como o satélite Sentinel-2', 'o fotografou nesta data, em cor real.', 'Nuvem aparece branca.']) {
+      ctx.fillText(linha, LADO.x, y + 18)
+      y += 28
+    }
+    const q = dados.qualidade
+    if (q?.pixelsNoTalhao) {
+      const limpo = (q.validos / q.pixelsNoTalhao) * 100
+      y += 16
+      ctx.font = `600 17px ${FONTE}`
+      ctx.fillText(limpo >= 99.5 ? 'Talhão todo sem nuvem' : `Nuvem / sem leitura: ${Math.round(100 - limpo)}% do talhão`, LADO.x, y + 18)
+    }
   } else {
     rotuloLateral('Imagem real')
     ctx.fillStyle = TEXTO
@@ -377,7 +400,9 @@ export async function desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, in
   ctx.font = `500 15px ${FONTE}`
   const creditos = comIndice
     ? 'Índice: Sentinel-2 L2A (Copernicus/ESA), 10 m por pixel, nuvem marcada pela própria cena  ·  Fundo: Esri World Imagery'
-    : 'Imagem: Esri, Maxar, Earthstar Geographics (World Imagery)'
+    : corReal
+      ? 'Talhão: Sentinel-2 L2A (Copernicus/ESA), cor real, 10 m por pixel  ·  Fundo: Esri World Imagery'
+      : 'Imagem: Esri, Maxar, Earthstar Geographics (World Imagery)'
   ctx.fillText(creditos, MARGEM, ALTURA - RODAPE / 2 + 5)
   ctx.textAlign = 'right'
   ctx.fillStyle = AZUL

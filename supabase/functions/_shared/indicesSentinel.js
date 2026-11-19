@@ -24,6 +24,13 @@ const SCL_NUVEM = new Set([3, 8, 9, 10])
 
 const BANDAS = { azul: 'blue', verde: 'green', vermelho: 'red', nir: 'nir' }
 
+// Cor real (vermelho, verde, azul): reflectância × ganho, com uma curva leve
+// para clarear as sombras — o mesmo jeito de "foto" dos visualizadores do
+// Sentinel. 0,30 de reflectância já é branco; lavoura e solo ficam no meio.
+const GANHO_COR = 3.4
+const GAMA_COR = 0.82
+const corDoCanal = (refl) => Math.round(255 * Math.min(1, Math.max(0, refl * GANHO_COR)) ** GAMA_COR)
+
 const falha = (status, mensagem) => Object.assign(new Error(mensagem), { status })
 
 /**
@@ -139,6 +146,7 @@ export async function calcularIndicesSentinel({ cenaId, geometria, buscar = fetc
   const refl = (n, v) => Math.max(0, v * conversao[n].escala + conversao[n].offset)
   const total = colunas * linhas
   const mascara = new Uint8Array(total)
+  const cor = new Uint8Array(total * 3) // RGB por pixel; fora do talhão fica 0
   const saida = { ndvi: new Int16Array(total).fill(SEM_VALOR), evi: new Int16Array(total).fill(SEM_VALOR), savi: new Int16Array(total).fill(SEM_VALOR), ndwi: new Int16Array(total).fill(SEM_VALOR) }
   const validos = { ndvi: [], evi: [], savi: [], ndwi: [] }
   const quantizar = (v) => (v === null || !Number.isFinite(v) ? SEM_VALOR : Math.max(-32000, Math.min(32000, Math.round(v * ESCALA))))
@@ -167,6 +175,10 @@ export async function calcularIndicesSentinel({ cenaId, geometria, buscar = fetc
       const gr = refl('verde', dn.verde[i])
       const r = refl('vermelho', dn.vermelho[i])
       const nir = refl('nir', dn.nir[i])
+      // A nuvem entra na cor real como ela é: a pessoa vê que estava nublado.
+      cor[i * 3] = corDoCanal(r)
+      cor[i * 3 + 1] = corDoCanal(gr)
+      cor[i * 3 + 2] = corDoCanal(a)
       const valores = { ndvi: ndvi(nir, r), evi: evi(nir, r, a), savi: savi(nir, r), ndwi: ndwi(gr, nir) }
       for (const k of Object.keys(valores)) {
         saida[k][i] = quantizar(valores[k])
@@ -188,6 +200,7 @@ export async function calcularIndicesSentinel({ cenaId, geometria, buscar = fetc
     semValor: SEM_VALOR,
     mascara: base64(mascara),
     indices: Object.fromEntries(Object.entries(saida).map(([k, v]) => [k, base64(v)])),
+    cor: base64(cor),
     estatisticas: Object.fromEntries(Object.entries(validos).map(([k, v]) => [k, estatisticas(v)])),
     qualidade: { pixelsNoTalhao: noTalhao, validos: noTalhao - nuvens - semDado, possivelNuvemPct: pct(nuvens), semDadoPct: pct(semDado) },
     calibracao: { tipo: 'reflectância de superfície (Sentinel-2 L2A, corrigida da atmosfera pela ESA)' },

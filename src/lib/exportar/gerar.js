@@ -170,27 +170,26 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
       let fundo = null
       try {
         if (desenho) fundo = await desenho.prepararFundo(t.geometria)
+        // A mesma data para tudo do talhão: índices e a imagem real (cor real
+        // do Sentinel). Sem data disponível, a imagem real cai na foto do mapa.
+        const cena = await escolherCena(t, brutos.indices, img.data)
+        const resposta = cena ? await calcularComCache(t.id, cena.id, t.geometria) : null
+        if (!cena && querIndices) faltas.push(`Talhão ${t.codigo}: sem imagem de satélite no período.`)
         if (img.real && fundo) {
-          const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: null, indice: null, data: null })
-          arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, null, null)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
+          const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: resposta, indice: null, data: cena?.data ?? null })
+          arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, null, resposta?.cor ? cena.data : null)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
         }
-        if (querIndices) {
-          const cena = await escolherCena(t, brutos.indices, img.data)
-          if (!cena) {
-            faltas.push(`Talhão ${t.codigo}: sem imagem de satélite no período.`)
-          } else {
-            const resposta = await calcularComCache(t.id, cena.id, t.geometria)
-            const data = new Date(cena.data).toLocaleDateString('pt-BR')
-            const dataArq = cena.data.slice(0, 10)
-            for (const indice of img.indices) {
-              if (img.kmz) {
-                const arquivo = `imagens/${indice}/talhao_${nomeArquivo(t.codigo)}_${dataArq}.png`
-                camadas.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
-              }
-              if (img.prontas && fundo) {
-                const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: resposta, indice, data: cena.data })
-                arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, indice, cena.data)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
-              }
+        if (querIndices && resposta) {
+          const data = new Date(cena.data).toLocaleDateString('pt-BR')
+          const dataArq = cena.data.slice(0, 10)
+          for (const indice of img.indices) {
+            if (img.kmz) {
+              const arquivo = `imagens/${indice}/talhao_${nomeArquivo(t.codigo)}_${dataArq}.png`
+              camadas.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
+            }
+            if (img.prontas && fundo) {
+              const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: resposta, indice, data: cena.data })
+              arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, indice, cena.data)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
             }
           }
         }

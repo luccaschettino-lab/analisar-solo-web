@@ -12,11 +12,11 @@ export default function BaixarImagem({ fazenda, talhao, dados, indice, data, des
     try {
       const { prepararFundo, desenharImagemDoTalhao, nomeDaImagem } = await import('../../lib/exportar/imagemDoTalhao.js')
       const fundo = await prepararFundo(talhao.geometria)
-      const blob = await desenharImagemDoTalhao({ fazenda, talhao, fundo, dados: indice ? dados : null, indice, data: indice ? data : null })
+      const blob = await desenharImagemDoTalhao({ fazenda, talhao, fundo, dados, indice, data })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = nomeDaImagem(talhao, indice, indice ? data : null)
+      a.download = nomeDaImagem(talhao, indice, dados?.cor || indice ? data : null)
       document.body.appendChild(a)
       a.click()
       a.remove()

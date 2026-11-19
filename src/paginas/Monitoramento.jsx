@@ -68,7 +68,7 @@ function Cartao({ titulo, children, className = '' }) {
 function EscolhaDoIndice({ ativo, aoTrocar }) {
   return (
     <div role="radiogroup" aria-label="Índice" className="vidro flex gap-0.5 rounded-lg p-1 shadow">
-      {[{ chave: SEM_INDICE, rotulo: 'Sem filtro', nome: 'Só a imagem de satélite, sem índice por cima' }, ...INDICES].map((item) => {
+      {[{ chave: SEM_INDICE, rotulo: 'Sem filtro', nome: 'A foto do satélite na data escolhida, sem índice por cima' }, ...INDICES].map((item) => {
         const selecionado = item.chave === ativo
         return (
           <button
@@ -327,12 +327,12 @@ export default function Monitoramento() {
           {/* Mapa */}
           <div className="h-[60vh] min-h-[22rem] lg:h-full">
             {geometria ? (
-              <MapaDoTalhao geometria={geometria} dados={semIndice ? null : dados} indice={indiceAtivo}>
+              <MapaDoTalhao geometria={geometria} dados={dados} indice={indiceAtivo}>
                 <div className="absolute left-3 top-3 z-[1000] flex flex-col items-start gap-2">
                   <EscolhaDoIndice ativo={indiceAtivo} aoTrocar={setIndiceAtivo} />
                   {calculando && (
                     <p role="status" className="vidro rounded-md px-3 py-1.5 text-sm text-slate-700 shadow dark:text-slate-200">
-                      Calculando os índices desta data…
+                      {semIndice ? 'Carregando a imagem desta data…' : 'Calculando os índices desta data…'}
                     </p>
                   )}
                 </div>
@@ -343,7 +343,7 @@ export default function Monitoramento() {
                     dados={dados}
                     indice={semIndice ? null : indiceAtivo}
                     data={cenaSelecionada?.data ?? null}
-                    desativado={!semIndice && (!dados || calculando)}
+                    desativado={calculando}
                   />
                 </div>
                 {dados && !semIndice && (
@@ -450,10 +450,13 @@ export default function Monitoramento() {
             {semIndice && (
               <Cartao titulo="Sem filtro">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  O talhão aparece só com a imagem de satélite do mapa de fundo, sem índice por cima. Essa imagem não é a da data
-                  escolhida acima: é o mosaico do provedor do mapa, e a data dela varia de lugar para lugar. Para trocar de imagem, use o botão de camadas no canto
-                  do mapa.
+                  O talhão aparece como o satélite o fotografou na data escolhida, em cor real, sem índice por cima. Troque a data
+                  ao lado para ver a lavoura mudando. Nuvem aparece branca: escolha as datas com bolinha verde.
                 </p>
+                {dados && !dados.cor && (
+                  <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">Esta data foi calculada antes da cor real existir: recarregue a página (Ctrl+F5).</p>
+                )}
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Fora do talhão continua a foto do mapa de fundo, que não é da mesma data.</p>
               </Cartao>
             )}
 
