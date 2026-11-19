@@ -59,7 +59,8 @@ export default function FormVistoria({ inicial, talhaoRotulo, aoSalvar, aoFechar
               <option key={e} value={e} />
             ))}
           </datalist>
-          <details className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        </label>
+        <details className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
             <summary className="cursor-pointer">O que é o estádio?</summary>
             {cultura === 'soja' ? (
               <p className="mt-1">
@@ -71,7 +72,6 @@ export default function FormVistoria({ inicial, talhaoRotulo, aoSalvar, aoFechar
               <p className="mt-1">A fase da lavoura hoje: florada, chumbinho (fruto pequeno), expansão, granação, maturação, colheita. Opcional.</p>
             )}
           </details>
-        </label>
         <label className="block text-sm text-slate-700 dark:text-slate-200">
           Observação (opcional)
           <textarea value={observacao} maxLength={1000} rows={2} onChange={(e) => setObservacao(e.target.value)} className={`${INPUT} mt-1`} />
