@@ -83,7 +83,7 @@ async function escolherCena(talhao, indicesGuardados, dataAlvo) {
  *   comparar: { safraA, safraB } | null,
  *   mapas: { formatos: Set(kml, shp, geojson), camadas: [talhoes, glebas, pontos] } | null,
  *   fotos: boolean,
- *   imagens: { indices: [ndvi...], data: 'aaaa-mm-dd' | null } | null,
+ *   imagens: { indices: [ndvi...], data: 'aaaa-mm-dd' | null, prontas, real, kmz } | null,
  * }
  * aoProgredir(texto, fracao)
  */
@@ -155,30 +155,51 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
   }
 
   // ---- Imagens de satélite ----
-  if (opcoes.imagens?.indices.length) {
+  // prontas: JPG de relatório (fundo + índice + legenda + logo), uma por
+  // talhão e índice; real: o mesmo quadro só com a foto de satélite; kmz:
+  // as camadas cruas para o Google Earth (KMZ + PNG).
+  const img = opcoes.imagens
+  const querIndices = img && img.indices.length > 0 && (img.prontas || img.kmz)
+  if (img && (querIndices || img.real)) {
     const talhoesArea = dados.talhoes.filter((t) => t.geometria && !ehPonto(t.geometria))
+    const desenho = img.prontas || img.real ? await import('./imagemDoTalhao.js') : null
     let feitos = 0
     const porTalhao = await emParalelo(talhoesArea, SATELITE_SIMULTANEOS, async (t) => {
-      const deste = []
+      const camadas = []
+      const pastaPronta = `Satelite/Imagens prontas/Talhao_${nomeArquivo(t.codigo)}`
+      let fundo = null
       try {
-        const cena = await escolherCena(t, brutos.indices, opcoes.imagens.data)
-        if (!cena) {
-          faltas.push(`Talhão ${t.codigo}: sem imagem de satélite no período.`)
-        } else {
-          const resposta = await calcularComCache(t.id, cena.id, t.geometria)
-          const data = new Date(cena.data).toLocaleDateString('pt-BR')
-          const dataArq = cena.data.slice(0, 10)
-          for (const indice of opcoes.imagens.indices) {
-            const arquivo = `imagens/${indice}/talhao_${nomeArquivo(t.codigo)}_${dataArq}.png`
-            deste.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
+        if (desenho) fundo = await desenho.prepararFundo(t.geometria)
+        if (img.real && fundo) {
+          const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: null, indice: null, data: null })
+          arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, null, null)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
+        }
+        if (querIndices) {
+          const cena = await escolherCena(t, brutos.indices, img.data)
+          if (!cena) {
+            faltas.push(`Talhão ${t.codigo}: sem imagem de satélite no período.`)
+          } else {
+            const resposta = await calcularComCache(t.id, cena.id, t.geometria)
+            const data = new Date(cena.data).toLocaleDateString('pt-BR')
+            const dataArq = cena.data.slice(0, 10)
+            for (const indice of img.indices) {
+              if (img.kmz) {
+                const arquivo = `imagens/${indice}/talhao_${nomeArquivo(t.codigo)}_${dataArq}.png`
+                camadas.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
+              }
+              if (img.prontas && fundo) {
+                const blob = await desenho.desenharImagemDoTalhao({ fazenda, talhao: t, fundo, dados: resposta, indice, data: cena.data })
+                arquivos.push({ caminho: `${pastaPronta}/${desenho.nomeDaImagem(t, indice, cena.data)}`, conteudo: new Uint8Array(await blob.arrayBuffer()), jaComprimido: true })
+              }
+            }
           }
         }
       } catch (e) {
-        faltas.push(`Talhão ${t.codigo}: ${e.message || 'falha ao calcular a imagem'}.`)
+        faltas.push(`Talhão ${t.codigo}: ${e.message || 'falha ao montar a imagem'}.`)
       }
       feitos++
       aoProgredir(`Imagens de satélite: ${feitos} de ${talhoesArea.length} talhões…`, 0.3 + 0.4 * (feitos / talhoesArea.length))
-      return deste
+      return camadas
     })
     const imagens = porTalhao.flat()
     if (imagens.length) {
@@ -187,10 +208,10 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
       kmz.file('doc.kml', kmlDasImagens(imagens, { nomeFazenda: fazenda.nome }))
       for (const im of imagens) {
         kmz.file(im.arquivo, im.bytes, { compression: 'STORE' }) // PNG já é comprimido
-        arquivos.push({ caminho: `Satelite/${im.arquivo.replace(/^imagens\//, '')}`, conteudo: im.bytes })
+        arquivos.push({ caminho: `Satelite/Google Earth/${im.arquivo.replace(/^imagens\//, '')}`, conteudo: im.bytes })
       }
       arquivos.push({
-        caminho: `Satelite/indices_${nomeArquivo(fazenda.nome)}.kmz`,
+        caminho: `Satelite/Google Earth/indices_${nomeArquivo(fazenda.nome)}.kmz`,
         conteudo: await kmz.generateAsync({ type: 'uint8array', compression: 'DEFLATE' }),
       })
     }
@@ -257,7 +278,8 @@ function leiaMe(fazenda, arquivos, faltas) {
   if (tem('Mapas/') && tem('.kml')) linhas.push('- Mapas/*.kml: talhões, glebas e pontos de amostra. Abre no Google Earth (arraste o arquivo para dentro dele).')
   if (tem('Mapas/Shapefile')) linhas.push('- Mapas/Shapefile: uma pasta por camada (.shp, .shx, .dbf, .prj). Abre no QGIS, ArcGIS e softwares de agricultura de precisão. As glebas trazem a análise mais recente (0-20) como atributos.')
   if (tem('Mapas/GeoJSON')) linhas.push('- Mapas/GeoJSON: as mesmas camadas em GeoJSON (sistemas web, QGIS).')
-  if (tem('Satelite/')) linhas.push('- Satelite/*.kmz: as imagens de NDVI/EVI/SAVI/NDWI sobre cada talhão. Abra no Google Earth e ligue/desligue cada índice na lista à esquerda. As imagens PNG soltas estão nas pastas de cada índice. Cinza = nuvem.')
+  if (tem('Satelite/Imagens prontas')) linhas.push('- Satelite/Imagens prontas: uma imagem JPG por talhão e índice, com a foto de satélite de fundo, a legenda (quanto do talhão em cada faixa), a data e a logo. Pronta para mandar ou pôr em relatório. Cinza = nuvem.')
+  if (tem('Satelite/Google Earth')) linhas.push('- Satelite/Google Earth: o .kmz abre no Google Earth com cada índice numa pasta (ligue/desligue na lista à esquerda); os PNG soltos são as mesmas camadas.')
   if (tem('Fotos do solo/')) linhas.push('- Fotos do solo: uma pasta por talhão e gleba, com a safra e a profundidade no nome do arquivo.')
   if (faltas.length) linhas.push('', 'Ficou de fora:', ...faltas.map((f) => `- ${f}`))
   return linhas.filter((l) => l !== null).join('\r\n')

@@ -6,6 +6,7 @@ import GraficoDoMes from './monitoramento/GraficoDoMes.jsx'
 import { listarIndicesDoTalhao } from '../dados/indicesTalhao.js'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
 import MapaDoTalhao from './monitoramento/MapaDoTalhao.jsx'
+import BaixarImagem from './monitoramento/BaixarImagem.jsx'
 import { distribuicaoPorFaixa, faixasDoIndice } from '../lib/rasterIndice.js'
 
 const INDICES = [
@@ -334,6 +335,16 @@ export default function Monitoramento() {
                       Calculando os índices desta data…
                     </p>
                   )}
+                </div>
+                <div className="absolute right-3 top-3 z-[1000]">
+                  <BaixarImagem
+                    fazenda={fazendaSelecionada}
+                    talhao={talhao}
+                    dados={dados}
+                    indice={semIndice ? null : indiceAtivo}
+                    data={cenaSelecionada?.data ?? null}
+                    desativado={!semIndice && (!dados || calculando)}
+                  />
                 </div>
                 {dados && !semIndice && (
                   <div className="absolute bottom-8 left-3 z-[1000]">

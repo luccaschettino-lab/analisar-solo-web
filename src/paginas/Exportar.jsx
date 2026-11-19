@@ -149,6 +149,9 @@ export default function Exportar() {
   const [camadas, setCamadas] = useState(() => new Set(CAMADAS.map(([c]) => c)))
   const [imagens, setImagens] = useState(true)
   const [indices, setIndices] = useState(() => new Set(['ndvi', 'ndwi']))
+  const [prontas, setProntas] = useState(true) // JPG de relatório
+  const [real, setReal] = useState(true) // imagem real, sem índice
+  const [kmz, setKmz] = useState(false) // camadas para o Google Earth
   const [quando, setQuando] = useState('recente') // 'recente' | 'data'
   const [dataAlvo, setDataAlvo] = useState(() => new Date().toISOString().slice(0, 10))
   const [fotos, setFotos] = useState(true)
@@ -177,7 +180,8 @@ export default function Exportar() {
   const talhoesOrdenados = useMemo(() => [...talhoes].sort((a, b) => ordem(a.codigo, b.codigo)), [talhoes])
 
   const partesEfetivas = planilha ? partes : new Set()
-  const temAlgo = partesEfetivas.size > 0 || (mapas && formatos.size > 0 && camadas.size > 0) || (imagens && indices.size > 0) || fotos
+  const temImagens = imagens && ((indices.size > 0 && (prontas || kmz)) || real)
+  const temAlgo = partesEfetivas.size > 0 || (mapas && formatos.size > 0 && camadas.size > 0) || temImagens || fotos
   const ocupado = progresso !== null
 
   function marcarTudo() {
@@ -188,6 +192,9 @@ export default function Exportar() {
     setCamadas(new Set(CAMADAS.map(([c]) => c)))
     setImagens(true)
     setIndices(new Set(INDICES.map(([c]) => c)))
+    setProntas(true)
+    setReal(true)
+    setKmz(true)
     setFotos(true)
   }
   function soPlanilha() {
@@ -216,7 +223,7 @@ export default function Exportar() {
           comparar: compararValido,
           mapas: mapas ? { formatos, camadas: CAMADAS.map(([c]) => c).filter((c) => camadas.has(c)) } : null,
           fotos,
-          imagens: imagens ? { indices: INDICES.map(([c]) => c).filter((c) => indices.has(c)), data: quando === 'data' ? dataAlvo : null } : null,
+          imagens: temImagens ? { indices: INDICES.map(([c]) => c).filter((c) => indices.has(c)), data: quando === 'data' ? dataAlvo : null, prontas, real, kmz } : null,
         },
         (texto, fracao) => setProgresso({ texto, fracao }),
       )
@@ -247,7 +254,11 @@ export default function Exportar() {
   const resumo = []
   if (partesEfetivas.size) resumo.push(`Planilha Excel com ${partesEfetivas.size + 1} abas`)
   if (mapas && formatos.size && camadas.size) resumo.push(`Mapas em ${FORMATOS_MAPA.filter(([c]) => formatos.has(c)).map(([, n]) => n).join(', ')}`)
-  if (imagens && indices.size) resumo.push(`Imagens de ${INDICES.filter(([c]) => indices.has(c)).map(([, n]) => n).join(', ')} de cada talhão`)
+  if (temImagens) {
+    const nomes = INDICES.filter(([c]) => indices.has(c)).map(([, n]) => n)
+    const tipos = [real && 'imagem real', ...(prontas || kmz ? nomes : [])].filter(Boolean)
+    resumo.push(`Imagens de cada talhão: ${tipos.join(', ')}${kmz && nomes.length ? ' (+ Google Earth)' : ''}`)
+  }
   if (fotos) resumo.push('Fotos do perfil do solo')
   const vaiSerZip = resumo.length > 1 || !partesEfetivas.size
   const nTalhoes = selTalhoes === null ? talhoes.length : selTalhoes.size
@@ -370,13 +381,19 @@ export default function Exportar() {
             <Cartao
               icone="🛰"
               titulo="Imagens de satélite"
-              subtitulo="O mapa de cada índice sobre cada talhão (Sentinel-2), em KMZ para o Google Earth e em PNG."
+              subtitulo="Cada talhão como no Monitoramento: foto de satélite de fundo, índice por cima, legenda e a logo do Moinho."
               ativo={imagens}
               acao={<Interruptor ligado={imagens} aoTrocar={setImagens} rotulo="Incluir imagens de satélite" />}
             >
               {imagens && (
                 <div className="space-y-3">
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid gap-x-2 sm:grid-cols-3">
+                    <Marca titulo="Imagens prontas (JPG)" descricao="Uma por talhão e índice, com legenda e logo: para mandar ou pôr em relatório." marcado={prontas} aoTrocar={setProntas} />
+                    <Marca titulo="Imagem real" descricao="O talhão na foto de satélite, sem índice por cima." marcado={real} aoTrocar={setReal} />
+                    <Marca titulo="Google Earth (KMZ)" descricao="As camadas dos índices para abrir sobre o mapa no Google Earth." marcado={kmz} aoTrocar={setKmz} />
+                  </div>
+                  <p className="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Índices</p>
+                  <div className="flex flex-wrap gap-1.5 px-2">
                     {INDICES.map(([chave, nome, uso]) => {
                       const ativo = indices.has(chave)
                       return (

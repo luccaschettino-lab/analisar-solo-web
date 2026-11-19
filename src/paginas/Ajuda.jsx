@@ -195,8 +195,12 @@ const SECOES = [
         'Pode. No Recorte, escolha os talhões, as safras e as profundidades; vale para tudo o que sair. Quem tem acesso à fazenda, mesmo só para ver, pode exportar.',
       ],
       [
-        'Como abro as imagens de satélite?',
-        'No ZIP, a pasta Satelite tem um arquivo .kmz: abra no Google Earth e ligue ou desligue cada índice na lista à esquerda. As mesmas imagens também vão soltas, em PNG. O sistema usa a imagem mais recente sem nuvem de cada talhão, ou a mais perto da data que você escolher.',
+        'Como saem as imagens de satélite?',
+        'Em "Imagens prontas", cada talhão vira uma imagem JPG igual à do Monitoramento: a foto de satélite de fundo, o índice por cima, a legenda com quanto do talhão está em cada faixa, a data, a escala e a logo do Moinho. Dá para pedir também a "imagem real" (o talhão na foto de satélite, sem índice) e o arquivo para o Google Earth (.kmz). O sistema usa a imagem mais recente sem nuvem de cada talhão, ou a mais perto da data que você escolher.',
+      ],
+      [
+        'Dá para baixar só a imagem que estou vendo?',
+        'Dá. No Monitoramento, o botão "Baixar imagem", no canto de cima do mapa, baixa o talhão, o índice e a data que estão na tela, já no formato de relatório. Com "Sem filtro" escolhido, sai a imagem real do talhão.',
       ],
     ],
   },
