@@ -36,7 +36,7 @@ const safraValida = (s) => {
  * marcado entra. Contrato e regras: README.md ao lado.
  */
 export default function ImportarPdf() {
-  const { fazendaSelecionada, talhoes, glebas, editor, recarregarAnalises } = useFazendaAtual()
+  const { fazendaSelecionada, talhoes, glebas, lancador, recarregarAnalises } = useFazendaAtual()
 
   const [laudos, setLaudos] = useState([]) // { nomeArquivo, laudo }
   const [contexto, setContexto] = useState(null) // { pontos, identidades }
@@ -209,8 +209,8 @@ export default function ImportarPdf() {
   if (!fazendaSelecionada) {
     return <Caixa>Escolha uma fazenda na barra lateral para importar um laudo.</Caixa>
   }
-  if (!editor) {
-    return <Caixa>Só quem pode editar a fazenda importa laudos.</Caixa>
+  if (!lancador) {
+    return <Caixa>Seu cargo nesta fazenda não lança laudos.</Caixa>
   }
 
   return (

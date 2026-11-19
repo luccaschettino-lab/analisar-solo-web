@@ -929,3 +929,26 @@ campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
   tem entra e aceita. O cadastro público continua fechado.
 - Gatilho `manter_um_proprietario`: não deixa tirar nem rebaixar o último
   proprietário (exceto em exclusão em cascata da fazenda ou da conta).
+
+## 2026-11-19 — Monitoramento de pragas e cargo Monitor
+
+- Nova tela Pragas (abas Visão geral, Por talhão, Pragas e níveis). Culturas
+  iniciais: soja e café. Sem modo offline por ora: o web assume sinal no
+  campo; offline fica para o futuro app de celular.
+- Vistoria = data + cultura + estádio; em cada ponto (GPS ou clique no mapa)
+  zero ou mais registros. Ponto sem nada = registro com praga nula, que conta
+  como zero na média do talhão (média de todos os pontos, como no MIP).
+- Cinco jeitos de medir, todos aceitos (a equipe ainda vai decidir qual usa):
+  pano de batida (/m), contagem na amostra (%), % estimada, presença e nota
+  visual. Cada praga vem com o mais comum; dá para trocar no ponto.
+- Semáforo: vermelho no nível de controle, amarelo a partir de 70% dele,
+  verde abaixo, cinza sem nível. Só compara quando o valor foi medido no
+  mesmo jeito do nível. Nota visual: a própria nota. Soja: de R1 em diante
+  vale o nível reprodutivo (percevejos, desfolha).
+- Níveis de referência no código (`src/config/pragas.js`, fontes citadas lá);
+  a fazenda ajusta ou acrescenta em `pragas_da_fazenda` (proprietário e
+  agrônomo). Mapa de calor: IDW dentro do talhão.
+- Cargo Monitor: vê tudo, lança vistorias e laudos (análises), sobe fotos só
+  na pasta `pragas/`. Não desenha talhões/glebas nem mexe em critérios.
+  Função nova `pode_lancar_campo`.
+- Segunda etapa (combinada): registro de aplicações (produto, dose, data).

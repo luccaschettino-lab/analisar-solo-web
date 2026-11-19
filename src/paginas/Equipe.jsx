@@ -28,6 +28,7 @@ const COR_CARGO = {
   proprietario: 'bg-solo-100 text-solo-800 dark:bg-solo-500/20 dark:text-solo-200',
   agronomo: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200',
   editor: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200',
+  monitor: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200',
   leitor: 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300',
 }
 

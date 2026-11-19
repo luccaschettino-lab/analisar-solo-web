@@ -26,6 +26,7 @@ const ROTULO: Record<string, string> = {
   proprietario: "Proprietário",
   agronomo: "Agrônomo",
   editor: "Editor",
+  monitor: "Monitor",
   leitor: "Leitor",
 };
 

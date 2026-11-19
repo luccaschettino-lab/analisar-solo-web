@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useFazendas } from '../../hooks/useFazendas.js'
 import { useHierarquia } from '../../hooks/useHierarquia.js'
-import { podeEditar } from '../../lib/permissoes.js'
+import { podeLancarCampo } from '../../lib/permissoes.js'
 
 /**
  * Seleção em cascata Fazenda › Talhão.
@@ -60,8 +60,8 @@ export function useSelecaoTalhao() {
     selecionarFazenda,
     selecionarTalhao: setTalhaoId,
 
-    // Escrever análise depende do papel na fazenda, como toda escrita.
-    podeLancar: podeEditar(fazenda?.papel),
+    // Lançar análise: quem edita a fazenda e o Monitor.
+    podeLancar: podeLancarCampo(fazenda?.papel),
 
     carregandoFazendas,
     carregandoHierarquia,

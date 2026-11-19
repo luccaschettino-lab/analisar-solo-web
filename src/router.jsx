@@ -20,6 +20,7 @@ const Filtros = lazy(() => import('./paginas/Filtros.jsx'))
 const Dados = lazy(() => import('./paginas/Dados.jsx'))
 const Comparar = lazy(() => import('./paginas/Comparar.jsx'))
 const Monitoramento = lazy(() => import('./paginas/Monitoramento.jsx'))
+const Pragas = lazy(() => import('./paginas/Pragas.jsx'))
 const Exportar = lazy(() => import('./paginas/Exportar.jsx'))
 const Equipe = lazy(() => import('./paginas/Equipe.jsx'))
 const Ajuda = lazy(() => import('./paginas/Ajuda.jsx'))
@@ -80,6 +81,7 @@ export const router = createHashRouter([
           { path: '/dados', element: comEspera(Dados) },
           { path: '/comparar', element: comEspera(Comparar) },
           { path: '/monitoramento', element: comEspera(Monitoramento) },
+          { path: '/pragas', element: comEspera(Pragas) },
           { path: '/exportar', element: comEspera(Exportar) },
           { path: '/criterios', element: comEspera(Criterios) },
           { path: '/equipe', element: comEspera(Equipe) },

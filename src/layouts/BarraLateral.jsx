@@ -100,6 +100,17 @@ function IconeMonitoramento(props) {
   )
 }
 
+// Inseto (besouro): pragas e doenças.
+function IconePragas(props) {
+  return (
+    <svg {...PROPRIEDADES_ICONE} {...props}>
+      <path d="M12 7a4 4 0 0 1 4 4v4a4 4 0 0 1-8 0v-4a4 4 0 0 1 4-4Z" />
+      <path d="M9.5 7.5 8 5M14.5 7.5 16 5M12 11v8" />
+      <path d="M8 12H4M8 16H4.5M16 12h4M16 16h3.5" />
+    </svg>
+  )
+}
+
 // Duas pessoas: a equipe da fazenda.
 function IconeEquipe(props) {
   return (
@@ -598,6 +609,7 @@ export default function BarraLateral({ aoNavegar, compacta = false, aoAlternar }
             </div>
           )}
           <ItemNav to="/monitoramento" tutorial="monitoramento" Icone={IconeMonitoramento} rotulo="Monitoramento" onClick={aoNavegar} compacta={compacta} />
+          <ItemNav to="/pragas" Icone={IconePragas} rotulo="Pragas" onClick={aoNavegar} compacta={compacta} />
           <ItemNav to="/exportar" tutorial="exportar" Icone={IconeExportar} rotulo="Exportar" onClick={aoNavegar} compacta={compacta} />
 
           <Secao titulo="Ajustes" compacta={compacta} />

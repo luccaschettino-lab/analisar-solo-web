@@ -51,7 +51,7 @@ const SECOES = [
       ],
       [
         'Quem pode mexer na fazenda?',
-        'São quatro cargos. Proprietário: tudo, inclusive a equipe e excluir a fazenda. Agrônomo: edita tudo e define os critérios de interpretação. Editor: lança análises, desenha e sobe fotos, mas não mexe em critérios. Leitor: só vê e exporta. Quem cria a fazenda é o proprietário. O seu cargo aparece embaixo do nome da fazenda, na barra lateral.',
+        'São cinco cargos. Proprietário: tudo, inclusive a equipe e excluir a fazenda. Agrônomo: edita tudo e define os critérios de interpretação e os níveis de controle de pragas. Editor: lança análises e vistorias, desenha e sobe fotos, mas não mexe em critérios. Monitor: quem vai a campo; lança vistorias de pragas e laudos, sem desenhar talhões ou glebas. Leitor: só vê e exporta. Quem cria a fazenda é o proprietário. O seu cargo aparece embaixo do nome da fazenda, na barra lateral.',
       ],
       [
         'Por que o sistema pede a minha senha para excluir?',
@@ -175,6 +175,32 @@ const SECOES = [
       [
         'Qual data escolho?',
         'Na barra do tempo, cada bolinha é uma imagem. As verdes têm até 20% de nuvem na região e são as melhores. A nuvem de cada imagem é medida na região inteira; no talhão pode ser mais ou menos. Os pixels com nuvem aparecem em cinza no mapa e ficam fora das contas, e o painel diz quanto do talhão entrou no cálculo.',
+      ],
+    ],
+  },
+  {
+    id: 'pragas',
+    titulo: 'Pragas e doenças',
+    itens: [
+      [
+        'Como lanço uma vistoria?',
+        'Em Pragas, aba "Por talhão", escolha o talhão e clique em "Nova vistoria" (data, cultura e estádio). Depois, em cada ponto do talhão: toque em "Usar meu GPS" (ou toque no mapa), acrescente o que achou e preencha o valor, tire uma foto se quiser e grave. O painel fica aberto para o próximo ponto, com as mesmas pragas e os valores em branco.',
+      ],
+      [
+        'Quais jeitos de medir existem?',
+        'Pano de batida (insetos por metro), contagem na amostra (atacados de quantos olhados, vira %), % estimada (desfolha, folhas com sintoma), presença (achou ou não) e nota visual (baixo, médio, alto). Cada praga já vem com o jeito mais comum, mas dá para trocar na hora.',
+      ],
+      [
+        'O que significam as cores?',
+        'Vermelho (Agir): o talhão passou do nível de controle. Amarelo (Atenção): chegou a 70% do nível. Verde (Tranquilo): abaixo. Cinza: a praga não tem nível definido, só registra. O valor do talhão é a média de todos os pontos da vistoria; ponto onde a praga não apareceu conta como zero. Na nota visual, a cor é a própria nota.',
+      ],
+      [
+        'De onde vêm os níveis de controle?',
+        'Da Embrapa Soja (MIP-Soja 2023), Embrapa Café, Embrapa Rondônia e Epamig. Ex.: percevejos 2 por metro na soja de grão a partir de R3; desfolha 30% no vegetativo e 15% no reprodutivo; bicho-mineiro 30% das folhas minadas; broca-do-café 3% dos frutos; ferrugem do café 5% das folhas. O proprietário e o agrônomo ajustam na aba "Pragas e níveis" e podem acrescentar pragas.',
+      ],
+      [
+        'O mapa de calor é exato?',
+        'Não: ele estima a infestação entre os pontos a partir dos mais próximos. Quanto mais pontos bem espalhados, melhor. Serve para ver onde a praga se concentra e onde olhar de novo.',
       ],
     ],
   },
