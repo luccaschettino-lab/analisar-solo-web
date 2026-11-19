@@ -25,6 +25,25 @@ const nomeArquivo = (s) =>
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '') || 'sem_nome'
 
+/** Roda `tarefa` em cada item, `simultaneas` de cada vez (ordem do resultado = ordem dos itens). */
+async function emParalelo(itens, simultaneas, tarefa) {
+  const resultados = new Array(itens.length)
+  let proximo = 0
+  const trabalhador = async () => {
+    while (proximo < itens.length) {
+      const i = proximo++
+      resultados[i] = await tarefa(itens[i], i)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(simultaneas, itens.length) }, trabalhador))
+  return resultados
+}
+
+// Quantos ao mesmo tempo: fotos são arquivos pequenos no Storage; o satélite é
+// conta pesada na função do servidor, então menos de cada vez.
+const FOTOS_SIMULTANEAS = 12
+const SATELITE_SIMULTANEOS = 4
+
 const hoje = () => new Date().toISOString().slice(0, 10)
 
 function dataUrlParaBytes(url) {
@@ -138,10 +157,9 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
   // ---- Imagens de satélite ----
   if (opcoes.imagens?.indices.length) {
     const talhoesArea = dados.talhoes.filter((t) => t.geometria && !ehPonto(t.geometria))
-    const imagens = []
     let feitos = 0
-    for (const t of talhoesArea) {
-      aoProgredir(`Imagem de satélite do talhão ${t.codigo} (${feitos + 1} de ${talhoesArea.length})…`, 0.3 + 0.4 * (feitos / talhoesArea.length))
+    const porTalhao = await emParalelo(talhoesArea, SATELITE_SIMULTANEOS, async (t) => {
+      const deste = []
       try {
         const cena = await escolherCena(t, brutos.indices, opcoes.imagens.data)
         if (!cena) {
@@ -152,20 +170,23 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
           const dataArq = cena.data.slice(0, 10)
           for (const indice of opcoes.imagens.indices) {
             const arquivo = `imagens/${indice}/talhao_${nomeArquivo(t.codigo)}_${dataArq}.png`
-            imagens.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
+            deste.push({ talhao: t.codigo, indice, data, arquivo, bbox: resposta.janela.bbox, bytes: dataUrlParaBytes(imagemDoIndice(resposta, indice)) })
           }
         }
       } catch (e) {
         faltas.push(`Talhão ${t.codigo}: ${e.message || 'falha ao calcular a imagem'}.`)
       }
       feitos++
-    }
+      aoProgredir(`Imagens de satélite: ${feitos} de ${talhoesArea.length} talhões…`, 0.3 + 0.4 * (feitos / talhoesArea.length))
+      return deste
+    })
+    const imagens = porTalhao.flat()
     if (imagens.length) {
       const JSZip = (await import('jszip')).default
       const kmz = new JSZip()
       kmz.file('doc.kml', kmlDasImagens(imagens, { nomeFazenda: fazenda.nome }))
       for (const im of imagens) {
-        kmz.file(im.arquivo, im.bytes)
+        kmz.file(im.arquivo, im.bytes, { compression: 'STORE' }) // PNG já é comprimido
         arquivos.push({ caminho: `Satelite/${im.arquivo.replace(/^imagens\//, '')}`, conteudo: im.bytes })
       }
       arquivos.push({
@@ -178,20 +199,25 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
   // ---- Fotos do perfil do solo ----
   if (opcoes.fotos && dados.fotos.length) {
     let feitas = 0
-    for (const f of dados.fotos) {
-      aoProgredir(`Baixando as fotos do solo (${feitas + 1} de ${dados.fotos.length})…`, 0.7 + 0.22 * (feitas / dados.fotos.length))
+    aoProgredir(`Baixando as fotos do solo (0 de ${dados.fotos.length})…`, 0.7)
+    const baixadas = await emParalelo(dados.fotos, FOTOS_SIMULTANEAS, async (f) => {
+      let arquivo = null
       try {
         const blob = await baixarFoto(f.caminho)
         const ext = (f.caminho.split('.').pop() || 'jpg').toLowerCase()
-        arquivos.push({
+        arquivo = {
           caminho: `Fotos do solo/Talhao_${nomeArquivo(f.talhao)}/Gleba_${nomeArquivo(f.gleba)}/${nomeArquivo(f.gleba)}_safra_${nomeArquivo(f.ano_safra)}_${nomeArquivo(f.profundidade)}cm.${ext}`,
           conteudo: new Uint8Array(await blob.arrayBuffer()),
-        })
+          jaComprimido: true,
+        }
       } catch {
         faltas.push(`Foto da gleba ${f.gleba} (${f.ano_safra}, ${f.profundidade} cm) não pôde ser baixada.`)
       }
       feitas++
-    }
+      aoProgredir(`Baixando as fotos do solo (${feitas} de ${dados.fotos.length})…`, 0.7 + 0.22 * (feitas / dados.fotos.length))
+      return arquivo
+    })
+    arquivos.push(...baixadas.filter(Boolean))
   }
 
   if (arquivos.length === 0) throw new Error('Nada para exportar com essas escolhas.')
@@ -208,7 +234,10 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
   const JSZip = (await import('jszip')).default
   const zip = new JSZip()
   const pasta = zip.folder(base)
-  for (const a of arquivos) pasta.file(a.caminho, a.conteudo)
+  for (const a of arquivos) {
+    const imagem = a.jaComprimido || /\.(png|jpe?g|kmz|zip)$/i.test(a.caminho)
+    pasta.file(a.caminho, a.conteudo, imagem ? { compression: 'STORE' } : undefined)
+  }
   pasta.file('LEIA-ME.txt', leiaMe(fazenda, arquivos, faltas))
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
   aoProgredir('Pronto!', 1)
