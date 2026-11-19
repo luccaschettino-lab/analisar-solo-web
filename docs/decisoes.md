@@ -902,3 +902,13 @@ campo vizinho, atravessando o carreador. O talhão 10 é desenhado em 6 partes
   índice) e PNG soltos.
 - Fotos do perfil: pasta por talhão/gleba, safra e profundidade no nome.
 - Sai um arquivo só: o .xlsx quando é só a planilha, senão um ZIP com LEIA-ME.
+
+## 2026-11-18 — CBERS-4A removido de vez
+
+- Estava oculto desde a manhã; o usuário decidiu tirar. Saíram a tela de
+  escolha de satélite, `dados/cbers.js`, `dados/indicesCbers.js`, a função
+  `cbers-indice` (no Supabase ficou uma versão inerte que responde 410; pode
+  ser excluída no painel, junto com o segredo INPE_EMAIL), `_shared/
+  indicesCbers.js`, `_shared/tiffRecorte.js`, os testes e o host do INPE na CSP.
+- O Monitoramento usa só o Sentinel-2. A coluna `indices_talhao.fonte` fica
+  (todas as linhas são 'sentinel'), caso entre outro satélite no futuro.

@@ -366,3 +366,20 @@ export function combinarGeometrias(geometrias) {
         : { type: 'MultiPolygon', coordinates: poligonos },
   }
 }
+
+/** [oeste, sul, leste, norte] de um Polygon/MultiPolygon (ou Feature), ou null. */
+export function bboxDaGeometria(geoJson) {
+  const geometria = geoJson?.type === 'Feature' ? geoJson.geometry : geoJson
+  if (!geometria || !['Polygon', 'MultiPolygon'].includes(geometria.type)) return null
+  const pontos = []
+  const visitar = (valor) => {
+    if (!Array.isArray(valor)) return
+    if (valor.length >= 2 && Number.isFinite(valor[0]) && Number.isFinite(valor[1])) pontos.push(valor)
+    else valor.forEach(visitar)
+  }
+  visitar(geometria.coordinates)
+  if (pontos.length === 0) return null
+  const lngs = pontos.map((p) => p[0])
+  const lats = pontos.map((p) => p[1])
+  return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]
+}

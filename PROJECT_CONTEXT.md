@@ -66,11 +66,9 @@ Modelar isso errado faz o produto inteiro perder a razão de existir.
 
 | Gráficos | Chart.js 4.5 + `react-chartjs-2` 5.3 |
 
-A tela Monitoramento consulta as cenas CBERS-4A MUX que cruzam a geometria real
-do talhão, com linha do tempo, cobertura de nuvens e prévia da cena orbital. A
-prévia é da cena completa, não um recorte do talhão. A geração dos mapas NDVI,
-EVI, SAVI e NDWI a partir dos GeoTIFFs originais ainda depende de processamento
-no servidor.
+A tela Monitoramento usa o Sentinel-2 L2A (Earth Search, AWS): lista as datas
+que cruzam o talhão e calcula NDVI, EVI, SAVI e NDWI recortados no talhão na
+função `sentinel-indice`. O CBERS-4A foi removido em 18/11/2026.
 
 **Turf granular, não `@turf/turf`.** O pacote completo arrasta dezenas de
 módulos para usarmos três funções. Os pacotes avulsos entregam o mesmo.

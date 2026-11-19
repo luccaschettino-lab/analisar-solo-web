@@ -140,7 +140,7 @@ export function montarExportacao({ fazenda, talhoes, glebas, analises, pontos, i
       return {
         talhao: talhaoPorId.get(i.talhao_id)?.codigo ?? '',
         data: i.data,
-        satelite: i.fonte === 'cbers' ? 'CBERS-4A' : 'Sentinel-2',
+        satelite: 'Sentinel-2',
         limpoPct: q.pixelsNoTalhao ? (q.validos / q.pixelsNoTalhao) * 100 : 0,
         estatisticas: i.estatisticas ?? {},
       }

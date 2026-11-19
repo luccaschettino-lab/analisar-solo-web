@@ -1,11 +1,14 @@
 import booleanIntersects from '@turf/boolean-intersects'
 import booleanContains from '@turf/boolean-contains'
 import { supabase } from '../lib/supabase.js'
+import { bboxDaGeometria } from '../lib/geo.js'
+
+export { bboxDaGeometria }
 
 /**
  * Sentinel-2 L2A pelo Earth Search (catálogo STAC público da AWS, sem
  * cadastro). Passa a cada 2–5 dias e tem pixel de 10 m — é o que dá imagem
- * semanal ao Monitoramento. O CBERS-4A (cbers.js) continua como alternativa.
+ * semanal ao Monitoramento. Único satélite desde 18/11/2026 (o CBERS-4A saiu).
  */
 
 const BUSCA = 'https://earth-search.aws.element84.com/v1/search'
@@ -17,6 +20,7 @@ function comoFeature(geoJson) {
   if (geoJson?.type === 'Polygon' || geoJson?.type === 'MultiPolygon') return { type: 'Feature', properties: {}, geometry: geoJson }
   return null
 }
+
 
 function cenaValida(item) {
   const data = item?.properties?.datetime

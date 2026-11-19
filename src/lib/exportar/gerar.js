@@ -2,9 +2,8 @@ import { montarExportacao } from './montagem.js'
 import { gerarPlanilha } from './planilha.js'
 import { camadasGeo, gerarKml, gerarShapefiles, kmlDasImagens } from './mapas.js'
 import { carregarDadosParaExportar, baixarFoto } from '../../dados/exportacao.js'
-import { calcularComCache } from '../../paginas/monitoramento/useIndicesCbers.js'
-import { listarCenasSentinel } from '../../dados/sentinel.js'
-import { bboxDaGeometria } from '../../dados/cbers.js'
+import { calcularComCache } from '../../paginas/monitoramento/useIndices.js'
+import { listarCenasSentinel, bboxDaGeometria } from '../../dados/sentinel.js'
 import { imagemDoIndice } from '../rasterIndice.js'
 import { ehPonto } from '../geo.js'
 import logoUrl from '../../assets/marca/moinho-completo.jpg'
@@ -148,7 +147,7 @@ export async function gerarExportacao(opcoes, aoProgredir = () => {}) {
         if (!cena) {
           faltas.push(`Talhão ${t.codigo}: sem imagem de satélite no período.`)
         } else {
-          const resposta = await calcularComCache('sentinel', t.id, cena.id, t.geometria)
+          const resposta = await calcularComCache(t.id, cena.id, t.geometria)
           const data = new Date(cena.data).toLocaleDateString('pt-BR')
           const dataArq = cena.data.slice(0, 10)
           for (const indice of opcoes.imagens.indices) {

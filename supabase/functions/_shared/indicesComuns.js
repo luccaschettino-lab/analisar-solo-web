@@ -1,8 +1,8 @@
 import { Buffer } from 'node:buffer'
 
 /**
- * O que os cálculos de índice do CBERS e do Sentinel-2 têm em comum: as
- * fórmulas, o formato da resposta (inteiros × 10000, máscara por pixel) e as
+ * A base do cálculo de índices (hoje só do Sentinel-2; o CBERS-4A saiu em
+ * 18/11/2026): as fórmulas, o formato da resposta (inteiros × 10000, máscara por pixel) e as
  * contas de geometria e estatística. As mesmas fórmulas de
  * src/lib/indicesVegetacao.js (o teste confere as duas).
  */

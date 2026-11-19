@@ -1,6 +1,6 @@
 import { FAIXAS_VIGOR, NIVEIS_VIGOR } from './indicesVegetacao.js'
 
-// Estados de cada pixel, os mesmos que a função cbers-indice devolve na máscara.
+// Estados de cada pixel, os mesmos que a função sentinel-indice devolve na máscara.
 export const PIXEL = { FORA: 0, VALIDO: 1, NUVEM: 2, SEM_DADO: 3 }
 
 // NDWI mede água na superfície, não vigor: escala própria, de seco a água.

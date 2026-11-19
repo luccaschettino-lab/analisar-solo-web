@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFazendaAtual } from '../context/FazendaContext.jsx'
-import { useCenasCbers, SATELITES } from './monitoramento/useCenasCbers.js'
-import { useIndicesCbers, calcularComCache, resultadoGuardado } from './monitoramento/useIndicesCbers.js'
+import { useCenas } from './monitoramento/useCenas.js'
+import { useIndices, calcularComCache, resultadoGuardado, FONTE } from './monitoramento/useIndices.js'
 import GraficoDoMes from './monitoramento/GraficoDoMes.jsx'
 import { listarIndicesDoTalhao } from '../dados/indicesTalhao.js'
 import SeletorDeData from './monitoramento/SeletorDeData.jsx'
@@ -174,27 +174,8 @@ export default function Monitoramento() {
   const [talhaoId, setTalhaoId] = useState('')
   const [indiceAtivo, setIndiceAtivo] = useState('ndvi')
   const [cenaAtivaId, setCenaAtivaId] = useState('')
-  // Satélite: Sentinel-2 por padrão (imagem a cada 2–5 dias). A escolha fica
-  // no navegador, para quem prefere o CBERS não precisar trocar toda vez.
-  const [fonte, setFonte] = useState(() => {
-    try {
-      const salvo = localStorage.getItem('moinho-satelite')
-      return SATELITES[salvo] && !SATELITES[salvo].oculto ? salvo : 'sentinel'
-    } catch {
-      return 'sentinel'
-    }
-  })
-  function trocarFonte(nova) {
-    setFonte(nova)
-    setCenaAtivaId('')
-    try {
-      localStorage.setItem('moinho-satelite', nova)
-    } catch {
-      // Sem storage: a escolha vale só nesta visita.
-    }
-  }
-  const satelite = SATELITES[fonte]
-  const satelitesVisiveis = Object.values(SATELITES).filter((s) => !s.oculto)
+  // Só o Sentinel-2: o CBERS-4A saiu em 18/11/2026.
+  const fonte = FONTE
 
   // Período da barra do tempo, do gráfico e do "carregar com um clique".
   // 12 meses de Sentinel-2 são ~100 imagens: numa barra estreita as bolinhas
@@ -217,12 +198,12 @@ export default function Monitoramento() {
 
   const talhao = talhoes.find((t) => t.id === talhaoId) ?? null
   const geometria = talhao?.geometria ?? null
-  const { cenas, carregando, erro } = useCenasCbers(talhaoId, geometria, fonte)
+  const { cenas, carregando, erro } = useCenas(talhaoId, geometria)
   // A data escolhida fica dentro do período; fora dele, vale a mais recente.
   const limitePeriodo = Date.now() - periodo * 86400000
   const visiveis = cenas.filter((c) => Date.parse(c.data) >= limitePeriodo)
   const cenaSelecionada = visiveis.find((cena) => cena.id === cenaAtivaId) ?? visiveis.at(-1) ?? null
-  const { dados, carregando: calculando, erro: erroCalculo } = useIndicesCbers(talhaoId, cenaSelecionada?.id, geometria, fonte)
+  const { dados, carregando: calculando, erro: erroCalculo } = useIndices(talhaoId, cenaSelecionada?.id, geometria)
 
   // Resumos já guardados no banco (qualquer pessoa da fazenda que calculou):
   // o gráfico abre com eles, sem recalcular.
@@ -244,7 +225,7 @@ export default function Monitoramento() {
   const cenasDoPeriodo = cenas.filter((c) => noPeriodo(c.data))
   const guardadoPorCena = new Map(guardados.map((g) => [g.cena_id, g]))
   const resumoDe = (cenaId) => {
-    const d = geometria ? resultadoGuardado(fonte, talhaoId, cenaId, geometria) : null
+    const d = geometria ? resultadoGuardado(talhaoId, cenaId, geometria) : null
     if (d) return { estatisticas: d.estatisticas, qualidade: d.qualidade }
     return guardadoPorCena.get(cenaId) ?? null
   }
@@ -261,7 +242,7 @@ export default function Monitoramento() {
       while (fila.length) {
         const cena = fila.shift()
         try {
-          await calcularComCache(fonte, talhaoId, cena.id, geometria)
+          await calcularComCache(talhaoId, cena.id, geometria)
         } catch {
           falhas++
         }
@@ -318,7 +299,7 @@ export default function Monitoramento() {
           <div className="min-w-0">
             <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">Monitoramento por satélite</h1>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-              {fazendaSelecionada.nome} · imagens {satelite.nome}, calculadas só dentro do talhão
+              {fazendaSelecionada.nome} · imagens Sentinel-2, calculadas só dentro do talhão
             </p>
           </div>
         </div>
@@ -369,32 +350,10 @@ export default function Monitoramento() {
 
           {/* Painel */}
           <aside className="space-y-4 lg:min-h-0 lg:overflow-auto lg:pr-1">
-            {satelitesVisiveis.length > 1 && <Cartao titulo="Satélite">
-              <div role="radiogroup" aria-label="Satélite" className="grid grid-cols-2 gap-2">
-                {satelitesVisiveis.map((s) => (
-                  <button
-                    key={s.chave}
-                    type="button"
-                    role="radio"
-                    aria-checked={fonte === s.chave}
-                    onClick={() => trocarFonte(s.chave)}
-                    className={`rounded-lg border px-3 py-2 text-left transition ${
-                      fonte === s.chave
-                        ? 'border-solo-600 bg-solo-50 dark:border-solo-500 dark:bg-solo-500/10'
-                        : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{s.nome}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400">{s.resumo}</span>
-                  </button>
-                ))}
-              </div>
-            </Cartao>}
-
             <Cartao titulo="Data da imagem">
               {geometria && carregando && (
                 <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
-                  Consultando as datas no catálogo do {satelite.nome}…
+                  Consultando as datas no catálogo do Sentinel-2…
                 </p>
               )}
               {erro && (
@@ -403,7 +362,7 @@ export default function Monitoramento() {
                 </p>
               )}
               {geometria && !carregando && !erro && cenas.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do {satelite.nome} para este talhão.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma imagem do Sentinel-2 para este talhão.</p>
               )}
               {cenas.length > 0 && (
                 <div role="radiogroup" aria-label="Período" className="mb-3 flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
@@ -506,23 +465,11 @@ export default function Monitoramento() {
                 </summary>
                 <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-100">{info.nome}</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{info.explicacao}</p>
-                {fonte === 'sentinel' ? (
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    Reflectância de superfície, já corrigida da atmosfera pela ESA. Nuvem e sombra de nuvem são marcadas pixel a pixel
-                    pela classificação da própria cena e ficam fora das contas. Cada quadrado do mapa tem 10 m. Imagens: Sentinel-2
-                    L2A, Copernicus/ESA, pelo repositório público da AWS (Earth Search).
-                  </p>
-                ) : (
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    Valores de reflectância no topo da atmosfera, sem correção atmosférica: servem para acompanhar a lavoura ao
-                    longo da safra, mas ficam um pouco abaixo dos de reflectância de superfície. Cada quadrado do mapa tem 16 m.
-                    Imagens: CBERS-4A MUX, INPE (
-                    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline">
-                      CC BY-SA 4.0
-                    </a>
-                    ).
-                  </p>
-                )}
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Reflectância de superfície, já corrigida da atmosfera pela ESA. Nuvem e sombra de nuvem são marcadas pixel a pixel
+                  pela classificação da própria cena e ficam fora das contas. Cada quadrado do mapa tem 10 m. Imagens: Sentinel-2
+                  L2A, Copernicus/ESA, pelo repositório público da AWS (Earth Search).
+                </p>
               </details>
             </Cartao>}
           </aside>

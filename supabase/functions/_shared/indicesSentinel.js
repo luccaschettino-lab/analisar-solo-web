@@ -6,9 +6,8 @@ import { ESCALA, SEM_VALOR, PIXEL, ndvi, evi, savi, ndwi, aneisDe, dentroDoPolig
  * NDVI, EVI, SAVI e NDWI de UM talhão numa cena Sentinel-2 L2A, lida do
  * repositório público da AWS (Earth Search / sentinel-cogs). Sem cadastro.
  *
- * Diferenças para o CBERS (indicesCbers.js), que é de onde vêm a saída, os
- * índices e as estatísticas — a tela usa as duas respostas do mesmo jeito:
- *   - 10 m por pixel (o CBERS MUX tem 16 m);
+ * A saída, os índices e as estatísticas vêm de indicesComuns.js.
+ *   - 10 m por pixel;
  *   - reflectância de SUPERFÍCIE, já corrigida da atmosfera pela ESA
  *     (DN × escala + offset, do próprio catálogo);
  *   - nuvem e sombra de nuvem vêm da camada SCL (classificação da cena, 20 m),

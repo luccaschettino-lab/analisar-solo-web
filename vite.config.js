@@ -30,7 +30,6 @@ function politicaDeSeguranca(urlSupabase) {
       "'self'",
       ...supabase,
       'https://nominatim.openstreetmap.org',
-      'https://www.dgi.inpe.br',
       // Catálogo do Sentinel-2 (lista de datas do Monitoramento). As bandas
       // são lidas pela função sentinel-indice, no servidor.
       'https://earth-search.aws.element84.com',

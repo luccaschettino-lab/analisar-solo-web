@@ -1,6 +1,6 @@
 // Latitude/longitude (WGS84) -> UTM. Série de Krüger (Karney, 2011): erro abaixo
 // de 1 mm dentro da zona. Escrito aqui porque a função roda no servidor e as
-// cenas do CBERS vêm em UTM; não vale puxar uma biblioteca de projeção só para
+// cenas do Sentinel-2 vêm em UTM; não vale puxar uma biblioteca de projeção só para
 // uma conta de ida.
 
 const A = 6378137.0

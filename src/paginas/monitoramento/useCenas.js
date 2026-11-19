@@ -1,0 +1,47 @@
+import { useEffect, useState } from 'react'
+import { bboxDaGeometria, listarCenasSentinel } from '../../dados/sentinel.js'
+
+/** Datas com imagem do Sentinel-2 sobre o talhão. */
+export function useCenas(talhaoId, geometria) {
+  const bbox = bboxDaGeometria(geometria)
+  const chaveBbox = bbox?.join(',') ?? ''
+  const chaveGeometria = geometria ? JSON.stringify(geometria) : ''
+  const [cenas, setCenas] = useState([])
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState(null)
+
+  useEffect(() => {
+    if (!talhaoId || !chaveBbox || !chaveGeometria) {
+      setCenas([])
+      setErro(null)
+      setCarregando(false)
+      return
+    }
+
+    const controle = new AbortController()
+    let ativa = true
+    setCarregando(true)
+    setErro(null)
+    setCenas([])
+
+    listarCenasSentinel(chaveBbox.split(',').map(Number), JSON.parse(chaveGeometria), controle.signal)
+      .then((resultado) => {
+        if (ativa) setCenas(resultado)
+      })
+      .catch((falha) => {
+        if (!ativa || falha.name === 'AbortError') return
+        setCenas([])
+        setErro(falha.message || 'Não foi possível consultar o catálogo do Sentinel-2.')
+      })
+      .finally(() => {
+        if (ativa) setCarregando(false)
+      })
+
+    return () => {
+      ativa = false
+      controle.abort()
+    }
+  }, [talhaoId, chaveBbox, chaveGeometria])
+
+  return { cenas, carregando, erro }
+}
