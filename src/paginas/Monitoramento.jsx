@@ -336,7 +336,8 @@ export default function Monitoramento() {
                     </p>
                   )}
                 </div>
-                <div className="absolute right-3 top-3 z-[1000]">
+                {/* right-16: ao lado do botão de camadas do mapa, não por cima dele. */}
+                <div className="absolute right-16 top-3 z-[1000]">
                   <BaixarImagem
                     fazenda={fazendaSelecionada}
                     talhao={talhao}
