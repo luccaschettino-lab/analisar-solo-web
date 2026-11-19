@@ -41,7 +41,9 @@ Deno.serve(async (req: Request) => {
     return responder(200, await calcularIndicesSentinel({ cenaId, geometria }));
   } catch (e) {
     const status = typeof (e as { status?: number }).status === "number" ? (e as { status: number }).status : 500;
-    const mensagem = status === 500 ? "Erro inesperado ao calcular os índices." : (e as Error).message;
+    // O detalhe vai para o registro da função (Logs), não para a tela.
+    console.error("sentinel-indice", cenaId, (e as Error)?.stack ?? e);
+    const mensagem = status === 500 ? "Falha momentânea ao calcular esta imagem. Tente de novo." : (e as Error).message;
     return responder(status, { erro: mensagem });
   }
 });

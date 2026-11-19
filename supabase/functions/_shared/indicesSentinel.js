@@ -39,7 +39,30 @@ const falha = (status, mensagem) => Object.assign(new Error(mensagem), { status 
  * @param {object} p.geometria GeoJSON do talhão, em lat/lng
  * @param {typeof fetch} [p.buscar]
  */
-export async function calcularIndicesSentinel({ cenaId, geometria, buscar = fetch }) {
+/**
+ * O repositório da AWS às vezes derruba uma conexão ou responde 5xx no meio
+ * de dezenas de leituras: uma falha dessas não deve virar "erro" na tela.
+ * Tenta de novo até 2 vezes, com uma pausa curta.
+ */
+function comNovasTentativas(buscar, tentativas = 3) {
+  return async (url, opcoes) => {
+    let ultimo
+    for (let t = 0; t < tentativas; t++) {
+      try {
+        const r = await buscar(url, opcoes)
+        if (r.status < 500) return r
+        ultimo = falha(502, `O repositório do Sentinel-2 respondeu com erro (HTTP ${r.status}).`)
+      } catch (e) {
+        ultimo = e
+      }
+      await new Promise((ok) => setTimeout(ok, 400 * (t + 1)))
+    }
+    throw ultimo?.status ? ultimo : falha(503, 'Falha momentânea ao ler a imagem do satélite. Tente de novo.')
+  }
+}
+
+export async function calcularIndicesSentinel({ cenaId, geometria, buscar: buscarDireto = fetch }) {
+  const buscar = comNovasTentativas(buscarDireto)
   if (!/^S2[A-D]_\d{2}[A-Z]{3}_\d{8}_\d{1,2}_L2A$/.test(String(cenaId ?? ''))) throw falha(400, 'Identificador de cena inválido.')
   const aneisLatLng = aneisDe(geometria)
 

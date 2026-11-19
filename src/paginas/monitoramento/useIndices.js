@@ -18,12 +18,24 @@ export function resultadoGuardado(talhaoId, cenaId, geometria) {
   return r && !(r instanceof Promise) ? r : null
 }
 
+// Uma falha passageira (rede, servidor reciclando) costuma passar na segunda.
+// Erros "de verdade" (cena não cobre o talhão, talhão grande demais) não.
+async function calcularComUmaRepeticao(cenaId, geometria) {
+  try {
+    return await calcularIndicesSentinel(cenaId, geometria)
+  } catch (e) {
+    if (/não cobre|grande demais|inválid|Nenhum pixel|polígono/i.test(e.message ?? '')) throw e
+    await new Promise((ok) => setTimeout(ok, 1500))
+    return calcularIndicesSentinel(cenaId, geometria)
+  }
+}
+
 /** Calcula (ou devolve o já calculado) os índices do talhão numa cena. */
 export function calcularComCache(talhaoId, cenaId, geometria) {
   const chave = chaveDe(talhaoId, cenaId, geometria)
   const guardado = cache.get(chave)
   if (guardado) return guardado instanceof Promise ? guardado : Promise.resolve(guardado)
-  const pedido = calcularIndicesSentinel(cenaId, geometria)
+  const pedido = calcularComUmaRepeticao(cenaId, geometria)
     .then((dados) => {
       cache.set(chave, dados)
       // O resumo vai para o banco: da próxima vez (e para toda a fazenda) o
@@ -42,6 +54,7 @@ export function calcularComCache(talhaoId, cenaId, geometria) {
 /** Índices do talhão na cena escolhida. */
 export function useIndices(talhaoId, cenaId, geometria) {
   const [estado, setEstado] = useState({ dados: null, carregando: false, erro: null })
+  const [tentativa, setTentativa] = useState(0)
   const chaveGeometria = geometria ? JSON.stringify(geometria) : ''
 
   useEffect(() => {
@@ -63,7 +76,8 @@ export function useIndices(talhaoId, cenaId, geometria) {
     return () => {
       ativa = false
     }
-  }, [talhaoId, cenaId, chaveGeometria])
+  }, [talhaoId, cenaId, chaveGeometria, tentativa])
 
-  return estado
+  // O cache já esqueceu a falha: chamar de novo recalcula.
+  return { ...estado, tentarDeNovo: () => setTentativa((t) => t + 1) }
 }
