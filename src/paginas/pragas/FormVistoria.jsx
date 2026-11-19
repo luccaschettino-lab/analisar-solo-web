@@ -59,11 +59,18 @@ export default function FormVistoria({ inicial, talhaoRotulo, aoSalvar, aoFechar
               <option key={e} value={e} />
             ))}
           </datalist>
-          {cultura === 'soja' && (
-            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-              Muda o nível de controle: de R1 em diante vale o da fase reprodutiva (percevejos, desfolha).
-            </span>
-          )}
+          <details className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <summary className="cursor-pointer">O que é o estádio?</summary>
+            {cultura === 'soja' ? (
+              <p className="mt-1">
+                A fase da lavoura hoje. <strong>V</strong> = vegetativo, só folhas (V3 = 3 folhas abertas). <strong>R</strong> = reprodutivo: R1-R2
+                flor, R3-R4 vagens, R5-R6 enchendo grão, R7-R8 maturação. Muda o nível de controle: percevejo só conta de R3 em diante, e a
+                desfolha tolerada cai de 30% para 15% a partir de R1. Opcional.
+              </p>
+            ) : (
+              <p className="mt-1">A fase da lavoura hoje: florada, chumbinho (fruto pequeno), expansão, granação, maturação, colheita. Opcional.</p>
+            )}
+          </details>
         </label>
         <label className="block text-sm text-slate-700 dark:text-slate-200">
           Observação (opcional)

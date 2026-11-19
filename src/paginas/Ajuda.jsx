@@ -187,6 +187,10 @@ const SECOES = [
         'Em Pragas, aba "Por talhão", escolha o talhão e clique em "Nova vistoria" (data, cultura e estádio). Depois, em cada ponto do talhão: toque em "Usar meu GPS" (ou toque no mapa), acrescente o que achou e preencha o valor, tire uma foto se quiser e grave. O painel fica aberto para o próximo ponto, com as mesmas pragas e os valores em branco.',
       ],
       [
+        'O que é o estádio da cultura?',
+        'É a fase em que a lavoura está no dia da vistoria. Soja: V (vegetativo, só folhas; o número é quantas folhas já abriram: V3, V4…) e R (reprodutivo: R1-R2 flor, R3-R4 vagens, R5-R6 enchendo grão, R7-R8 maturação). Café: florada, chumbinho, expansão, granação, maturação. Na soja ele muda o nível de controle: percevejo só conta de R3 em diante e a desfolha tolerada cai de 30% para 15% a partir de R1. É opcional; em branco, vale o nível do vegetativo.',
+      ],
+      [
         'Quais jeitos de medir existem?',
         'Pano de batida (insetos por metro), contagem na amostra (atacados de quantos olhados, vira %), % estimada (desfolha, folhas com sintoma), presença (achou ou não) e nota visual (baixo, médio, alto). Cada praga já vem com o jeito mais comum, mas dá para trocar na hora.',
       ],
